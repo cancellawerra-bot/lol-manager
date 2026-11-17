@@ -24,13 +24,16 @@ export function factorsFor(d: DraftState, form: Record<string, number>): Factor[
   const mean = (a: number[]): number => a.reduce((x, y) => x + y, 0) / a.length;
   // 1 선수 기량
   {
-    const lines = [0, 1, 2, 3, 4].map((i) => `${POS_KO[i]} ${pB[i].name} ${pB[i].pct.ovr} (${pB[i].games}경기${pB[i].small ? "·표본 부족" : ""}) vs ${pR[i].name} ${pR[i].pct.ovr} (${pR[i].games}경기${pR[i].small ? "·표본 부족" : ""})`);
-    F.push({ key: "skill", label: "선수 지표 (2026 LCK)", v: COEF.skill * (mean(pB.map((p) => p.z.ovr)) - mean(pR.map((p) => p.z.ovr))), lines });
+    const who = (p: typeof pB[0]): string => `${p.label ?? p.name} ${p.pct.ovr} (${p.cardYear ? p.cardYear+" 카드 · " : ""}${p.games}경기${p.small ? "·표본 부족" : ""})`;
+    const lines = [0, 1, 2, 3, 4].map((i) => `${POS_KO[i]} ${who(pB[i])} vs ${who(pR[i])}`);
+    const anyCard = [...pB, ...pR].some((p) => p.cardYear);
+    F.push({ key: "skill", label: anyCard ? "선수 지표 (시즌 카드·2026 LCK)" : "선수 지표 (2026 LCK)", v: COEF.skill * (mean(pB.map((p) => p.z.ovr)) - mean(pR.map((p) => p.z.ovr))), lines });
   }
   // 2 팀 경기력
   {
     const b = TM[d.teams.B], r = TM[d.teams.R];
-    F.push({ key: "org", label: "팀 세트 승률 (2026 LCK)", v: COEF.org * (orgOf(b.short) - orgOf(r.short)), lines: [`${b.short} ${b.gw}승 ${b.gl}패 · ${r.short} ${r.gw}승 ${r.gl}패 (보정: (승+10)/(경기+20))`] });
+    const rec = (x: typeof b): string => (x.gw + x.gl === 0 || x.founded) ? `${x.short} 신생·2026 세트 승률 기록 없음 (평균으로 반영)` : `${x.short} ${x.gw}승 ${x.gl}패`;
+    F.push({ key: "org", label: "팀 세트 승률 (2026 LCK)", v: COEF.org * (orgOf(b.short) - orgOf(r.short)), lines: [`${rec(b)} · ${rec(r)} (보정: (승+10)/(경기+20))`] });
   }
   // 3 숙련도
   {

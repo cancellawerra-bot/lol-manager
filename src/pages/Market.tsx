@@ -1,0 +1,107 @@
+import { useMemo, useState } from "react";
+import { CARDS, CARDS_FILE, POS_KO, recTxt, cardLabel, fmt } from "../data";
+import type { SeasonCard } from "../types";
+import { personUsed } from "../game/cards";
+import { getSave, useSave } from "../store";
+import { Card } from "../ui";
+import { go } from "../nav";
+
+export function CardTile({ c, on, disabled, reason, onClick, price }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number }) {
+  return (
+    <button type="button" className={"card-tile" + (on ? " on" : "") + (disabled ? " dim" : "")} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`}>
+      <div className="row between"><b>{cardLabel(c)}</b><span className="gold">{price ?? c.salary}억</span></div>
+      <div className="muted sm">{POS_KO[c.posIdx]} · {c.team} · {c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""}</div>
+      <div className="sm">{c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`}</div>
+      <div className="tile-metrics xs muted">
+        <span>KDA {recTxt(c.kda, (n) => n.toFixed(2))}</span>
+        <span>승률 {recTxt(c.wr, (n) => `${(n * 100).toFixed(1)}%`)}</span>
+        <span>GD@15 {recTxt(c.gd15, (n) => (n >= 0 ? "+" : "") + fmt(n, 0))}</span>
+        <span>DPM {recTxt(c.dpm, (n) => fmt(n, 0))}</span>
+      </div>
+      {reason && <div className="xs err">{reason}</div>}
+    </button>
+  );
+}
+
+export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf }: { cap: number; selected: string[]; onChange: (ids: string[]) => void; hideOwn?: boolean; yearMax?: number; priceOf?: (c: SeasonCard) => number }) {
+  const [q, setQ] = useState("");
+  const [pos, setPos] = useState<number | "all">("all");
+  const [year, setYear] = useState<number | "all">("all");
+  const [sort, setSort] = useState<"salary" | "salaryAsc" | "pct" | "year">("salary");
+  const list = useMemo(() => {
+    let arr = Object.values(CARDS);
+    if (yearMax) arr = arr.filter((c) => c.year <= yearMax);
+    if (pos !== "all") arr = arr.filter((c) => c.posIdx === pos);
+    if (year !== "all") arr = arr.filter((c) => c.year === year);
+    if (q.trim()) { const t = q.trim().toLowerCase(); arr = arr.filter((c) => c.name.toLowerCase().includes(t) || String(c.year).includes(t) || c.team.toLowerCase().includes(t)); }
+    arr = [...arr].sort((a, b) => sort === "salary" ? b.salary - a.salary : sort === "salaryAsc" ? a.salary - b.salary : sort === "pct" ? b.percentile - a.percentile : b.year - a.year || b.salary - a.salary);
+    return arr;
+  }, [q, pos, year, sort]);
+  const price = (c: SeasonCard): number => priceOf ? priceOf(c) : c.salary;
+  const used = selected.reduce((n, id) => n + (CARDS[id] ? price(CARDS[id]) : 0), 0);
+  const toggle = (c: SeasonCard): void => {
+    if (selected.includes(c.id)) { onChange(selected.filter((x) => x !== c.id)); return; }
+    const starters = selected.filter((id) => CARDS[id]);
+    if (starters.filter((id) => CARDS[id].posIdx === c.posIdx).length >= 2 && !selected.includes(c.id)) {
+      // allow 1 starter + 1 bench per pos basically, max 8 total handled below
+    }
+    if (selected.length >= 8) return;
+    if (personUsed(selected, c.pkey)) return;
+    if (used + price(c) > cap) return;
+    onChange([...selected, c.id]);
+  };
+  const reason = (c: SeasonCard): string | undefined => {
+    if (selected.includes(c.id)) return;
+    if (personUsed(selected, c.pkey)) return "같은 선수의 다른 시즌 카드가 이미 있습니다";
+    if (selected.length >= 8) return "로스터는 최대 8명입니다";
+    if (used + price(c) > cap) return "예산을 초과합니다";
+  };
+  const years = useMemo(() => [...new Set(Object.values(CARDS).filter((c) => !yearMax || c.year <= yearMax).map((c) => c.year))].sort((a, b) => b - a), [yearMax]);
+  return (
+    <div>
+      <div className="row between wrap gap market-bar">
+        <div className="row wrap gap">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="이름·팀·연도 검색" aria-label="카드 검색" />
+          <select value={pos} onChange={(e) => setPos(e.target.value === "all" ? "all" : Number(e.target.value))} data-testid="card-pos">
+            <option value="all">전 포지션</option>
+            {POS_KO.map((n, i) => <option key={n} value={i}>{n}</option>)}
+          </select>
+          <select value={year} onChange={(e) => setYear(e.target.value === "all" ? "all" : Number(e.target.value))}>
+            <option value="all">전 연도</option>
+            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} data-testid="card-sort">
+            <option value="salary">연봉 높은 순</option>
+            <option value="salaryAsc" data-testid="sort-asc">연봉 낮은 순</option>
+            <option value="pct">퍼센타일 순</option>
+            <option value="year">최신 연도 순</option>
+          </select>
+        </div>
+        <div className="sm">사용 {used}억 / 한도 {cap}억 · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
+      </div>
+      <div className="card-grid">
+        {list.slice(0, hideOwn ? 240 : 240).map((c) => {
+          const r = reason(c);
+          return <CardTile key={c.id} c={c} on={selected.includes(c.id)} disabled={!!r} reason={r} onClick={() => toggle(c)} price={price(c)} />;
+        })}
+      </div>
+      {list.length > 240 && <p className="muted sm">검색·필터로 더 좁혀 주세요. {fmt(list.length)}장 중 240장만 표시합니다.</p>}
+    </div>
+  );
+}
+
+export default function MarketPage() {
+  const s = useSave();
+  if (!s) { go("#/"); return null; }
+  const selected = s.cards.length ? s.cards : (s.starters[s.team] ?? []);
+  return (
+    <Card title="영입 · 시즌 카드 시장" right={<span className="muted sm">같은 실존 인물은 로스터에 한 장만 · 선발 5 + 벤치 최대 3</span>}>
+      <p className="muted sm">{CARDS_FILE.meta.rule} 연봉은 게임용 가상 금액입니다. 시즌이 시작된 뒤에는 카드를 살펴볼 수 있고, 본격적인 스토브 이적은 다음 버전에서 열립니다.</p>
+      <div className="card-grid" style={{ marginTop: 12 }}>
+        {selected.map((id) => CARDS[id] ? <CardTile key={id} c={CARDS[id]} on /> : <div key={id} className="card-tile"><b>{id}</b><div className="muted sm">2026 로스터 선수</div></div>)}
+      </div>
+    </Card>
+  );
+}
+// keep getSave imported usage free
+void getSave;

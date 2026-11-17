@@ -13,7 +13,7 @@ export function TeamChip({ t, size = "md", full }: { t: string; size?: "sm" | "m
   return (
     <span className={`tchip ${size}`}>
       <span className="tdot" style={{ background: tm?.color ?? "#64748b" }}>{t}</span>
-      {full && <span className="tname">{tm?.ko}</span>}
+      {full && <span className="tname">{tm?.ko ?? t}</span>}
     </span>
   );
 }
@@ -46,7 +46,8 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
 export function PName({ k, link = true }: { k: string; link?: boolean }) {
   const p = PL[k];
   if (!p) return <span>{k}</span>;
-  return link ? <a className="pname" href={`#/player/${k}`}>{p.name}</a> : <span className="pname">{p.name}</span>;
+  const label = p.label ?? p.name;
+  return link ? <a className="pname" href={`#/player/${k}`}>{label}</a> : <span className="pname">{label}</span>;
 }
 export function Card({ title, right, children, className }: { title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (

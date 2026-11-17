@@ -343,3 +343,41 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 }
 .nowrap-row{flex-wrap:nowrap;gap:6px}.nowrap-row>*{white-space:nowrap}
 @media (max-width:520px){.tbl td,.tbl th{padding:8px 6px}.card{padding-left:14px;padding-right:14px}}
+
+
+/* v2 setup / market / match extras */
+.mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.mode-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.mode-card{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;color:inherit}
+.mode-card:hover{border-color:var(--teal)}
+.mode-card.on{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal);background:linear-gradient(180deg,rgba(45,212,191,.1),var(--panel))}
+.mode-card b{display:block;font-size:17px;margin:4px 0}
+.mode-card p{margin:6px 0 0;color:var(--sub);font-size:13px;font-weight:500}
+.mode-card small{color:var(--gold);font-weight:800;font-size:11px}
+.mode-card.disabled{opacity:.55;cursor:not-allowed}
+.mode-card em{display:block;margin-top:8px;font-style:normal;color:var(--dim)}
+.setup-foot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin:22px 0 8px}
+.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.form-grid label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--sub)}
+.sig-pad{width:100%;max-width:480px;height:140px;border:1px dashed var(--line2);border-radius:12px;background:var(--panel2);touch-action:none;cursor:crosshair;display:block;margin:8px 0}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:12px}
+.card-tile{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;color:inherit;cursor:pointer}
+.card-tile:hover{border-color:var(--teal)}
+.card-tile.on{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.card-tile.dim{opacity:.55}
+.card-tile .gold{color:var(--gold);font-weight:800}
+.tile-metrics{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.picked-line{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.market-bar{margin:8px 0 4px}
+.banner-note{background:rgba(251,191,36,.12);color:#FCD34D;padding:8px 22px;font-size:14px;font-weight:650}
+.pog-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.pog-card{background:linear-gradient(180deg,rgba(233,196,106,.16),var(--panel));border:1px solid var(--gold);border-radius:16px;padding:22px 26px;min-width:280px}
+.draft-order{columns:2;margin:8px 0}
+.draft-order .me{color:var(--teal);font-weight:800}
+.help-page{max-width:860px}.help-page h1{margin:8px 0 16px}.help-page h2{margin:22px 0 8px;font-size:18px}
+.sched-grid select{width:100%;min-width:0;padding:4px 6px;font-size:13px}
+@media (max-width:860px){
+  .mode-grid,.mode-grid.four,.form-grid{grid-template-columns:1fr}
+  .card-grid{grid-template-columns:1fr}
+  .setup-foot .btn{width:100%}
+}

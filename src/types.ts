@@ -1,4 +1,4 @@
-// 정적 데이터 타입 (tools/build_data.py 가 만드는 public/data/*.json)
+// 정적 데이터 타입 (tools/build_data.py · tools/build_cards.py)
 export type PosIdx = 0 | 1 | 2 | 3 | 4;
 export interface Player {
   key: string; name: string; full: string; team: number; pos: PosIdx;
@@ -9,10 +9,17 @@ export interface Player {
   z: Record<"lane" | "fight" | "farm" | "vision" | "pool" | "ovr", number>;
   pct: Record<"lane" | "fight" | "farm" | "vision" | "pool" | "ovr", number>;
   small: boolean;
+  cardYear?: number;
+  cardTeam?: string;
+  personKey?: string;
+  salary?: number;
+  limited?: boolean;
+  label?: string;
 }
 export interface Team {
   id: number; short: string; name: string; ko: string; color: string;
   starters: string[]; players: string[]; real: [number, number, number, number]; gw: number; gl: number;
+  founded?: boolean;
 }
 export interface Style {
   games: number; bans: [string, number][]; p1bans: [string, number][]; picks: [string, number][]; p1picks: [string, number][]; firstPos: number[];
@@ -35,3 +42,11 @@ export interface Ranked {
   meta: { games: number; tiers: Record<string, number>; versions: Record<string, number>; min: number; source: string };
   lane: Record<string, [number, number]>; mu: Record<string, [number, number]>; syn: Record<string, [number, number]>;
 }
+export interface SeasonCard {
+  id: string; pkey: string; name: string; year: number; pos: string; posIdx: PosIdx; team: string; games: number;
+  kills: number | null; deaths: number | null; assists: number | null;
+  kda: number | null; wr: number | null; kp: number | null; gd15: number | null; dpm: number | null; cspm: number | null;
+  percentile: number; rank: number | null; pool: number | null; salary: number; composite: number;
+  small: boolean; limited: boolean; source: string; metrics: string[]; eligible: boolean;
+}
+export interface CardsFile { meta: { builtAt: string; years: [number, number]; cards: number; eligible: number; minGames: number; eligibleMinGames: number; formula: string; salaryNote: string; sources: string[]; rule: string }; cards: SeasonCard[] }

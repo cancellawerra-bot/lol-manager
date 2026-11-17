@@ -3,8 +3,9 @@ import { CORE, TM, PL } from "../data";
 import { DraftState, DPick, Side, autoDraft, newDraft, other } from "./draft";
 import { GameResult, simulateGame } from "./sim";
 import { Rng } from "./rng";
+import type { StoryState } from "./story";
 
-export const SAVE_V = 1;
+export const SAVE_V = 2;
 export type Stage = "R" | "PO1" | "SF" | "F";
 export const STAGE_KO: Record<Stage, string> = { R: "정규 시즌", PO1: "플레이오프 1라운드", SF: "플레이오프 준결승", F: "결승" };
 export interface GameRec {
@@ -12,29 +13,58 @@ export interface GameRec {
   bans: Record<Side, string[]>; picks: Record<Side, DPick[]>; lineup: Record<Side, string[]>;
   dur: number; kills: [number, number]; gold15: number; mvp: string; pPre: number; res?: GameResult;
 }
-export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string }
+export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string }
 export interface Day { date: string; week: number; stage: Stage; label: string }
 export interface News { id: number; day: number; date: string; kind: "result" | "upset" | "streak" | "leader" | "season" | "welcome" | "mvp" | "playoff"; title: string; body: string; team?: string; read: boolean }
 export interface PStat { g: number; w: number; k: number; d: number; a: number; mvp: number; rsum: number }
 export interface Session {
   seriesId: string; gameIdx: number; holder: string;
-  stage: "brief" | "select" | "draft" | "sim" | "result" | "end";
+  stage: "press" | "lineup" | "select" | "draft" | "meet" | "sim" | "pog" | "result" | "locker" | "end";
   blue?: string; red?: string; firstSide?: Side; choiceNote?: string; aiTook?: "first" | "blue";
   draft?: DraftState; result?: GameResult; simStep: number;
+  pressTone?: string; meetPlan?: "atk" | "bal" | "safe"; locker?: { target: "team" | "one"; tone: "calm" | "firm" | "harsh"; key?: string };
+  lineup?: Record<string, string[]>;
 }
+export type Mode = "story" | "club" | "roster" | "fantasy";
+export type CareerBg = "amateur" | "academy" | "pro" | "worlds";
+export interface Manager { name: string; birth: string; nation: string; career: CareerBg; signature?: string }
+export interface ClubInfo { name: string; short: string; color: string; replaced?: string }
+export interface Economy {
+  difficulty: "easy" | "normal" | "hard"; cap: number; cash: number;
+  trust: number; fans: number;
+  goal: "win" | "final" | "sf" | "po" | "top8";
+  grant: number; bonus: number; trustHit: number; trustWin: number;
+  sponsor?: { name: string; amount: number; goal: string; years: number };
+}
+export type DayAct = "train" | "scrim" | "rest" | "";
 export interface Save {
   v: number; slot: number; seed: number; rng: number; team: string; manager: string; created: string; updated: string;
+  mode: Mode; managerInfo: Manager; club?: ClubInfo; eco: Economy; cards: string[];
   day: number; days: Day[]; series: SeriesRec[]; news: News[]; newsSeq: number;
   form: Record<string, number[]>; starters: Record<string, string[]>; pstats: Record<string, PStat>;
+  sched: Record<string, DayAct[]>; schedOk: boolean;
   session?: Session; phase: "regular" | "playoffs" | "done"; champion?: string; seen: string; seeds?: string[];
+  ownerNote?: string;
+  story?: StoryState;
+}
+export interface CareerOpts {
+  mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
+  cards?: string[]; replace?: string; starters?: Record<string, string[]>;
 }
 
 const addDays = (iso: string, n: number): string => { const d = new Date(iso + "T12:00:00+09:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 export const dateKo = (iso: string): string => { const d = new Date(iso + "T12:00:00+09:00"); return `${d.getMonth() + 1}월 ${d.getDate()}일 (${"일월화수목금토"[d.getDay()]})`; };
+export function leagueShorts(s: { club?: ClubInfo; story?: StoryState; mode?: Mode }): string[] {
+  if (s.mode === "story" && s.story) return s.story.tier === "LCK" ? s.story.lck : s.story.ck;
+  return CORE.teams.map((t) => (s.club && t.short === s.club.replaced ? s.club.short : t.short));
+}
 
-export function newCareer(team: string, manager: string, slot: number, seed: number): Save {
+export function newCareer(team: string, manager: string, slot: number, seed: number, opt: CareerOpts = {}): Save {
   const rng = new Rng(seed);
-  const teams = rng.shuffle(CORE.teams.map((t) => t.short));
+  const mode = opt.mode ?? "roster";
+  const replaced = opt.club?.replaced ?? opt.replace;
+  const shorts = CORE.teams.map((t) => (replaced && t.short === replaced && opt.club ? opt.club.short : t.short));
+  const teams = rng.shuffle(shorts);
   // 원형 방식 라운드로빈 9라운드 + 홈/어웨이 바꿔 9라운드 = 팀당 18시리즈 (2026 Rounds 1-2 구조, Bo3)
   const rounds: [string, string][][] = [];
   const arr = [...teams];
@@ -57,11 +87,29 @@ export function newCareer(team: string, manager: string, slot: number, seed: num
   days.push({ date: addDays(last, 5), week: 10, stage: "PO1", label: "플레이오프 1라운드" });
   days.push({ date: addDays(last, 12), week: 11, stage: "SF", label: "플레이오프 준결승" });
   days.push({ date: addDays(last, 19), week: 12, stage: "F", label: "결승" });
-  const starters: Record<string, string[]> = {};
-  for (const t of CORE.teams) starters[t.short] = [...t.starters];
+  const starters: Record<string, string[]> = { ...(opt.starters ?? {}) };
+  for (const t of CORE.teams) {
+    if (replaced && t.short === replaced) continue;
+    if (!starters[t.short]) starters[t.short] = [...t.starters];
+  }
   const now = new Date().toISOString();
-  const s: Save = { v: SAVE_V, slot, seed, rng: rng.s, team, manager, created: now, updated: now, day: 0, days, series, news: [], newsSeq: 0, form: {}, starters, pstats: {}, phase: "regular", seen: "" };
-  addNews(s, "welcome", `${manager} 감독, ${TM[team].ko} 지휘봉`, `${TM[team].name}이(가) ${manager} 감독 체제로 2026 LCK 정규 시즌을 시작합니다. 첫 경기는 ${dateKo(days[0].date)} ${opp(s, s.series.find((x) => x.day === 0 && (x.a === team || x.b === team))!)}전입니다.`, team);
+  const info = opt.managerInfo ?? { name: manager, birth: "", nation: "한국", career: "amateur" as const };
+  const eco: Economy = {
+    difficulty: "normal", cap: 100, cash: 100, trust: 55, fans: 50,
+    goal: "top8", grant: 1.5, bonus: 5, trustHit: 10, trustWin: 9,
+    ...(opt.eco ?? {}),
+  };
+  eco.cash = eco.cap;
+  const teamName = opt.club?.name ?? TM[team]?.ko ?? team;
+  const s: Save = {
+    v: SAVE_V, slot, seed, rng: rng.s, team, manager: info.name, created: now, updated: now,
+    mode, managerInfo: info, club: opt.club, eco, cards: opt.cards ?? [],
+    day: 0, days, series, news: [], newsSeq: 0, form: {}, starters, pstats: {},
+    sched: {}, schedOk: false, phase: "regular", seen: "",
+  };
+  const first = s.series.find((x) => x.day === 0 && (x.a === team || x.b === team));
+  const vs = first ? (first.a === team ? first.b : first.a) : "";
+  addNews(s, "welcome", `${info.name} 감독, ${teamName} 지휘봉`, `${teamName}이(가) ${info.name} 감독 체제로 2026 LCK 정규 시즌을 시작합니다.${vs ? ` 첫 경기는 ${dateKo(days[0].date)} ${vs}전입니다.` : ""}`, team);
   return s;
 }
 export const opp = (s: Save, sr: SeriesRec): string => (sr.a === s.team ? sr.b : sr.a);
@@ -76,7 +124,7 @@ export function formMap(s: Save, keys: string[]): Record<string, number> { const
 export interface Row { t: string; w: number; l: number; gw: number; gl: number; streak: string; last: string[] }
 export function standings(s: Save): Row[] {
   const R: Record<string, Row> = {};
-  for (const t of CORE.teams) R[t.short] = { t: t.short, w: 0, l: 0, gw: 0, gl: 0, streak: "", last: [] };
+  for (const short of leagueShorts(s)) R[short] = { t: short, w: 0, l: 0, gw: 0, gl: 0, streak: "", last: [] };
   const done = s.series.filter((x) => x.stage === "R" && x.winner).sort((a, b) => a.day - b.day);
   for (const x of done) {
     const aw = x.winner === x.a;
@@ -171,7 +219,29 @@ export function finishDay(s: Save, rng: Rng): void {
   else if (st === "F") {
     const f = s.series.find((x) => x.stage === "F")!;
     s.phase = "done"; s.champion = f.winner;
-    addNews(s, "season", `${f.winner}, 2026 LOL Manager 시즌 우승`, `결승에서 ${f.winner}가 ${f.winner === f.a ? f.b : f.a}를 ${Math.max(f.sa, f.sb)}:${Math.min(f.sa, f.sb)}로 꺾었습니다.${f.winner === s.team ? ` ${s.manager} 감독의 첫 우승입니다.` : ""}`, f.winner);
+    judgeSeason(s);
+    addNews(s, "season", `${f.winner}, 2026 LOL Manager 시즌 우승`, `결승에서 ${f.winner}가 ${f.winner === f.a ? f.b : f.a}를 ${Math.max(f.sa, f.sb)}:${Math.min(f.sa, f.sb)}로 꺾었습니다.${f.winner === s.team ? ` ${s.manager} 감독의 우승입니다.` : ""} ${s.ownerNote ?? ""}`, f.winner);
+  }
+}
+function judgeSeason(s: Save): void {
+  if (!s.eco) return;
+  const rows = standings(s);
+  const rank = rows.findIndex((r) => r.t === s.team) + 1;
+  const seeds = s.seeds ?? [];
+  const played = (st: Stage): boolean => s.series.some((x) => x.stage === st && (x.a === s.team || x.b === s.team));
+  const g = s.eco.goal;
+  const ok = g === "win" ? s.champion === s.team
+    : g === "final" ? played("F")
+    : g === "sf" ? played("SF") || played("F")
+    : g === "po" ? seeds.includes(s.team)
+    : rank >= 1 && rank <= 8;
+  if (ok) {
+    s.eco.trust = Math.min(100, (s.eco.trust ?? 55) + s.eco.trustWin);
+    s.eco.cash = (s.eco.cash ?? 0) + s.eco.bonus;
+    s.ownerNote = `구단주 평가: 목표를 달성했습니다 (정규 ${rank}위). 신뢰 +${s.eco.trustWin}, 보너스 ${s.eco.bonus}억.`;
+  } else {
+    s.eco.trust = Math.max(0, (s.eco.trust ?? 55) - s.eco.trustHit);
+    s.ownerNote = `구단주 평가: 목표에 미치지 못했습니다 (정규 ${rank}위). 신뢰 −${s.eco.trustHit}.`;
   }
 }
 

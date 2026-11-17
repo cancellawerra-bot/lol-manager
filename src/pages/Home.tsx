@@ -1,6 +1,7 @@
 import { CORE, PL, POS_KO, TM, fmt } from "../data";
-import { useSave } from "../store";
+import { useSave, fillSchedule, mutate, autoSimSplit, acceptFranchise, confirmStove } from "../store";
 import { standings, nextMySeries, dateKo, formVal, STAGE_KO, opp } from "../game/season";
+import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO } from "../game/story";
 import { Card, Pct, TeamChip, form5, PName } from "../ui";
 
 export default function Home() {
@@ -8,34 +9,95 @@ export default function Home() {
   const rows = standings(s);
   const nx = nextMySeries(s);
   const op = nx ? opp(s, nx) : null;
-  const rowOf = (t: string) => rows.find((r) => r.t === t)!;
+  const emptyRow = (t: string) => ({ t, w: 0, l: 0, gw: 0, gl: 0, streak: "–", last: [] as string[] });
+  const rowOf = (t: string) => rows.find((r) => r.t === t) ?? emptyRow(t);
   const started = rows.some((r) => r.w + r.l > 0);
   const rankOf = (t: string): string => (started ? `${rows.findIndex((r) => r.t === t) + 1}` : "–");
   const h2h = op ? s.series.filter((x) => x.winner && ((x.a === s.team && x.b === op) || (x.a === op && x.b === s.team))) : [];
   const upcoming = s.series.filter((x) => (x.a === s.team || x.b === s.team) && !x.winner).sort((a, b) => a.day - b.day).slice(0, 5);
   const recent = s.series.filter((x) => (x.a === s.team || x.b === s.team) && x.winner).sort((a, b) => b.day - a.day).slice(0, 5);
   const myRow = rowOf(s.team);
+  const goalKo = { win: "우승", final: "결승 진출", sf: "4강", po: "플레이오프 진출", top8: "8위 이내" }[s.eco?.goal ?? "top8"];
   return (
     <div className="grid home">
+      {s.seen === "tut1" && (
+        <Card title="수석코치 안내 1/2" className="span2">
+          <p>상단의 <b>진행하기</b>로 일주일을 넘깁니다. 우리 경기가 있는 날에는 기자회견부터 밴픽, 경기, 결과 설명까지 이어집니다.</p>
+          <p className="muted sm">그 전에 선수단 주간 일정을 정해야 합니다. 수석코치에게 맡겨도 됩니다.</p>
+          <button className="btn primary" onClick={() => mutate((x) => { x.seen = "tut2"; })}>다음</button>
+        </Card>
+      )}
+      {s.seen === "tut2" && (
+        <Card title="수석코치 안내 2/2" className="span2">
+          <p><b>선수단 일정</b>에서 훈련·스크림·휴식을 정하고, <b>영입</b>에서 시즌 카드를 다시 살펴볼 수 있습니다. 예산·신뢰도는 위쪽 칩에 있습니다.</p>
+          <button className="btn primary" onClick={() => mutate((x) => { x.seen = "done"; })}>알겠습니다</button>
+        </Card>
+      )}
+      {!s.schedOk && (
+        <Card title="주전 일정을 정해 주세요" className="span2">
+          <p>한 주 일정의 빈 칸을 채워야 경기를 진행할 수 있습니다. 수석코치에게 맡기면 훈련·스크림과 휴식일이 채워집니다.</p>
+          <div className="row gap wrap"><a className="btn" href="#/squad">선수단 일정</a><button className="btn primary" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button></div>
+        </Card>
+      )}
+      {s.mode === "story" && s.story && (
+        <Card title={`${s.story.year} ${SPLIT_KO[s.story.split]} · ${TIER_KO[s.story.tier]} · ${PHASE_STORY_KO[s.story.phase]}`} className="span2">
+          <p>2018 2부에서 시작해 2027 월즈 우승이 목표입니다. LCK {s.story.trophies.lck}회 · 월즈 {s.story.trophies.worlds}회. 정규 시리즈는 축약(싱글 라운드 로빈)이며, 우리 경기가 없는 날은 자동으로 넘어갑니다.</p>
+          {s.story.phase === "regular" && <div className="row gap wrap">
+            <button className="btn" data-testid="auto-split" onClick={() => autoSimSplit(false)}>이 스플릿 나머지 자동 진행</button>
+            <span className="muted sm">우리 경기도 즉시 시뮬합니다. 한 해를 빠르게 넘기기 위한 축약 기능입니다.</span>
+          </div>}
+        </Card>
+      )}
+      {s.story?.phase === "franchise" && (
+        <Card title="2021 프랜차이즈 전환" className="span2">
+          {s.story.tier === "LCK"
+            ? <><p>2020 시즌을 LCK에서 마쳤습니다. 프랜차이즈 슬롯을 받을 수 있습니다. 이후 승강전은 없습니다.</p>
+                <button className="btn primary" data-testid="franchise-yes" onClick={() => acceptFranchise(true)}>슬롯 확정</button></>
+            : <><p>2부에서 2020을 마쳤습니다. 한 번의 매수 제안이 있습니다. 비용 {FRANCHISE_BUYIN[s.eco.difficulty]}억(현재 {s.eco.cash}억). 수락하면 이 게임에서는 2021 LCK 전력 최하위 구단 자리를 대신합니다. 거절하거나 자금이 부족하면 2부에 남고, LCK·월즈에는 나가지 못합니다.</p>
+                <div className="row gap wrap">
+                  <button className="btn primary" data-testid="franchise-yes" onClick={() => { const e = acceptFranchise(true); if (e) alert(e); }}>매수 수락</button>
+                  <button className="btn" data-testid="franchise-no" onClick={() => acceptFranchise(false)}>2부에 남는다</button>
+                </div></>}
+        </Card>
+      )}
+      {s.story?.phase === "stove" && (
+        <Card title="스토브리그" className="span2">
+          <p>계약이 1년씩 줄어듭니다. 만료된 선수는 방출되고, 남은 선수는 다음 해 카드로 능력치가 바뀝니다. 연봉을 정산한 뒤 다음 시즌으로 넘어갑니다. 자세한 영입 시장은 다음 버전에서 깊어집니다.</p>
+          <button className="btn primary" data-testid="stove-next" onClick={() => confirmStove()}>다음 시즌으로</button>
+        </Card>
+      )}
+      {s.story?.ended === "clear" && (
+        <Card title="클리어" className="span2 hero-done">
+          <p className="big">클리어 — 2027 월즈 우승</p>
+          <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}이 2027 월즈를 우승했습니다. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회.</p>
+        </Card>
+      )}
+      {s.story?.ended === "fail" && (
+        <Card title="여정의 끝" className="span2">
+          <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>
+          <p>LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회. {s.story.note}</p>
+        </Card>
+      )}
       {s.phase === "done" && (
         <Card title="시즌 종료" className="span2 hero-done">
           <p className="big">{s.champion === s.team ? `🏆 ${TM[s.team].ko} 우승! ${s.manager} 감독, 축하드립니다.` : `우승: ${TM[s.champion!].ko}. ${TM[s.team].ko}는 정규 시즌 ${rankOf(s.team)}위로 마쳤습니다.`}</p>
-          <p className="muted">정규 시즌 {myRow.w}승 {myRow.l}패 (세트 {myRow.gw}:{myRow.gl}). 새 시즌은 다음 버전에서 이어집니다. 지금은 새 커리어로 다른 팀을 맡아 보실 수 있습니다.</p>
+          <p>{s.ownerNote ?? "구단주가 이번 시즌을 평가했습니다."}</p>
+          <p className="muted">목표였던 {goalKo} · 정규 시즌 {myRow.w}승 {myRow.l}패 (세트 {myRow.gw}:{myRow.gl}). 스토브리그와 다음 시즌은 다음 버전에서 이어집니다.</p>
           <a className="btn" href="#/">타이틀로</a>
         </Card>
       )}
       {nx && op && (
         <Card title={<>다음 경기 <span className="muted">· {STAGE_KO[nx.stage]} · Bo{nx.bo}</span></>} className="span2 next-match">
           <div className="vs">
-            <div className="vs-team"><TeamChip t={s.team} size="lg" /><b>{TM[s.team].ko}</b><span className="muted">{started ? `${rankOf(s.team)}위 · ${myRow.w}승 ${myRow.l}패` : "개막전"}</span>{form5(myRow.last)}</div>
+            <div className="vs-team"><TeamChip t={s.team} size="lg" /><b>{TM[s.team]?.ko ?? s.team}</b><span className="muted">{started ? `${rankOf(s.team)}위 · ${myRow.w}승 ${myRow.l}패` : "개막전"}</span>{form5(myRow.last)}</div>
             <div className="vs-mid"><span className="vs-x">VS</span><b>{dateKo(s.days[nx.day].date)}</b><span className="muted">{s.days[nx.day].label}</span>{h2h.length > 0 && <span className="muted sm">이번 시즌 상대 전적 {h2h.filter((x) => x.winner === s.team).length}승 {h2h.filter((x) => x.winner !== s.team).length}패</span>}</div>
-            <div className="vs-team"><TeamChip t={op} size="lg" /><b>{TM[op].ko}</b><span className="muted">{started ? `${rankOf(op)}위 · ${rowOf(op).w}승 ${rowOf(op).l}패` : "개막전"}</span>{form5(rowOf(op).last)}</div>
+            <div className="vs-team"><TeamChip t={op} size="lg" /><b>{TM[op]?.ko ?? op}</b><span className="muted">{started ? `${rankOf(op)}위 · ${rowOf(op).w}승 ${rowOf(op).l}패` : "개막전"}</span>{form5(rowOf(op).last)}</div>
           </div>
           <table className="tbl lineup-cmp">
             <thead><tr><th>{s.team}</th><th className="c">포지션</th><th className="r">{op}</th></tr></thead>
             <tbody>{[0, 1, 2, 3, 4].map((i) => {
-              const a = PL[s.starters[s.team][i]], b = PL[s.starters[op][i]];
-              return <tr key={i}><td><PName k={a.key} /> <Pct v={a.pct.ovr} />{a.small && <span className="tag warn">표본 부족</span>}</td><td className="c muted">{POS_KO[i]}</td><td className="r">{b.small && <span className="tag warn">표본 부족</span>}<Pct v={b.pct.ovr} /> <PName k={b.key} /></td></tr>;
+              const a = PL[s.starters[s.team]?.[i]], b = PL[s.starters[op]?.[i]];
+              return <tr key={i}><td>{a ? <><PName k={a.key} /> <Pct v={a.pct.ovr} />{a.small && <span className="tag warn">표본 부족</span>}</> : "–"}</td><td className="c muted">{POS_KO[i]}</td><td className="r">{b ? <>{b.small && <span className="tag warn">표본 부족</span>}<Pct v={b.pct.ovr} /> <PName k={b.key} /></> : "–"}</td></tr>;
             })}</tbody>
           </table>
           <div className="row gap wrap"><a className="btn" href={`#/scout/${op}`}>{op} 밴픽 성향 보기</a><span className="muted sm">숫자는 포지션 내 종합 지표 백분위(2026 LCK). 상단 "{nx.day === s.day ? "경기 시작" : "진행하기"}"로 진행합니다.</span></div>

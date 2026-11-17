@@ -36,7 +36,8 @@ export function newDraft(blue: string, red: string, lineB: string[], lineR: stri
   return { teams: { B: blue, R: red }, lineup: { B: lineB, R: lineR }, firstSide, step: 0, bans: { B: [], R: [] }, picks: { B: [], R: [] }, locked, log: [] };
 }
 export function used(d: DraftState): Set<string> {
-  return new Set([...d.bans.B, ...d.bans.R, ...d.picks.B.map((p) => p.c), ...d.picks.R.map((p) => p.c), ...d.locked]);
+  if (!d?.bans) return new Set(d?.locked ?? []);
+  return new Set([...d.bans.B, ...d.bans.R, ...(d.picks?.B ?? []).map((p) => p.c), ...(d.picks?.R ?? []).map((p) => p.c), ...(d.locked ?? [])]);
 }
 export function available(d: DraftState): Champ[] { const u = used(d); return CHAMPS.filter((c) => !u.has(c.id)); }
 export function openPos(d: DraftState, s: Side): PosIdx[] {
@@ -86,10 +87,13 @@ export function comfort(p: Player | undefined, c: string): { n: number; w: numbe
 }
 const STYM = new Map<string, Map<string, number>>();
 function styleCount(team: string, kind: "picks" | "bans", c: string): number {
+  const st = CORE.styles?.[team];
+  if (!st) return 0;
   const k = team + kind; let m = STYM.get(k);
-  if (!m) { m = new Map(CORE.styles[team][kind]); STYM.set(k, m); }
+  if (!m) { m = new Map(st[kind] ?? []); STYM.set(k, m); }
   return m.get(c) ?? 0;
 }
+function styleGames(team: string): number { return CORE.styles?.[team]?.games ?? 0; }
 const isFront = (c: Champ): boolean => c.u >= 3 || c.tags.includes("T");
 
 function metaScore(c: Champ): Reason | null {
@@ -116,12 +120,13 @@ export function recommend(d: DraftState, side: Side, kind: Kind, forcePos?: PosI
         if (pw < 0.15) continue;
         const rs: Reason[] = [];
         const m = metaScore(c); if (m) rs.push(m); else rs.push({ t: "LCK 2026 표본 부족(픽 3회 미만)", v: -0.4 });
-        const pl = PL[d.lineup[side][pos]];
+        const pl = PL[d.lineup[side]?.[pos]];
+        if (!pl) continue;
         const cf = comfort(pl, c.id);
         if (cf.n > 0) rs.push({ t: `${pl.name} 2026 LCK ${cf.n}경기 ${cf.w}승`, v: Math.min(cf.n, 12) / 12 * 1.8 });
         else rs.push({ t: `${pl?.name ?? "선수"} 2026 LCK 기록 없음`, v: -0.5 });
         const sc = styleCount(team, "picks", c.id);
-        if (sc > 0) rs.push({ t: `${team} 2026 LCK ${CORE.styles[team].games}경기 중 픽 ${sc}회`, v: (sc / CORE.styles[team].games) * 5 });
+        if (sc > 0) rs.push({ t: `${team} 성향 픽 ${sc}회`, v: (sc / Math.max(1, styleGames(team))) * 5 });
         const opp = d.picks[enemy].find((p) => p.pos === pos);
         if (opp) {
           const mu = rankedMu(pos, c.id, opp.c);
@@ -148,15 +153,15 @@ export function recommend(d: DraftState, side: Side, kind: Kind, forcePos?: PosI
       let bestCf: Reason | null = null;
       for (const pos of eopen) {
         if (!playable(c, pos)) continue;
-        const pl = PL[d.lineup[enemy][pos]]; const cf = comfort(pl, c.id);
+        const pl = PL[d.lineup[enemy]?.[pos]]; if (!pl) continue; const cf = comfort(pl, c.id);
         if (cf.n >= 2) { const v = Math.min(cf.n, 12) / 12 * 1.6 + (cf.w / cf.n - 0.5) * 1.2; if (!bestCf || v > bestCf.v) bestCf = { t: `상대 ${pl.name} 2026 LCK ${cf.n}경기 ${cf.w}승`, v }; }
       }
       if (bestCf) rs.push(bestCf);
       if (!eopen.some((p) => playable(c, p))) rs.push({ t: "상대에게 남은 포지션과 맞지 않음", v: -2 });
       const ep = styleCount(eteam, "picks", c.id);
-      if (ep > 0) rs.push({ t: `${eteam} 2026 LCK 픽 ${ep}회 (${CORE.styles[eteam].games}경기)`, v: (ep / CORE.styles[eteam].games) * 4 });
+      if (ep > 0) rs.push({ t: `${eteam} 성향 픽 ${ep}회`, v: (ep / Math.max(1, styleGames(eteam))) * 4 });
       const ob = styleCount(team, "bans", c.id);
-      if (ob > 0) rs.push({ t: `${team} 2026 LCK 밴 ${ob}회 (${CORE.styles[team].games}경기)`, v: (ob / CORE.styles[team].games) * 3 });
+      if (ob > 0) rs.push({ t: `${team} 성향 밴 ${ob}회`, v: (ob / Math.max(1, styleGames(team))) * 3 });
       // 우리 픽의 랭크 천적 견제
       for (const o of d.picks[side]) {
         const mu = rankedMu(o.pos, c.id, o.c);

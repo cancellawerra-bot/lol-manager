@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
-import { useSave, toSelection, choose, mySide, userAct, aiAct, autoRest, runSim, simNext, toResult, nextGame, endSeries, sessionSeries } from "../store";
+import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, setMeet, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
-import { STAGE_KO, formVal } from "../game/season";
+import { STAGE_KO } from "../game/season";
 import type { GameResult } from "../game/sim";
 import { sigmoid } from "../game/rng";
 import { ChampIcon, TeamChip, Pct } from "../ui";
@@ -26,34 +26,117 @@ export default function Match() {
         <div className="mt-score"><TeamChip t={s.team} size="lg" /><b>{myScore}</b><span>:</span><b>{opScore}</b><TeamChip t={op} size="lg" /></div>
         <div className="mt-r">{sr.games.length > 0 && <span className="muted sm">피어리스 잠금 {sr.games.length * 10}개</span>}<button className="btn ghost sm" onClick={() => go("#/home")}>나가기(저장됨)</button></div>
       </div>
-      {ss.stage === "brief" && <Brief />}
+      {ss.stage === "press" && <Press />}
+      {ss.stage === "lineup" && <Lineup />}
       {ss.stage === "select" && <Select />}
       {ss.stage === "draft" && ss.draft && <Draft d={ss.draft} />}
+      {ss.stage === "meet" && <Meet />}
       {ss.stage === "sim" && ss.result && <Sim d={ss.draft!} r={ss.result} step={ss.simStep} />}
+      {ss.stage === "pog" && ss.result && <Pog r={ss.result} />}
       {ss.stage === "result" && ss.result && <Result d={ss.draft!} r={ss.result} />}
+      {ss.stage === "locker" && <Locker />}
       {ss.stage === "end" && <End />}
     </div>
   );
 }
 
-function Brief() {
+
+function Press() {
   const s = useSave()!; const sr = sessionSeries(s); const op = sr.a === s.team ? sr.b : sr.a;
-  const locked = sr.games.flatMap((g) => [...g.picks.B, ...g.picks.R].map((p) => p.c));
+  const tones = [
+    ["적극적", "오늘 우리 플랜을 자신 있게 말합니다. 사기가 조금 오를 수 있습니다."],
+    ["신중", "상대를 존중하며 조심스럽게 답합니다."],
+    ["절제", "말을 아낍니다. 실언은 줄지만 임팩트도 작습니다."],
+    ["노코멘트", "질문에 답하지 않습니다."],
+  ];
   return (
-    <div className="panel brief">
-      <h2>{sr.games.length ? `${sr.games.length + 1}세트 준비` : `${TM[op].ko}전 준비`}</h2>
+    <div className="panel">
+      <h2>경기 전 기자회견</h2>
+      <p className="muted">{TM[s.team]?.ko} vs {TM[op]?.ko}. 질문: "오늘 경기를 어떻게 보십니까?"</p>
+      <div className="mode-grid">
+        {tones.map(([t, d]) => <button key={t} className={"mode-card" + (s.session?.pressTone === t ? " on" : "")} onClick={() => setPress(t)}><b>{t}</b><p>{d}</p></button>)}
+      </div>
+      <div className="row gap wrap" style={{ marginTop: 16 }}>
+        <button className="btn primary lg" data-testid="press-next" onClick={() => { if (!s.session?.pressTone) setPress("신중"); afterPress(); }}>라인업으로 ▶</button>
+        <button className="btn" onClick={() => { setPress("신중"); afterPress(); }}>수석코치에게 맡기기</button>
+      </div>
+    </div>
+  );
+}
+function Lineup() {
+  const s = useSave()!; const sr = sessionSeries(s); const op = sr.a === s.team ? sr.b : sr.a;
+  const mine = s.starters[s.team];
+  const bench = (s.cards.length ? s.cards : []).filter((k) => !mine.includes(k));
+  return (
+    <div className="panel">
+      <h2>선발 라인업 · {sr.games.length + 1}세트</h2>
+      <p className="muted">같은 포지션 벤치와만 교체할 수 있습니다. 상대 컨디션은 보이지 않습니다.</p>
       <div className="brief-grid">
-        {[s.team, op].map((t) => (
-          <div key={t} className="brief-team"><TeamChip t={t} full />
-            <ul>{s.starters[t].map((k, i) => <li key={k}><small>{POS_KO[i]}</small><a href={`#/player/${k}`}>{PL[k].name}</a><Pct v={PL[k].pct.ovr} />{s.form[k]?.length ? <span className={formVal(s, k) > 0.15 ? "up sm" : formVal(s, k) < -0.15 ? "down sm" : "muted sm"}>폼 {formVal(s, k) >= 0 ? "+" : ""}{formVal(s, k).toFixed(1)}</span> : null}</li>)}</ul>
-          </div>
+        <div className="brief-team"><TeamChip t={s.team} full />
+          <ul>{mine.map((k, i) => {
+            const opts = bench.filter((x) => PL[x]?.pos === i);
+            return <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Pct v={PL[k]?.pct.ovr ?? 0} />
+              {opts.length > 0 && <select value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select>}
+            </li>;
+          })}</ul>
+        </div>
+        <div className="brief-team"><TeamChip t={op} full />
+          <ul>{s.starters[op].map((k, i) => <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Pct v={PL[k]?.pct.ovr ?? 0} /></li>)}</ul>
+        </div>
+      </div>
+      <button className="btn primary lg" data-testid="lineup-next" onClick={confirmLineup}>선발 확정 · 선택권 ▶</button>
+    </div>
+  );
+}
+function Meet() {
+  const s = useSave()!;
+  const plans = [
+    ["atk", "공격", "한타와 오브젝트를 적극적으로 노립니다."],
+    ["bal", "균형", "상황에 맞춰 표준적으로 운영합니다."],
+    ["safe", "안전", "라인전과 실수 줄이기를 우선합니다."],
+  ] as const;
+  return (
+    <div className="panel">
+      <h2>경기 전 미팅</h2>
+      <p className="muted">오늘 경기 방향을 정하세요. 수석코치에게 맡겨도 됩니다.</p>
+      <div className="mode-grid">
+        {plans.map(([id, t, d]) => <button key={id} className={"mode-card" + (s.session?.meetPlan === id ? " on" : "")} onClick={() => setMeet(id)}><b>{t}</b><p>{d}</p></button>)}
+      </div>
+      <div className="row gap wrap" style={{ marginTop: 16 }}>
+        <button className="btn primary lg" data-testid="meet-next" onClick={() => { if (!s.session?.meetPlan) setMeet("bal"); afterMeet(); }}>경기 시작 ▶</button>
+        <button className="btn" onClick={() => { setMeet("bal"); afterMeet(); }}>수석코치에게 맡기기</button>
+      </div>
+    </div>
+  );
+}
+function Pog({ r }: { r: GameResult }) {
+  const p = PL[r.mvp];
+  const perf = r.perf.find((x) => x.key === r.mvp);
+  return (
+    <div className="panel pog-wrap">
+      <h2>Player Of the Game</h2>
+      <div className="pog-card">
+        <div><b className="big">{p?.label ?? p?.name ?? r.mvp}</b><div className="muted">{p ? POS_KO[p.pos] : ""} · {CH[perf?.c ?? ""]?.ko ?? ""}</div></div>
+        <div>KDA {perf ? `${perf.k}/${perf.d}/${perf.a}` : "–"} · 평점 {perf?.rating.toFixed(1)}</div>
+      </div>
+      <button className="btn primary lg" data-testid="pog-next" onClick={afterPog}>세트 결과 · 왜 이겼나/졌나 ▶</button>
+    </div>
+  );
+}
+function Locker() {
+  const [tone, setTone] = useState<"calm" | "firm" | "harsh">("firm");
+  return (
+    <div className="panel">
+      <h2>라커룸</h2>
+      <p className="muted">다음 세트 전에 한 마디 합니다. 말투만 고르면 됩니다.</p>
+      <div className="row gap wrap">
+        {([["calm", "침착"], ["firm", "단호"], ["harsh", "강하게"]] as const).map(([id, t]) => (
+          <button key={id} className={"btn" + (tone === id ? " primary" : "")} onClick={() => setTone(id)}>{t}</button>
         ))}
       </div>
-      {locked.length > 0 && <div className="locked"><b>피어리스로 쓸 수 없는 챔피언 ({locked.length})</b><div className="icons">{locked.map((c) => <ChampIcon key={c} id={c} size={28} dim />)}</div></div>}
-      <div className="row gap wrap">
-        <button className="btn primary lg" onClick={toSelection} data-testid="to-select">첫 번째 선택권 정하기 ▶</button>
-        {sr.games.length === 0 && <a className="btn" href="#/squad">주전 바꾸기</a>}
-        <a className="btn ghost" href={`#/scout/${op}`}>{op} 밴픽 성향</a>
+      <div className="setup-foot" style={{ marginTop: 16 }}>
+        <button className="btn primary lg" data-testid="locker-next" onClick={afterLocker}>다음 세트 ▶</button>
+        <button className="btn" onClick={afterLocker}>수석코치에게 맡긴다</button>
       </div>
     </div>
   );
@@ -113,6 +196,7 @@ function TeamBar({ d, side, me }: { d: DraftState; side: Side; me: boolean }) {
 }
 
 function Draft({ d }: { d: DraftState }) {
+  if (!d?.bans) return <div className="panel"><p>밴픽 정보를 준비하는 중입니다.</p></div>;
   const s = useSave()!;
   const me = mySide(s); const t = turn(d);
   const myTurn = !!t && t.side === me;
@@ -143,7 +227,7 @@ function Draft({ d }: { d: DraftState }) {
           {lastLog && lastLog.by === "ai" && <div className="ai-why"><b>{d.teams[lastLog.side]} {lastLog.kind === "ban" ? "밴" : "픽"}: {CH[lastLog.c].ko}</b>{lastLog.why.slice(0, 2).map((w) => <small key={w}>{w}</small>)}</div>}
         </div>
         {done ? (
-          <div className="panel center"><h2>밴픽이 끝났습니다</h2><button className="btn primary lg" onClick={runSim} data-testid="run-sim">경기 시작 ▶</button></div>
+          <div className="panel center"><h2>밴픽이 끝났습니다</h2><button className="btn primary lg" onClick={toMeet} data-testid="run-sim">경기 전 미팅 ▶</button></div>
         ) : (
           <div className="draft-body">
             <div className="pool-panel">
@@ -241,8 +325,8 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
           <div className="col gap">
             {!end && <button className="btn primary lg block" onClick={() => simNext()} data-testid="sim-next">다음 장면 ▶</button>}
             {!end && <button className="btn block" onClick={() => setAuto(!auto)}>{auto ? "자동 진행 멈춤" : "자동 진행"}</button>}
-            {!end && <button className="btn ghost block" onClick={() => simNext(true)} data-testid="sim-all">결과까지 건너뛰기</button>}
-            {end && <button className="btn primary lg block" onClick={toResult} data-testid="to-result">경기 분석 보기 ▶</button>}
+            {!end && <button className="btn ghost block rc-insta" onClick={() => simNext(true)} data-testid="sim-all">즉시 결과</button>}
+            {end && <button className="btn primary lg block" onClick={toPog} data-testid="to-result">Player Of the Game ▶</button>}
           </div>
         </div>
       </div>
@@ -319,7 +403,7 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
         </section>
       </div>
       <div className="row gap center-row">
-        <button className="btn primary lg" onClick={nextGame} data-testid="next-game">{sr.winner ? "시리즈 결과 보기 ▶" : `${sr.games.length + 1}세트로 ▶`}</button>
+        <button className="btn primary lg" onClick={afterResult} data-testid="next-game">{sr.winner ? "시리즈 결과 보기 ▶" : "라커룸으로 ▶"}</button>
       </div>
     </div>
   );
