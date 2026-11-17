@@ -381,25 +381,44 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
   for (const keys of Object.values(s.starters ?? {})) keys.forEach((k, pos) => reviveKey(k, year, pos));
   const rng = new Rng(s.seed ^ year * 17);
   const user = s.club ? { short: s.club.short, ko: s.club.name, name: s.club.name, color: s.club.color } : undefined;
-  const allTeams = [...lckTeamsOf(year), ...ckTeamsOf(year, user)];
-  for (const t of allTeams) {
-    if (t.short === s.team) {
+  // 일정에 올라 있는 구단(승강 결과가 반영된 st.lck/st.ck) 기준으로 짭니다.
+  // 공식 연도 명단만 쓰면 약칭이 바뀐 구단(ROX, SKT, BBQ 등)이 비어 승강전이 멈춥니다.
+  const shorts = [...new Set([...(st.lck ?? []), ...(st.ck ?? []), s.team])].filter(Boolean);
+  for (const short of shorts) {
+    const t = eraTeamFor(short, year, user);
+    if (short === s.team) {
       const stt = s.starters[s.team] ?? [];
       injectEraTeam(t, stt.length === 5 ? stt : fillAndKeep(s, year), s.cards);
       continue;
     }
-    if (s.starters[t.short]?.length === 5 && st.worldBuiltYear === year) {
-      // 이미 그해 로스터를 짰으면 시즌 중에 다시 만들지 않습니다.
-      const keys = s.starters[t.short];
+    if (s.starters[short]?.length === 5 && st.worldBuiltYear === year) {
+      const keys = s.starters[short];
       keys.forEach((k) => { const p = PL[k]; if (p?.personKey) used.add(p.personKey); });
       injectEraTeam(t, keys);
       continue;
     }
-    const roster = fillTeamRoster(t.short, year, used, rng);
-    s.starters[t.short] = roster;
+    const roster = fillTeamRoster(short, year, used, rng);
+    s.starters[short] = roster;
     injectEraTeam(t, roster);
   }
   st.worldBuiltYear = year;
+}
+
+
+function eraTeamFor(short: string, year: number, user?: EraTeam): EraTeam {
+  if (user && (user.short === short)) return user;
+  const official = [...lckTeamsOf(year), ...ckTeamsOf(year, user)];
+  const exact = official.find((t) => t.short === short);
+  if (exact) return exact;
+  const want = new Set((TEAM_ALIAS[short] ?? [short]).map((x) => x.toLowerCase()));
+  want.add(short.toLowerCase());
+  for (const t of official) {
+    const names = [t.short, t.name, t.ko, ...(TEAM_ALIAS[t.short] ?? [])].map((x) => x.toLowerCase());
+    if (names.some((n) => want.has(n))) return { ...t, short };
+  }
+  const prev = TM[short];
+  if (prev) return { short, ko: prev.ko, name: prev.name, color: prev.color };
+  return T(short, short, short, "#64748B");
 }
 
 function fillAndKeep(s: Save, _year: number): string[] {
