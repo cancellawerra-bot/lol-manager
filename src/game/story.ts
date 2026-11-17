@@ -990,7 +990,7 @@ function intlName(t: string): string {
 }
 function ghostLineup(tag: string, _year: number): string[] {
   // create 5 anonymous PL entries with banded ratings, no padded real stats
-  const band = /LPL-1/.test(tag) ? 85 : /LPL-2|LEC-1/.test(tag) ? 78 : /LPL|LEC-2|LCS-1/.test(tag) ? 72 : 60;
+  const band = /LPL-1/.test(tag) ? 80 : /LPL-2|LEC-1/.test(tag) ? 74 : /LPL|LEC-2|LCS-1/.test(tag) ? 69 : 58;
   const keys: string[] = [];
   for (let pos = 0; pos < 5; pos++) {
     const key = `intl-${tag}-${pos}`;
