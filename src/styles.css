@@ -332,7 +332,8 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
   .cgrid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));height:auto;max-height:380px}
   .sim-head{grid-template-columns:1fr}.sim-team.R{align-items:flex-start}
   .sim-picks .cicon{width:30px;height:30px}
-  .sim-body{grid-template-columns:1fr}.sim-side{order:-1}.feed{min-height:200px;max-height:none}
+  .sim-body{grid-template-columns:1fr}.sim-side{order:-1}.sim-side svg.lead{display:none}.feed{min-height:200px;max-height:none;flex-direction:column-reverse;justify-content:flex-end}
+  .sim-team{flex-direction:row;align-items:center;flex-wrap:wrap}.sim-team.R{align-items:center}
   .factor summary{grid-template-columns:110px 1fr 58px;font-size:13px}
   .dlog{grid-template-columns:1fr}
   .sched-mini li{grid-template-columns:96px 1fr auto}
