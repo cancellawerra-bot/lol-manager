@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from "react";
+import { fmtMoney } from "./game/money";
 import { CORE, CARDS_FILE, loadCore, loadRanked, TM } from "./data";
 import { useSave, advance, loadSlot, lastSlot } from "./store";
 import { standings, nextMySeries, dateKo, STAGE_KO } from "./game/season";
@@ -22,6 +23,7 @@ const Help = lazy(() => import("./pages/Help"));
 const Patch = lazy(() => import("./pages/Patch"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Match = lazy(() => import("./pages/Match"));
+const Stove = lazy(() => import("./pages/Stove"));
 
 function useHash(): string {
   const [h, setH] = useState(location.hash || "#/");
@@ -46,7 +48,7 @@ export default function App() {
   const hash = useHash();
   const save = useSave();
   useEffect(() => {
-    loadCore().then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
+    loadCore().then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market|stove)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
   }, []);
   useEffect(() => { if (save) loadRanked(); }, [save]);
   useEffect(() => { setMenu(false); setNote(""); }, [hash]);
@@ -74,7 +76,7 @@ export default function App() {
     if (r === "sched") { setNote("선수단 주간 일정을 먼저 정해 주세요."); go("#/home"); }
     else if (r === "match") go("#/match");
     else if (r === "franchise") { setNote("2021 프랜차이즈 전환을 확인해 주세요."); go("#/home"); }
-    else if (r === "stove") { setNote("스토브리그: 다음 시즌으로 넘어갈 수 있습니다."); go("#/home"); }
+    else if (r === "stove") { setNote("스토브리그 본편으로 이동합니다."); go("#/stove"); }
     else if (r === "endstory") go("#/home");
     else if (page !== "home") go("#/home");
   };
@@ -100,7 +102,7 @@ export default function App() {
             {save.story && <div className="chip"><small>{save.story.year}</small><b>{save.story.tier === "LCK" ? "LCK" : "2부"}</b></div>}
             <div className="chip"><small>전적</small><b>{me.w}승 {me.l}패</b></div>
             <div className="chip hide-s"><small>목표</small><b>{goalKo}</b></div>
-            <div className="chip hide-s"><small>자금</small><b>{save.eco.cash.toFixed(0)}억</b></div>
+            <div className="chip hide-s"><small>자금</small><b>{fmtMoney(save.eco.cash)}</b></div>
             <div className="chip hide-m"><small>구단주 신뢰</small><b>{save.eco.trust}</b></div>
             <div className="chip hide-m"><small>다음 경기</small><b>{nx ? <>vs {nx.a === save.team ? nx.b : nx.a} <span className="muted">· {dateKo(save.days[nx.day].date)}</span></> : "없음"}</b></div>
             <div className="chip hide-s"><small>최근 5경기</small><b>{me.last.length ? form5(me.last) : "–"}</b></div>
@@ -114,7 +116,7 @@ export default function App() {
           <Suspense fallback={<Loading />}>
             {page === "home" || page === "" ? <Home /> : page === "news" ? <NewsPage /> : page === "schedule" ? <Schedule /> : page === "standings" ? <Standings />
               : page === "squad" ? <Squad /> : page === "club" ? <Club /> : page === "market" ? <Market /> : page === "player" ? <PlayerPage k={route[1]} /> : page === "scout" ? <Scout team={route[1]} /> : page === "meta" ? <Meta />
-              : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : <Home />}
+              : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : page === "stove" ? <Stove /> : <Home />}
           </Suspense>
           {!inMatch && <FanNotice />}
         </main>

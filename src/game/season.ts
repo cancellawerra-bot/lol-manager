@@ -125,8 +125,9 @@ export interface Row { t: string; w: number; l: number; gw: number; gl: number; 
 export function standings(s: Save): Row[] {
   const R: Record<string, Row> = {};
   for (const short of leagueShorts(s)) R[short] = { t: short, w: 0, l: 0, gw: 0, gl: 0, streak: "", last: [] };
-  const done = s.series.filter((x) => x.stage === "R" && x.winner).sort((a, b) => a.day - b.day);
+  const done = s.series.filter((x) => x.stage === "R" && x.winner && !x.id.startsWith("MSI-") && !x.id.startsWith("W-G")).sort((a, b) => a.day - b.day);
   for (const x of done) {
+    if (!R[x.a] || !R[x.b]) continue; // 승격·다른 리그·국제전 잔여 경기
     const aw = x.winner === x.a;
     R[x.a].w += aw ? 1 : 0; R[x.a].l += aw ? 0 : 1; R[x.b].w += aw ? 0 : 1; R[x.b].l += aw ? 1 : 0;
     R[x.a].gw += x.sa; R[x.a].gl += x.sb; R[x.b].gw += x.sb; R[x.b].gl += x.sa;

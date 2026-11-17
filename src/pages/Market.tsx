@@ -5,11 +5,12 @@ import { personUsed } from "../game/cards";
 import { getSave, useSave } from "../store";
 import { Card } from "../ui";
 import { go } from "../nav";
+import { fmtMoney } from "../game/money";
 
 export function CardTile({ c, on, disabled, reason, onClick, price }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number }) {
   return (
     <button type="button" className={"card-tile" + (on ? " on" : "") + (disabled ? " dim" : "")} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`}>
-      <div className="row between"><b>{cardLabel(c)}</b><span className="gold">{price ?? c.salary}억</span></div>
+      <div className="row between"><b>{cardLabel(c)}</b><span className="gold">{fmtMoney(price ?? c.salary)}</span></div>
       <div className="muted sm">{POS_KO[c.posIdx]} · {c.team} · {c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""}</div>
       <div className="sm">{c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`}</div>
       <div className="tile-metrics xs muted">
@@ -34,9 +35,9 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf 
     if (pos !== "all") arr = arr.filter((c) => c.posIdx === pos);
     if (year !== "all") arr = arr.filter((c) => c.year === year);
     if (q.trim()) { const t = q.trim().toLowerCase(); arr = arr.filter((c) => c.name.toLowerCase().includes(t) || String(c.year).includes(t) || c.team.toLowerCase().includes(t)); }
-    arr = [...arr].sort((a, b) => sort === "salary" ? b.salary - a.salary : sort === "salaryAsc" ? a.salary - b.salary : sort === "pct" ? b.percentile - a.percentile : b.year - a.year || b.salary - a.salary);
+    arr = [...arr].sort((a, b) => { const pa = priceOf ? priceOf(a) : a.salary, pb = priceOf ? priceOf(b) : b.salary; return sort === "salary" ? pb - pa : sort === "salaryAsc" ? pa - pb : sort === "pct" ? b.percentile - a.percentile : b.year - a.year || pb - pa; });
     return arr;
-  }, [q, pos, year, sort]);
+  }, [q, pos, year, sort, yearMax, priceOf]);
   const price = (c: SeasonCard): number => priceOf ? priceOf(c) : c.salary;
   const used = selected.reduce((n, id) => n + (CARDS[id] ? price(CARDS[id]) : 0), 0);
   const toggle = (c: SeasonCard): void => {
@@ -77,7 +78,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf 
             <option value="year">최신 연도 순</option>
           </select>
         </div>
-        <div className="sm">사용 {used}억 / 한도 {cap}억 · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
+        <div className="sm">사용 {fmtMoney(used)} / 한도 {fmtMoney(cap)} · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
       </div>
       <div className="card-grid">
         {list.slice(0, hideOwn ? 240 : 240).map((c) => {
@@ -96,7 +97,7 @@ export default function MarketPage() {
   const selected = s.cards.length ? s.cards : (s.starters[s.team] ?? []);
   return (
     <Card title="영입 · 시즌 카드 시장" right={<span className="muted sm">같은 실존 인물은 로스터에 한 장만 · 선발 5 + 벤치 최대 3</span>}>
-      <p className="muted sm">{CARDS_FILE.meta.rule} 연봉은 게임용 가상 금액입니다. 시즌이 시작된 뒤에는 카드를 살펴볼 수 있고, 본격적인 스토브 이적은 다음 버전에서 열립니다.</p>
+      <p className="muted sm">{CARDS_FILE.meta.rule} 연봉은 게임용 가상 금액입니다. 시즌이 시작된 뒤에는 보유 카드를 살펴볼 수 있습니다. 영입·이적·FA 입찰은 시즌이 끝난 뒤 스토브리그 본편에서 진행합니다. 연봉은 게임용 가상 금액입니다.</p>
       <div className="card-grid" style={{ marginTop: 12 }}>
         {selected.map((id) => CARDS[id] ? <CardTile key={id} c={CARDS[id]} on /> : <div key={id} className="card-tile"><b>{id}</b><div className="muted sm">2026 로스터 선수</div></div>)}
       </div>

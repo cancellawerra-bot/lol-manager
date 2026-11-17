@@ -1,7 +1,7 @@
 import { CORE, PL, POS_KO, TM, fmt } from "../data";
-import { useSave, fillSchedule, mutate, autoSimSplit, acceptFranchise, confirmStove } from "../store";
+import { useSave, fillSchedule, mutate, autoSimSplit, autoToOffseason, acceptFranchise } from "../store";
 import { standings, nextMySeries, dateKo, formVal, STAGE_KO, opp } from "../game/season";
-import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO } from "../game/story";
+import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO, fmtMoney } from "../game/story";
 import { Card, Pct, TeamChip, form5, PName } from "../ui";
 
 export default function Home() {
@@ -42,10 +42,14 @@ export default function Home() {
       {s.mode === "story" && s.story && (
         <Card title={`${s.story.year} ${SPLIT_KO[s.story.split]} · ${TIER_KO[s.story.tier]} · ${PHASE_STORY_KO[s.story.phase]}`} className="span2">
           <p>2018 2부에서 시작해 2027 월즈 우승이 목표입니다. LCK {s.story.trophies.lck}회 · 월즈 {s.story.trophies.worlds}회. 정규 시리즈는 축약(싱글 라운드 로빈)이며, 우리 경기가 없는 날은 자동으로 넘어갑니다.</p>
-          {s.story.phase === "regular" && <div className="row gap wrap">
-            <button className="btn" data-testid="auto-split" onClick={() => autoSimSplit(false)}>이 스플릿 나머지 자동 진행</button>
-            <span className="muted sm">우리 경기도 즉시 시뮬합니다. 한 해를 빠르게 넘기기 위한 축약 기능입니다.</span>
+          {["regular", "playoffs", "promo", "rtm", "msi", "worlds"].includes(s.story.phase) && <div className="row gap wrap">
+            <button className="btn" data-testid="auto-split" onClick={() => autoSimSplit(false)}>이 국면 나머지 자동 진행</button>
+            <button className="btn" data-testid="auto-year" onClick={() => autoToOffseason()}>오프시즌까지 자동 진행</button>
+            <span className="muted sm">우리 경기도 즉시 시뮬합니다. 승패를 조작하지 않으며, 한 해를 빠르게 넘기기 위한 축약입니다.</span>
           </div>}
+          {s.story.phase === "msi" && <p data-testid="msi-banner">MSI가 진행 중입니다. 그룹은 단판 라운드 로빈, 상위 4팀이 준결승(Bo5)에 갑니다. 해외 팀은 리그 시드 이름이며 개별 선수 기록은 없습니다.</p>}
+          {s.story.phase === "rtm" && <p data-testid="rtm-banner">Road to MSI: 스프링 상위 팀이 LCK 시드를 가립니다. 2018–2020은 1시드만, 2021년부터는 최종전으로 2시드까지 정합니다.</p>}
+          {["awards", "tryout", "expiry", "stove"].includes(s.story.phase) && <p><a className="btn primary" href="#/stove" data-testid="goto-stove">스토브리그 본편으로</a></p>}
         </Card>
       )}
       {s.story?.phase === "franchise" && (
@@ -53,32 +57,30 @@ export default function Home() {
           {s.story.tier === "LCK"
             ? <><p>2020 시즌을 LCK에서 마쳤습니다. 프랜차이즈 슬롯을 받을 수 있습니다. 이후 승강전은 없습니다.</p>
                 <button className="btn primary" data-testid="franchise-yes" onClick={() => acceptFranchise(true)}>슬롯 확정</button></>
-            : <><p>2부에서 2020을 마쳤습니다. 한 번의 매수 제안이 있습니다. 비용 {FRANCHISE_BUYIN[s.eco.difficulty]}억(현재 {s.eco.cash}억). 수락하면 이 게임에서는 2021 LCK 전력 최하위 구단 자리를 대신합니다. 거절하거나 자금이 부족하면 2부에 남고, LCK·월즈에는 나가지 못합니다.</p>
+            : <><p>2부에서 2020을 마쳤습니다. 한 번의 매수 제안이 있습니다. 비용 {fmtMoney(FRANCHISE_BUYIN[s.eco.difficulty])}(현재 {fmtMoney(s.eco.cash)}). 수락하면 이 게임에서는 2021 LCK 전력 최하위 구단 자리를 대신합니다. 거절하거나 자금이 부족하면 2부에 남고, LCK·월즈에는 나가지 못합니다.</p>
                 <div className="row gap wrap">
                   <button className="btn primary" data-testid="franchise-yes" onClick={() => { const e = acceptFranchise(true); if (e) alert(e); }}>매수 수락</button>
                   <button className="btn" data-testid="franchise-no" onClick={() => acceptFranchise(false)}>2부에 남는다</button>
                 </div></>}
         </Card>
       )}
-      {s.story?.phase === "stove" && (
-        <Card title="스토브리그" className="span2">
-          <p>계약이 1년씩 줄어듭니다. 만료된 선수는 방출되고, 남은 선수는 다음 해 카드로 능력치가 바뀝니다. 연봉을 정산한 뒤 다음 시즌으로 넘어갑니다. 자세한 영입 시장은 다음 버전에서 깊어집니다.</p>
-          <button className="btn primary" data-testid="stove-next" onClick={() => confirmStove()}>다음 시즌으로</button>
-        </Card>
-      )}
       {s.story?.ended === "clear" && (
-        <Card title="클리어" className="span2 hero-done">
-          <p className="big">클리어 — 2027 월즈 우승</p>
-          <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}이 2027 월즈를 우승했습니다. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회.</p>
+        <Card title="클리어" className="span2 hero-done" >
+          <div data-testid="clear-screen">
+            <p className="big">클리어 — 2027 월즈 우승</p>
+            <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}이 2027 월즈를 우승했습니다. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회.</p>
+          </div>
         </Card>
       )}
       {s.story?.ended === "fail" && (
         <Card title="여정의 끝" className="span2">
-          <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>
-          <p>LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회. {s.story.note}</p>
+          <div data-testid="fail-screen">
+            <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>
+            <p>LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회. {s.story.tier === "CK" && !s.story.franchised ? "2부에서 프랜차이즈 슬롯을 받지 못해 월즈에 나가지 못했습니다." : ""}</p>
+          </div>
         </Card>
       )}
-      {s.phase === "done" && (
+      {s.phase === "done" && !s.story?.ended && (
         <Card title="시즌 종료" className="span2 hero-done">
           <p className="big">{s.champion === s.team ? `🏆 ${TM[s.team].ko} 우승! ${s.manager} 감독, 축하드립니다.` : `우승: ${TM[s.champion!].ko}. ${TM[s.team].ko}는 정규 시즌 ${rankOf(s.team)}위로 마쳤습니다.`}</p>
           <p>{s.ownerNote ?? "구단주가 이번 시즌을 평가했습니다."}</p>

@@ -7,7 +7,9 @@ import { formMap } from "./game/season";
 import { Rng } from "./game/rng";
 import type { PosIdx } from "./types";
 import { hydrateSave } from "./game/cards";
-import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, finishStove as finishStoveYear, applyStoryWorld } from "./game/story";
+import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, applyStoryWorld } from "./game/story";
+import "./game/stove";
+import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
 
 const KEY = (slot: number): string => `lolm.slot.${slot}`;
 const LAST = "lolm.last";
@@ -68,7 +70,7 @@ export function advance(): "match" | "day" | "done" | "sched" | "franchise" | "s
   if (s.phase === "done" || s.story?.ended) return s.story?.ended ? "endstory" : "done";
   if (s.session) return "match";
   if (isStory(s) && s.story!.phase === "franchise") return "franchise";
-  if (isStory(s) && s.story!.phase === "stove") return "stove";
+  if (isStory(s) && ["awards", "tryout", "expiry", "stove"].includes(s.story!.phase)) return "stove";
   const my = mySeriesToday(s);
   if (my) {
     if (!s.schedOk) return "sched";
@@ -79,6 +81,12 @@ export function advance(): "match" | "day" | "done" | "sched" | "franchise" | "s
 }
 export function autoSimSplit(onlyOthers = false): void {
   mutate((s, rng) => { if (isStory(s)) simRestOfPhase(s, rng, onlyOthers); });
+}
+export function autoToOffseason(): void {
+  mutate((s, rng) => { if (isStory(s)) pumpStory(s, rng); });
+}
+export function autoStove(signStars = false): void {
+  mutate((s, rng) => { if (isStory(s)) autoAdvanceOffseason(s, rng, { signStars }); });
 }
 
 export const sessionSeries = (s: Save) => s.series.find((x) => x.id === s.session?.seriesId)!;
@@ -183,4 +191,4 @@ export function acceptFranchise(ok: boolean): string | null {
   mutate((s) => { if (s.story) err = resolveFranchise(s, ok); });
   return err;
 }
-export function confirmStove(): void { mutate((s, rng) => { if (s.story) finishStoveYear(s, rng); }); }
+export function confirmStove(): void { mutate((s, rng) => { if (s.story) finishOffseason(s, rng); }); }

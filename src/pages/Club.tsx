@@ -1,6 +1,7 @@
 import { CARDS, CARDS_FILE, PL, POS_KO, TM, recTxt, fmt } from "../data";
 import { useSave } from "../store";
 import { rosterSalary } from "../game/cards";
+import { fmtMoney } from "../game/money";
 import { Card, PName, Pct, TeamChip } from "../ui";
 import { standings } from "../game/season";
 
@@ -11,7 +12,15 @@ export default function Club() {
   const bench = s.cards.filter((k) => !keys.includes(k));
   const rows = standings(s);
   const me = rows.find((r) => r.t === s.team);
-  const sal = rosterSalary(s.cards.length ? s.cards : keys);
+  const payOf = (k: string): number | undefined => {
+    const ct = s.story?.contracts.find((c) => c.key === k || c.cardId === k);
+    if (ct) return ct.salary;
+    const c = CARDS[k];
+    return c?.salary;
+  };
+  const sal = s.story
+    ? [...keys, ...bench].reduce((n, k) => n + (payOf(k) ?? 0), 0)
+    : rosterSalary(s.cards.length ? s.cards : keys);
   return (
     <div className="col gap">
       <Card title="구단 개요" right={<TeamChip t={s.team} full />}>
@@ -20,9 +29,9 @@ export default function Club() {
           <li><b>{me ? `${me.w}승 ${me.l}패` : "–"}</b><span>정규 전적</span></li>
           <li><b>{s.eco.trust}</b><span>구단주 신뢰</span></li>
           <li><b>{s.eco.fans}</b><span>팬심</span></li>
-          <li><b>{fmt(s.eco.cash, 1)}억</b><span>자금 (한도 {s.eco.cap}억)</span></li>
+          <li><b>{fmtMoney(s.eco.cash)}</b><span>자금 (한도 {fmtMoney(s.eco.cap)})</span></li>
         </div>
-        {s.eco.sponsor && <p className="sm">스폰서 {s.eco.sponsor.name} 연 {s.eco.sponsor.amount}억 · 목표 {s.eco.sponsor.goal}</p>}
+        {s.eco.sponsor && <p className="sm">스폰서 {s.eco.sponsor.name} 연 {fmtMoney(s.eco.sponsor.amount)} · 목표 {s.eco.sponsor.goal}</p>}
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       <Card title="선수 기록">
@@ -43,20 +52,20 @@ export default function Club() {
                     <td>{c ? recTxt(c.gd15, (n) => (n >= 0 ? "+" : "") + fmt(n, 0)) : recTxt(p.m.gd, (n) => (n >= 0 ? "+" : "") + fmt(n, 0))}</td>
                     <td>{c ? recTxt(c.dpm, (n) => fmt(n, 0)) : recTxt(p.m.dpm || null, (n) => fmt(n, 0))}</td>
                     <td><Pct v={p.pct.ovr} /></td>
-                    <td>{c ? `${c.salary}억` : "–"}</td>
+                    <td>{payOf(k) != null ? fmtMoney(payOf(k)!) : "–"}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <p className="muted sm">연봉 합 {sal}억. 없는 지표는 기록 없음이며 0으로 채우지 않았습니다.</p>
+        <p className="muted sm">연봉 합 {fmtMoney(sal)}. 없는 지표는 기록 없음이며 0으로 채우지 않았습니다.</p>
       </Card>
       <Card title="예산">
         <ul className="sm">
-          <li>한도 {s.eco.cap}억 ({({ easy: "쉬움", normal: "보통", hard: "어려움" } as const)[s.eco.difficulty]})</li>
-          <li>목표 추가 지원 {s.eco.grant}억 · 달성 보너스 {s.eco.bonus}억 · 실패 시 신뢰 −{s.eco.trustHit}</li>
-          <li>선수 연봉 {sal}억 · 보유 자금 {fmt(s.eco.cash, 1)}억</li>
+          <li>한도 {fmtMoney(s.eco.cap)} ({({ easy: "쉬움", normal: "보통", hard: "어려움" } as const)[s.eco.difficulty]})</li>
+          <li>목표 추가 지원 {fmtMoney(s.eco.grant)} · 달성 보너스 {fmtMoney(s.eco.bonus)} · 실패 시 신뢰 −{s.eco.trustHit}</li>
+          <li>선수 연봉 {fmtMoney(sal)} · 보유 자금 {fmtMoney(s.eco.cash)}</li>
         </ul>
       </Card>
     </div>

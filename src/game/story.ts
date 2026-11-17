@@ -4,24 +4,30 @@ import type { SeasonCard, Team } from "../types";
 import { playerFromCard } from "./cards";
 import { Rng } from "./rng";
 import type { Day, Economy, Save, SeriesRec } from "./season";
+import type { StoveState } from "./stove";
 import { addNews, dateKo, simSeries, standings } from "./season";
+import { moneyRound, fmtMoney } from "./money";
 
 export const STORY_START = 2018;
 export const STORY_END = 2027;
-export const STORY_BUDGETS = { easy: 30, normal: 20, hard: 10 } as const;
-export const CK_SALARY_MULT = 0.4;
-export const CK_SALARY_MIN = 1;
-export const FRANCHISE_BUYIN = { easy: 20, normal: 35, hard: 50 } as const;
+export const STORY_BUDGETS = { easy: 5, normal: 3.2, hard: 2 } as const;
+/** 2부 전형 연봉 하한·상한(억). 평균은 0.2–0.5억(2천만~5천만 원), 이름 있는 선수는 최대 약 2억. */
+export const CK_SALARY_MIN = 0.2;
+export const CK_SALARY_MAX = 2;
+export const CK_OPS = 0.25; // 2부 연간 운영비(연습실·스태프 등, 억)
+export const FRANCHISE_BUYIN = { easy: 3.5, normal: 6, hard: 9 } as const;
 export const LCK_SHARE = 8; // 2021+ LCK 연간 배분(억)
 export const DECAY_PCT = 15;
+export { fmtMoney };
 export type StoryDiff = keyof typeof STORY_BUDGETS;
 export type Tier = "LCK" | "CK";
 export type Split = "spring" | "summer";
 export type StoryPhase =
-  | "regular" | "playoffs" | "promo" | "worlds" | "stove" | "franchise" | "clear" | "fail";
+  | "regular" | "playoffs" | "promo" | "rtm" | "msi" | "worlds"
+  | "awards" | "tryout" | "expiry" | "stove" | "franchise" | "clear" | "fail";
 
 export interface EraTeam { short: string; ko: string; name: string; color: string }
-export interface Contract { key: string; cardId: string; years: number; salary: number; person: string }
+export interface Contract { key: string; cardId: string; years: number; salary: number; person: string; prepaid?: boolean }
 export interface PromoState {
   wb: [string, string][]; // remaining or completed markers via series
   lck9: string; lck10: string; ck1: string; ck2: string;
@@ -41,12 +47,13 @@ export interface StoryState {
   buyInOffered?: boolean; buyInPaid?: boolean; buyInRefused?: boolean;
   trophies: { lck: number; msi: number; worlds: number };
   contracts: Contract[];
+  stove?: StoveState;
   worldsChamp?: string;
   ended?: "clear" | "fail";
   note?: string;
 }
 
-export const STORY_BUDGET_NOTE = "기본 자금은 쉬움 30억, 보통 20억, 어려움 10억입니다(게임용 가상 금액).";
+export const STORY_BUDGET_NOTE = "기본 자금(창단 한도)은 쉬움 5억, 보통 3.2억, 어려움 2억입니다. 개막 로스터 연봉은 시작할 때 차감합니다. 모두 게임용 가상 금액입니다.";
 
 const T = (short: string, ko: string, name: string, color: string): EraTeam => ({ short, ko, name, color });
 
@@ -162,9 +169,57 @@ export const ckTeamsOf = (_year: number, user?: EraTeam): EraTeam[] => {
   return user ? [...base, user] : base;
 };
 
-export function storySalary(raw: number, tier: Tier): number {
-  if (tier !== "CK") return Math.round(raw);
-  return Math.max(CK_SALARY_MIN, Math.round(raw * CK_SALARY_MULT));
+/**
+ * LCK는 카드에 적힌 공식 연봉 그대로입니다.
+ * 2부는 퍼센타일(능력치)에 따라 0.2–0.5억이 전형이고, LCK에서 이름 있던 선수(높은 퍼센타일·여러 시즌)는 최대 약 2억입니다.
+ */
+export function storySalary(cardOrRaw: SeasonCard | number, tier: Tier): number {
+  if (tier !== "CK") return typeof cardOrRaw === "number" ? cardOrRaw : cardOrRaw.salary;
+  if (typeof cardOrRaw === "number") return ckSalaryFromRaw(cardOrRaw);
+  return ckSalary(cardOrRaw);
+}
+
+let _byP: Map<string, SeasonCard[]> | null = null;
+function cardsOf(pkey: string): SeasonCard[] {
+  if (!_byP || _byP.size === 0) {
+    _byP = new Map();
+    for (const c of Object.values(CARDS)) {
+      const arr = _byP.get(c.pkey) ?? [];
+      arr.push(c);
+      _byP.set(c.pkey, arr);
+    }
+  }
+  return _byP.get(pkey) ?? [];
+}
+
+function ckBase(p: number): number {
+  if (p <= 75) return 0.20 + 0.30 * (Math.max(0, p) / 75);
+  return 0.50 + 0.50 * (Math.min(25, p - 75) / 25);
+}
+
+function ckNameBonus(card: SeasonCard): number {
+  const hist = cardsOf(card.pkey).filter((x) => x.year <= card.year);
+  const peak = Math.max(card.percentile, ...hist.map((x) => x.percentile));
+  const seasons = new Set((hist.length ? hist : [card]).map((x) => x.year)).size;
+  let b = 0;
+  if (peak >= 90) b += 0.60;
+  else if (peak >= 80) b += 0.40;
+  else if (peak >= 70) b += 0.20;
+  if (seasons >= 4) b += 0.30;
+  else if (seasons >= 3) b += 0.15;
+  return b;
+}
+
+function ckSalary(card: SeasonCard): number {
+  const v = ckBase(card.percentile) + ckNameBonus(card);
+  return moneyRound(Math.max(CK_SALARY_MIN, Math.min(CK_SALARY_MAX, v)));
+}
+
+/** 카드 없이 공식 연봉만 있을 때의 대략 환산(이름 가산 없음). */
+function ckSalaryFromRaw(raw: number): number {
+  const t = Math.max(0, Math.min(1, (raw - 3) / 44));
+  const v = t <= 0.25 ? 0.20 + 0.30 * (t / 0.25) : 0.50 + 1.0 * ((t - 0.25) / 0.75);
+  return moneyRound(Math.max(CK_SALARY_MIN, Math.min(CK_SALARY_MAX, v)));
 }
 
 /** Y시즌에 쓸 카드: 같은 해 우선, 없으면 가장 가까운 과거. 미래 연도는 쓰지 않음. */
@@ -361,13 +416,14 @@ export function isStory(s: Save): boolean { return s.mode === "story" && !!s.sto
 export const SPLIT_KO = { spring: "스프링", summer: "서머" } as const;
 export const TIER_KO = { LCK: "LCK", CK: "2부" } as const;
 export const PHASE_STORY_KO: Record<StoryPhase, string> = {
-  regular: "정규 시즌", playoffs: "플레이오프", promo: "승강전", worlds: "월즈", stove: "스토브", franchise: "프랜차이즈 전환", clear: "클리어", fail: "종료",
+  regular: "정규 시즌", playoffs: "플레이오프", promo: "승강전", rtm: "Road to MSI", msi: "MSI", worlds: "월즈",
+  awards: "시상식", tryout: "트라이아웃", expiry: "계약 만료", stove: "스토브리그", franchise: "프랜차이즈 전환", clear: "클리어", fail: "종료",
 };
 
 export function seedTop4PO(s: Save): void {
   const rows = standings(s).filter((r) => currentLeague(s).includes(r.t));
   const seeds = rows.slice(0, 4).map((r) => r.t);
-  if (seeds.length < 4) { s.story!.phase = nextAfterPO(s); return; }
+  if (seeds.length < 4) { goAfterSplit(s); return; }
   s.seeds = seeds; s.phase = "playoffs"; s.story!.phase = "playoffs";
   const d = s.days.length;
   s.days.push({ date: addDays(s.days[s.days.length - 1].date, 5), week: (s.days[s.days.length - 1].week ?? 9) + 1, stage: "SF", label: "플레이오프 준결승" });
@@ -378,11 +434,17 @@ export function seedTop4PO(s: Save): void {
   addNews(s, "season", "플레이오프 대진 확정", `1위 ${seeds[0]} vs 4위 ${seeds[3]}, 2위 ${seeds[1]} vs 3위 ${seeds[2]} (Bo5).`, s.team);
 }
 
-function nextAfterPO(s: Save): StoryPhase {
+function goAfterSplit(s: Save): void {
   const st = s.story!;
-  if (st.year <= 2020) return "promo";
-  if (st.split === "summer" && st.tier === "LCK") return "worlds";
-  return "stove";
+  if (st.split === "spring") {
+    if (st.tier === "LCK") startRTM(s);
+    else if (st.year <= 2020) startPromo(s);
+    else beginSplit(s, st.year, "summer");
+    return;
+  }
+  if (st.year <= 2020) startPromo(s);
+  else if (st.tier === "LCK") startWorlds(s);
+  else beginOffseason(s);
 }
 
 export function finishStoryPO(s: Save): void {
@@ -400,8 +462,7 @@ export function finishStoryPO(s: Save): void {
     s.champion = f.winner;
     if (f.winner === s.team) s.story!.trophies.lck += 1;
     addNews(s, "season", `${f.winner}, ${s.story!.year} ${SPLIT_KO[s.story!.split]} 우승`, `결승에서 ${f.winner === f.a ? f.b : f.a}를 꺾었습니다.`, f.winner);
-    s.story!.phase = nextAfterPO(s);
-    s.phase = "regular";
+    goAfterSplit(s);
   }
 }
 
@@ -436,9 +497,9 @@ export function startPromo(s: Save): void {
 }
 
 function rankByPower(shorts: string[], year: number): string[] {
-  return [...shorts].sort((a, b) => powerOf(b, year) - powerOf(a, year));
+  return [...shorts].sort((a, b) => teamPower(b, year) - teamPower(a, year));
 } // year used in powerOf
-function powerOf(short: string, _year?: number): number {
+export function teamPower(short: string, _year?: number): number {
   const keys = TM[short]?.starters ?? [];
   if (!keys.length) return 40;
   const avg = keys.reduce((n, k) => n + (PL[k]?.pct.ovr ?? 40), 0) / keys.length;
@@ -526,14 +587,125 @@ function afterPromo(s: Save): void {
   if (st.split === "spring") {
     beginSplit(s, st.year, "summer");
   } else if (st.year <= 2020 && st.tier === "LCK") {
-    st.phase = "worlds";
     startWorlds(s);
-  } else if (st.year === 2020 && st.split === "summer") {
-    st.phase = "franchise";
-    addNews(s, "season", "2021 프랜차이즈 전환", "2021년부터 LCK는 프랜차이즈 체제입니다. 홈에서 전환 내용을 확인해 주세요.", s.team);
   } else {
-    startStove(s);
+    beginOffseason(s);
   }
+}
+
+
+export function startRTM(s: Save): void {
+  const st = s.story!;
+  st.phase = "rtm";
+  const seeds = ([s.champion, ...rankByPower(st.lck, st.year).filter((t) => t !== s.champion)].filter(Boolean) as string[]).slice(0, 3);
+  if (seeds.length < 2) { afterRTM(s, seeds[0] ? [seeds[0]] : rankByPower(st.lck, st.year).slice(0, 1)); return; }
+  const date = addDays(s.days[s.days.length - 1]?.date ?? splitStartDate(st.year, "spring"), 5);
+  const d = s.days.length;
+  s.days.push({ date, week: 15, stage: "SF", label: "Road to MSI · 1시드 결정전" });
+  s.series.push({ id: "RTM-1", day: d, stage: "SF", a: seeds[0], b: seeds[1], bo: 5, games: [], sa: 0, sb: 0, holder1: seeds[0] });
+  s.day = d;
+  st.note = JSON.stringify({ seeds, step: "seed1" });
+  addNews(s, "season", `${st.year} Road to MSI`, `스프링 1위 ${seeds[0]} vs 2위 ${seeds[1]} (Bo5). 승자가 MSI 1시드입니다.${st.year >= 2021 && seeds[2] ? ` 패자는 3위 ${seeds[2]}와 최종전을 치릅니다.` : " 2018–2020은 스프링 대표 1팀이 MSI에 나갑니다."}`, s.team);
+}
+
+export function advanceRTM(s: Save, rng: Rng): void {
+  const st = s.story!;
+  const meta = JSON.parse(st.note || "{}") as { seeds: string[]; step: string };
+  const m1 = s.series.find((x) => x.id === "RTM-1");
+  if (!m1?.winner) {
+    if (m1 && !m1.winner) simSeries(s, m1, rng);
+    return;
+  }
+  if (meta.step === "seed1") {
+    if (st.year <= 2020 || !meta.seeds[2]) { afterRTM(s, [m1.winner]); return; }
+    const loser = m1.winner === m1.a ? m1.b : m1.a;
+    const d = s.days.length;
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: 16, stage: "F", label: "Road to MSI · 최종전" });
+    s.series.push({ id: "RTM-2", day: d, stage: "F", a: loser, b: meta.seeds[2], bo: 5, games: [], sa: 0, sb: 0, holder1: loser });
+    s.day = d; meta.step = "seed2"; st.note = JSON.stringify(meta); return;
+  }
+  const m2 = s.series.find((x) => x.id === "RTM-2");
+  if (m2 && !m2.winner) simSeries(s, m2, rng);
+  if (m2?.winner) afterRTM(s, [m1.winner, m2.winner]);
+}
+
+function afterRTM(s: Save, lckSeeds: string[]): void { startMSI(s, lckSeeds.length ? lckSeeds : rankByPower(s.story!.lck, s.story!.year).slice(0, 1)); }
+
+export function startMSI(s: Save, lckSeeds: string[]): void {
+  const st = s.story!;
+  st.phase = "msi";
+  const intl = ["LPL-1", "LEC-1", "LCS-1", "PCS-1", "TCL-1", "VCS-1"];
+  const need = Math.max(0, 6 - lckSeeds.length);
+  const teams = [...lckSeeds, ...intl.slice(0, need)];
+  for (const t of teams) {
+    if (!TM[t]) {
+      TM[t] = { id: 810, short: t, name: t, ko: t.includes("-") ? t.replace("-", " ") + "시드" : t, color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
+    }
+    if (t.includes("-") && (s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year);
+  }
+  const date = `${st.year}-05-10`;
+  const d0 = s.days.length;
+  let day = d0;
+  for (let i = 0; i < teams.length; i++) for (let j = i + 1; j < teams.length; j++) {
+    s.days.push({ date: addDays(date, day - d0), week: 17, stage: "R", label: `MSI 그룹 ${teams[i]} vs ${teams[j]}` });
+    s.series.push({ id: `MSI-G-${i}-${j}`, day, stage: "R", a: teams[i], b: teams[j], bo: 1, games: [], sa: 0, sb: 0 });
+    day++;
+  }
+  s.day = d0;
+  st.note = JSON.stringify({ teams, lckSeeds, step: "groups" });
+  addNews(s, "season", `${st.year} MSI 개막 · 6팀`, `LCK 시드: ${lckSeeds.join(", ") || "없음"}. 그룹은 단판 라운드 로빈, 상위 4팀이 준결승에 갑니다. 해외 팀은 리그 시드 이름만 쓰며 개별 선수 기록은 없습니다.`, s.team);
+  if (!lckSeeds.includes(s.team)) {
+    // 미참가: 빠르게 시뮬하고 다음 국면으로
+  }
+}
+
+export function advanceMSI(s: Save, rng: Rng): void {
+  const st = s.story!;
+  const meta = JSON.parse(st.note || "{}") as { teams: string[]; step: string };
+  const groups = s.series.filter((x) => x.id.startsWith("MSI-G-"));
+  if (!meta.step || meta.step === "groups") {
+    for (const sr of groups) if (!sr.winner) { try { simSeries(s, sr, rng); } catch { /* */ } }
+    if (!groups.length || !groups.every((x) => x.winner)) return;
+    const rows = (meta.teams ?? []).map((t) => {
+      const w = groups.filter((x) => x.winner === t).length;
+      return { t, w };
+    }).sort((a, b) => b.w - a.w);
+    const top = rows.slice(0, 4).map((r) => r.t);
+    const d = s.days.length;
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: 18, stage: "SF", label: "MSI 준결승" });
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: 18, stage: "SF", label: "MSI 준결승" });
+    s.series.push({ id: "MSI-SF0", day: d, stage: "SF", a: top[0], b: top[3], bo: 5, games: [], sa: 0, sb: 0, holder1: top[0] });
+    s.series.push({ id: "MSI-SF1", day: d + 1, stage: "SF", a: top[1], b: top[2], bo: 5, games: [], sa: 0, sb: 0, holder1: top[1] });
+    s.day = d; meta.step = "sf"; st.note = JSON.stringify(meta);
+    addNews(s, "season", "MSI 4강 대진 확정", `${top[0]} vs ${top[3]}, ${top[1]} vs ${top[2]}.`, s.team);
+    return;
+  }
+  if (meta.step === "sf") {
+    for (const id of ["MSI-SF0", "MSI-SF1"]) {
+      const sr = s.series.find((x) => x.id === id);
+      if (sr && !sr.winner) { try { simSeries(s, sr, rng); } catch { /* */ } }
+    }
+    const a = s.series.find((x) => x.id === "MSI-SF0")?.winner, b = s.series.find((x) => x.id === "MSI-SF1")?.winner;
+    if (!a || !b) return;
+    const d = s.days.length;
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 4), week: 19, stage: "F", label: "MSI 결승" });
+    s.series.push({ id: "MSI-F", day: d, stage: "F", a, b, bo: 5, games: [], sa: 0, sb: 0, holder1: a });
+    s.day = d; meta.step = "f"; st.note = JSON.stringify(meta); return;
+  }
+  if (meta.step === "f") {
+    const f = s.series.find((x) => x.id === "MSI-F");
+    if (f && !f.winner) { try { simSeries(s, f, rng); } catch { /* */ } }
+    if (!f?.winner) return;
+    if (f.winner === s.team) st.trophies.msi += 1;
+    addNews(s, "season", `${f.winner}, ${st.year} MSI 우승`, f.winner === s.team ? `${s.manager} 감독이 MSI를 우승했습니다.` : `우승은 ${f.winner}.`, f.winner);
+    afterMSI(s);
+  }
+}
+
+function afterMSI(s: Save): void {
+  const st = s.story!;
+  if (st.year <= 2020) startPromo(s);
+  else beginSplit(s, st.year, "summer");
 }
 
 export function startWorlds(s: Save): void {
@@ -548,9 +720,8 @@ export function startWorlds(s: Save): void {
   for (const t of intl) {
     if (!TM[t]) {
       TM[t] = { id: 800, short: t, name: t, ko: intlName(t), color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
-      // anonymous strength band, no fake player records
-      s.starters[t] = ghostLineup(t, st.year);
     }
+    if ((s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year);
   }
   const groups: string[][] = [[], [], [], []];
   teams.forEach((t, i) => groups[i % 4].push(t));
@@ -654,11 +825,8 @@ function stEndWorlds(s: Save, champ: string): void {
   addNews(s, "season", `${champ}, ${st.year} 월즈 우승`, champ === s.team ? `${s.manager} 감독이 ${st.year} 월즈를 들어올렸습니다.` : `우승은 ${champ}. 우리 구단의 여정은 계속됩니다.`, champ);
   if (st.year >= STORY_END) {
     endStory(s, champ === s.team ? "clear" : "fail");
-  } else if (st.year === 2020) {
-    st.phase = "franchise";
-    addNews(s, "season", "2021 프랜차이즈 전환", "2020 시즌이 끝났습니다. 프랜차이즈 전환을 확인해 주세요.", s.team);
   } else {
-    startStove(s);
+    beginOffseason(s);
   }
 }
 
@@ -674,31 +842,20 @@ export function endStory(s: Save, how: "clear" | "fail"): void {
   }
 }
 
-export function startStove(s: Save): void {
-  const st = s.story!;
-  st.phase = "stove";
-  // income
-  const rows = standings(s);
-  const rank = rows.findIndex((r) => r.t === s.team) + 1;
-  const prize = st.tier === "LCK" ? Math.max(1, 9 - Math.min(rank, 8)) : Math.max(0.5, 4 - Math.min(rank, 4));
-  const share = st.franchised && st.tier === "LCK" ? LCK_SHARE : 0;
-  const sp = s.eco.sponsor?.amount ?? (st.tier === "LCK" ? 4 : 1.5);
-  s.eco.cash = Math.round((s.eco.cash + prize + share + sp) * 10) / 10;
-  // contracts tick happens when leaving stove
-  addNews(s, "season", `${st.year} 스토브리그`, `수입: 성적 ${prize}억, 스폰서 ${sp}억${share ? `, 프랜차이즈 배분 ${share}억` : ""}. 남은 자금 ${s.eco.cash}억. 계약이 끝나는 선수는 재계약하거나 방출하세요.`, s.team);
+let _beginOff: (s: Save) => void = (s) => { s.story!.phase = "stove"; };
+let _enterWeeks: (s: Save, rng: import("./rng").Rng) => void = (s) => { s.story!.phase = "stove"; };
+export function registerOffseason(fn: (s: Save) => void, weeks?: (s: Save, rng: import("./rng").Rng) => void): void {
+  _beginOff = fn; if (weeks) _enterWeeks = weeks;
 }
+export function beginOffseason(s: Save): void { _beginOff(s); }
+export function enterStoveWeeksFromFranchise(s: Save, rng: import("./rng").Rng): void { _enterWeeks(s, rng); }
+export const startStove = beginOffseason;
 
 export function finishStove(s: Save, _rng: Rng): void {
   const st = s.story!;
-  for (const c of st.contracts) c.years -= 1;
-  const gone = st.contracts.filter((c) => c.years <= 0);
-  st.contracts = st.contracts.filter((c) => c.years > 0);
-  if (gone.length) {
-    s.cards = s.cards.filter((id) => !gone.some((g) => g.cardId === id || g.key === id));
-    const keep = new Set(st.contracts.map((c) => c.key));
-    s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => keep.has(k) ? k : "");
-    addNews(s, "season", "계약 만료 이탈", gone.map((g) => PL[g.key]?.name ?? g.key).join(", ") + " 선수가 로스터에서 빠졌습니다.", s.team);
-  }
+  // 연수 차감·만료는 오프시즌 초·재계약 화면에서 이미 처리합니다.
+  const keep = new Set(st.contracts.map((c) => c.key));
+  s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => keep.has(k) ? k : "");
   // age cards to next year
   const next = st.year + 1;
   const newKeys: string[] = [];
@@ -715,12 +872,13 @@ export function finishStove(s: Save, _rng: Rng): void {
   s.starters[s.team] = nextStarters;
   s.cards = st.contracts.map((c) => c.key);
   // salaries for next year
-  const pay = st.contracts.reduce((n, c) => n + storySalary(c.salary, st.tier), 0);
-  s.eco.cash = Math.round((s.eco.cash - pay) * 10) / 10;
+  const pay = st.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
+  for (const c of st.contracts) c.prepaid = false;
+  s.eco.cash = moneyRound(s.eco.cash - pay);
   applyStoryWorld(s);
   if (next > STORY_END) { endStory(s, st.trophies.worlds > 0 && st.year >= STORY_END ? "clear" : "fail"); return; }
   beginSplit(s, next, "spring");
-  addNews(s, "welcome", `${next} 시즌 개막`, `연봉 ${pay}억을 정산했습니다. 잔고 ${s.eco.cash}억.`, s.team);
+  addNews(s, "welcome", `${next} 시즌 개막`, `연봉 ${fmtMoney(pay)}을 정산했습니다. 잔고 ${fmtMoney(s.eco.cash)}.`, s.team);
 }
 
 export function resolveFranchise(s: Save, accept: boolean): string | null {
@@ -729,27 +887,27 @@ export function resolveFranchise(s: Save, accept: boolean): string | null {
   if (st.tier === "LCK") {
     st.franchised = true;
     addNews(s, "season", "프랜차이즈 슬롯 확보", "2020 시즌을 LCK에서 마쳐 2021 프랜차이즈 자리를 받았습니다. 이후 승강전은 없습니다.", s.team);
-    startStove(s);
+    if (st.stove) enterStoveWeeksFromFranchise(s, new Rng((s.seed^0)+st.year*19)); else beginOffseason(s);
     return null;
   }
   const cost = FRANCHISE_BUYIN[s.eco.difficulty];
   if (accept) {
-    if (s.eco.cash < cost) return `매수 비용 ${cost}억이 부족합니다. 현재 ${s.eco.cash}억.`;
-    s.eco.cash = Math.round((s.eco.cash - cost) * 10) / 10;
+    if (s.eco.cash < cost) return `매수 비용 ${fmtMoney(cost)}이 부족합니다. 현재 ${fmtMoney(s.eco.cash)}.`;
+    s.eco.cash = moneyRound(s.eco.cash - cost);
     st.buyInPaid = true; st.franchised = true; st.tier = "LCK";
     // replace weakest 2021 LCK team
     const yearTeams = lckTeamsOf(2021).map((t) => t.short);
     applyStoryWorld(s);
-    const weak = [...yearTeams].sort((a, b) => powerOf(a, 2021) - powerOf(b, 2021)).find((t) => t !== s.team) ?? yearTeams[yearTeams.length - 1];
+    const weak = [...yearTeams].sort((a, b) => teamPower(a, 2021) - teamPower(b, 2021)).find((t) => t !== s.team) ?? yearTeams[yearTeams.length - 1];
     st.lck = yearTeams.map((t) => t === weak ? s.team : t);
     st.ck = st.ck.filter((t) => t !== s.team);
-    addNews(s, "season", "프랜차이즈 매수 합의", `${cost}억으로 2021 LCK에 진입합니다. 이 게임에서는 전력 최하위 구단(${weak}) 자리를 대신합니다.`, s.team);
-    startStove(s);
+    addNews(s, "season", "프랜차이즈 매수 합의", `${fmtMoney(cost)}으로 2021 LCK에 진입합니다. 이 게임에서는 전력 최하위 구단(${weak}) 자리를 대신합니다.`, s.team);
+    if (st.stove) enterStoveWeeksFromFranchise(s, new Rng((s.seed^0)+st.year*19)); else beginOffseason(s);
     return null;
   }
   st.buyInRefused = true; st.franchised = false; st.tier = "CK";
   addNews(s, "season", "2부 잔류", "매수 제안을 받아들이지 않았습니다. 2021부터는 LCK 챌린저스에서 이어가며, LCK·월즈에는 나갈 수 없습니다.", s.team);
-  startStove(s);
+  if (st.stove) enterStoveWeeksFromFranchise(s, new Rng((s.seed^0)+st.year*19)); else beginOffseason(s);
   return null;
 }
 
@@ -760,20 +918,26 @@ export function autoQualifyFranchiseIfLck(s: Save): void {
 
 /** 남은 정규(또는 지정) 시리즈를 자동 시뮬. 우리 경기도 즉시 시뮬합니다. */
 export function simRestOfPhase(s: Save, rng: Rng, onlyOthers = false): void {
-  const today = s.day;
-  for (const sr of s.series) {
-    if (sr.winner) continue;
-    if (onlyOthers && (sr.a === s.team || sr.b === s.team)) continue;
-    if (!s.starters[sr.a]?.length || !s.starters[sr.b]?.length) {
-      // skip incomplete
-      continue;
+  if (onlyOthers) {
+    for (const sr of s.series) {
+      if (sr.winner || sr.a === s.team || sr.b === s.team) continue;
+      try { simSeries(s, sr, rng); } catch { /* */ }
     }
-    try { simSeries(s, sr, rng); } catch { /* 라인업 부족한 해외 시드 등은 건너뜀 */ }
+    return;
   }
-  const lastR = Math.max(0, ...s.series.filter((x) => x.stage === "R").map((x) => x.day));
-  if (s.story?.phase === "regular") { s.day = lastR + 1; afterRegularSplit(s); }
-  else if (s.story?.phase === "worlds") { finishWorldsGroups(s, rng); }
-  void today;
+  const cur = s.story!.phase;
+  let g = 0;
+  while (g++ < 80 && s.story!.phase === cur && !s.story!.ended) {
+    for (const sr of s.series.filter((x) => !x.winner)) {
+      try { simSeries(s, sr, rng); } catch { /* */ }
+    }
+    const day0 = s.day;
+    finishStoryDay(s, rng);
+    if (s.story!.phase === cur && s.day === day0 && !s.series.some((x) => !x.winner)) {
+      if (cur === "regular") afterRegularSplit(s);
+      else break;
+    }
+  }
 }
 
 export function afterRegularSplit(s: Save): void {
@@ -782,7 +946,7 @@ export function afterRegularSplit(s: Save): void {
   else {
     // CK: no PO, go promo if 2018-2020
     if (st.year <= 2020) startPromo(s);
-    else if (st.split === "summer") startStove(s);
+    else if (st.split === "summer") beginOffseason(s);
     else beginSplit(s, st.year, "summer");
   }
 }
@@ -791,7 +955,7 @@ export function makeContracts(cardIds: string[], years: number, tier: Tier): Con
   return cardIds.map((id) => {
     const c = CARDS[id];
     const key = PL[id] ? id : (c ? ensurePlayer(c, c.year, false) : id);
-    return { key, cardId: id, years, salary: c ? storySalary(c.salary, tier) : 1, person: c?.pkey ?? id };
+    return { key, cardId: id, years, salary: c ? storySalary(c, tier) : (tier === "CK" ? 0.3 : 1), person: c?.pkey ?? id };
   });
 }
 
@@ -820,6 +984,8 @@ export function finishStoryDay(s: Save, rng: Rng): void {
     return;
   }
   if (st.phase === "promo") { advancePromo(s, rng); return; }
+  if (st.phase === "rtm") { advanceRTM(s, rng); return; }
+  if (st.phase === "msi") { advanceMSI(s, rng); return; }
   if (st.phase === "worlds") {
     const meta = JSON.parse(st.note || "{}") as { step?: string };
     if (!meta.step || meta.step === "groups") {
@@ -853,7 +1019,8 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
     goal: "po", grant: 0, bonus: 2, trustHit: 6, trustWin: 8,
     ...(opt.eco ?? {}),
   };
-  eco.cash = eco.cap;
+  const openPay = opt.cards.reduce((n, id) => n + (CARDS[id] ? storySalary(CARDS[id], "CK") : 0), 0);
+  eco.cash = moneyRound(eco.cap - openPay);
   const now = new Date().toISOString();
   const info = opt.managerInfo;
   const story: StoryState = {
@@ -872,4 +1039,26 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
   beginSplit(s, year, "spring");
   addNews(s, "welcome", `${info.name} 감독, ${club.name} 창단`, `${club.name}이(가) 2018 챌린저스에서 출발합니다. 목표는 2027 월즈 우승입니다. ${STORY_BUDGET_NOTE}`, teamShort);
   return s;
+}
+
+/** 현재 대회/스플릿을 결과가 날 때까지 시뮬합니다. 승패를 조작하지 않고 엔진 그대로 돌립니다. */
+export function pumpStory(s: Save, rng: Rng, stop: StoryPhase[] = ["awards", "tryout", "expiry", "stove", "franchise", "clear", "fail"]): StoryPhase {
+  let g = 0;
+  while (g++ < 200) {
+    const ph = s.story!.phase;
+    if (stop.includes(ph)) return ph;
+    const open = s.series.filter((x) => !x.winner && (s.starters[x.a]?.length || x.a.includes("-")) && (s.starters[x.b]?.length || x.b.includes("-")));
+    for (const sr of open) {
+      try { simSeries(s, sr, rng); } catch { /* */ }
+    }
+    const before = s.story!.phase;
+    const day0 = s.day;
+    finishStoryDay(s, rng);
+    if (s.story!.phase === before && s.day === day0 && !s.series.some((x) => !x.winner)) {
+      // stuck
+      if (ph === "regular") afterRegularSplit(s);
+      else break;
+    }
+  }
+  return s.story!.phase;
 }
