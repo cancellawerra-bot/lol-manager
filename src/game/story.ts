@@ -336,13 +336,17 @@ export function injectEraTeam(t: EraTeam, starters: string[], extra: string[] = 
 function hash(s: string): number { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
 
 
-function reviveKey(k: string, year: number): void {
+function reviveKey(k: string, year: number, posIdx?: number): void {
   if (!k || PL[k]) return;
   if (CARDS[k]) { PL[k] = playerFromCard(CARDS[k]); return; }
   const m = /^(.*)-est-(\d+)$/.exec(k);
   if (m) {
-    const r = cardForYear(m[1], year);
-    if (r) { const nk = ensurePlayer(r.card, year, true); if (nk !== k && !PL[k]) PL[k] = { ...PL[nk], key: k }; }
+    const y = Number(m[2]) || year;
+    const r = cardForYear(m[1], y, posIdx);
+    if (r) {
+      const nk = ensurePlayer(r.card, y, true);
+      if (!PL[k]) PL[k] = nk === k ? PL[nk] : { ...PL[nk], key: k };
+    }
   }
 }
 export function applyStoryWorld(s: Save): void {
@@ -352,7 +356,7 @@ export function applyStoryWorld(s: Save): void {
   // user people reserved
   for (const c of s.story?.contracts ?? []) used.add(c.person);
   for (const id of s.cards ?? []) if (CARDS[id]) used.add(CARDS[id].pkey);
-  for (const keys of Object.values(s.starters ?? {})) for (const k of keys) reviveKey(k, year);
+  for (const keys of Object.values(s.starters ?? {})) keys.forEach((k, pos) => reviveKey(k, year, pos));
   const rng = new Rng(s.seed ^ year * 17);
   const user = s.club ? { short: s.club.short, ko: s.club.name, name: s.club.name, color: s.club.color } : undefined;
   const allTeams = [...lckTeamsOf(year), ...ckTeamsOf(year, user)];

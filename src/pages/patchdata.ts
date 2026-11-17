@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.2.1";
+export const PATCH_VERSION = "2.2.2";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.2.2", date: "2026-11-17",
+    items: [
+      "세이브를 불러올 때 추정 카드의 오버롤이 포지션을 무시하고 다시 계산되던 문제를 고쳤습니다. 같은 시드가 새 커리어와 저장 불러오기에서 같게 진행됩니다.",
+    ],
+  },
   {
     v: "2.2.1", date: "2026-11-17",
     items: [
