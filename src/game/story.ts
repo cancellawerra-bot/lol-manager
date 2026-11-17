@@ -1035,7 +1035,7 @@ function stEndWorlds(s: Save, champ: string): void {
 
 export function endStory(s: Save, how: "clear" | "fail" | "bankrupt"): void {
   const st = s.story!;
-  st.ended = how; st.phase = how === "bankrupt" ? "bankrupt" : how; s.phase = "done";
+  st.ended = how; st.phase = how === "bankrupt" ? "bankrupt" : how; s.phase = "done"; s.session = undefined;
   if (how === "clear") {
     st.note = "클리어";
     addNews(s, "season", "클리어 — 2027 월즈 우승", `2018년 2부에서 출발한 ${s.club?.name ?? s.team}이 2027 월즈를 우승했습니다. LCK ${st.trophies.lck}회, 월즈 ${st.trophies.worlds}회.`, s.team);

@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.2.2";
+export const PATCH_VERSION = "2.2.3";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.2.3", date: "2026-11-17",
+    items: [
+      "스토리 클리어·실패·파산 후 홈을 커리어 요약 엔딩 화면으로 바꿉니다. 우승 기록, 연도, 최종 로스터, 새 게임/계속 살펴보기 버튼을 보여 주고, 헤더의 날짜·전적·진행 버튼이 시즌이 리셋된 것처럼 보이지 않게 맞춥니다.",
+    ],
+  },
   {
     v: "2.2.2", date: "2026-11-17",
     items: [

@@ -69,6 +69,8 @@ export default function App() {
   const rank = rows.findIndex((r) => r.t === save.team) + 1;
   const me = rows.find((r) => r.t === save.team) ?? { t: save.team, w: 0, l: 0, gw: 0, gl: 0, streak: "–", last: [] as string[] };
   const nx = nextMySeries(save);
+  const storyEnded = save.story?.ended;
+  const endLabel = storyEnded === "clear" ? "클리어" : storyEnded === "bankrupt" ? "파산" : storyEnded === "fail" ? "여정의 끝" : "";
   const day = save.days[Math.min(save.day, save.days.length - 1)];
   const unread = save.news.filter((n) => !n.read).length;
   const onAdvance = (): void => {
@@ -85,7 +87,7 @@ export default function App() {
   return (
     <div className={"shell" + (inMatch ? " in-match" : "")}>
       <aside className={"side" + (menu ? " open" : "")}>
-        <a className="brand" href="#/home"><span className="logo">LM</span><span><b>LOL Manager</b><small>{save.story ? `${save.story.year} · 스토리` : "2026 시즌"} · v{PATCH_VERSION}</small></span></a>
+        <a className="brand" href="#/home"><span className="logo">LM</span><span><b>LOL Manager</b><small>{save.story ? `${save.story.year} · 스토리${storyEnded ? " · " + endLabel : ""}` : "2026 시즌"} · v{PATCH_VERSION}</small></span></a>
         <div className="side-team"><TeamChip t={save.team} full /><small>{save.manager} 감독</small></div>
         <nav>{NAV.map(([h, label, ic]) => (
           <a key={h} href={h} className={hash.startsWith(h) ? "on" : ""}><i>{ic}</i>{label}{h === "#/news" && unread > 0 && <em>{unread}</em>}</a>
@@ -96,19 +98,19 @@ export default function App() {
       <div className="main">
         <header className="top">
           <button className="hamb" onClick={() => setMenu(!menu)} aria-label="메뉴">☰</button>
-          <div className="top-date"><b>{dateKo(day.date)}</b><small>{save.phase === "done" ? "시즌 종료" : `${day.label} · ${STAGE_KO[day.stage]}`}</small></div>
+          <div className="top-date"><b>{storyEnded ? `${save.story!.year} 시즌` : dateKo(day.date)}</b><small>{storyEnded ? endLabel : (save.phase === "done" ? "시즌 종료" : `${day.label} · ${STAGE_KO[day.stage]}`)}</small></div>
           <div className="chips">
-            <div className="chip"><small>순위</small><b>{me.w + me.l > 0 ? `${rank}위` : "–"}</b></div>
+            <div className="chip"><small>순위</small><b>{storyEnded && save.story?.lastRank ? `${save.story.lastRank}위` : (me.w + me.l > 0 ? `${rank}위` : "–")}</b></div>
             {save.story && <div className="chip"><small>{save.story.year}</small><b>{save.story.tier === "LCK" ? "LCK" : "2부"}</b></div>}
-            <div className="chip"><small>전적</small><b>{me.w}승 {me.l}패</b></div>
+            <div className="chip"><small>{storyEnded && save.story?.lastRank ? "최종 순위" : "전적"}</small><b>{storyEnded && save.story?.lastRank ? `${save.story.lastRank}위` : `${me.w}승 ${me.l}패`}</b></div>
             <div className="chip hide-s"><small>목표</small><b>{goalKo}</b></div>
             <div className="chip hide-s"><small>자금</small><b>{fmtMoney(save.eco.cash)}</b></div>
             <div className="chip hide-m"><small>구단주 신뢰</small><b>{save.eco.trust}</b></div>
-            <div className="chip hide-m"><small>다음 경기</small><b>{nx ? <>vs {nx.a === save.team ? nx.b : nx.a} <span className="muted">· {dateKo(save.days[nx.day].date)}</span></> : "없음"}</b></div>
+            <div className="chip hide-m"><small>다음 경기</small><b>{storyEnded ? "종료" : (nx ? <>vs {nx.a === save.team ? nx.b : nx.a} <span className="muted">· {dateKo(save.days[nx.day].date)}</span></> : "없음")}</b></div>
             <div className="chip hide-s"><small>최근 5경기</small><b>{me.last.length ? form5(me.last) : "–"}</b></div>
           </div>
-          {!inMatch && <button className="btn primary go" onClick={onAdvance} disabled={save.phase === "done"} data-testid="advance">
-            {save.phase === "done" ? "시즌 종료" : save.session ? "경기 계속하기 ▶" : nx && nx.day === save.day ? "경기 시작 ▶" : "진행하기 ▶"}
+          {!inMatch && <button className="btn primary go" onClick={onAdvance} disabled={save.phase === "done" || !!storyEnded} data-testid="advance">
+            {storyEnded || save.phase === "done" ? (endLabel || "시즌 종료") : save.session ? "경기 계속하기 ▶" : nx && nx.day === save.day ? "경기 시작 ▶" : "진행하기 ▶"}
           </button>}
         </header>
         {note && <div className="banner-note">{note}</div>}

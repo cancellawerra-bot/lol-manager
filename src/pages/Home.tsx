@@ -76,27 +76,23 @@ export default function Home() {
           </div>
         </Card>
       )}
-      {s.story?.ended === "clear" && (
-        <Card title="클리어" className="span2 hero-done" >
-          <div data-testid="clear-screen">
-            <p className="big">클리어 — 2027 월즈 우승</p>
-            <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}이 2027 월즈를 우승했습니다. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회.</p>
-          </div>
-        </Card>
-      )}
-      {s.story?.ended === "fail" && (
-        <Card title="여정의 끝" className="span2">
-          <div data-testid="fail-screen">
-            <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>
-            <p>LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회. {s.story.tier === "CK" && !s.story.franchised ? "2부에서 프랜차이즈 슬롯을 받지 못해 월즈에 나가지 못했습니다." : ""}</p>
-          </div>
-        </Card>
-      )}
-      {s.story?.ended === "bankrupt" && (
-        <Card title="구단주 해임" className="span2">
-          <div data-testid="bankrupt-screen">
-            <p className="big">파산 — 누적 적자로 구단 운영이 중단되었습니다.</p>
-            <p>잔고 {fmtMoney(s.eco.cash)}. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회.</p>
+      {s.story?.ended && (
+        <Card title={s.story.ended === "clear" ? "클리어" : s.story.ended === "bankrupt" ? "구단주 해임" : "여정의 끝"} className="span2 hero-done">
+          <div data-testid={s.story.ended === "clear" ? "clear-screen" : s.story.ended === "bankrupt" ? "bankrupt-screen" : "fail-screen"}>
+            {s.story.ended === "clear" && <p className="big">클리어 — 2027 월즈 우승</p>}
+            {s.story.ended === "fail" && <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>}
+            {s.story.ended === "bankrupt" && <p className="big">파산 — 누적 적자로 구단 운영이 중단되었습니다.</p>}
+            <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}의 기록입니다. 2018–{s.story.year}. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회. 잔고 {fmtMoney(s.eco.cash)}.{s.story.lastRank ? ` 마지막 정규 순위 ${s.story.lastRank}위.` : ""}{s.story.ended === "fail" && s.story.tier === "CK" && !s.story.franchised ? " 2부에서 프랜차이즈 슬롯을 받지 못해 월즈에 나가지 못했습니다." : ""}</p>
+            <table className="tbl compact" data-testid="ending-roster">
+              <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th></tr></thead>
+              <tbody>{(s.starters[s.team] ?? []).map((k, i) => (
+                <tr key={k || i}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r">{PL[k] ? <Pct v={PL[k].pct.ovr} /> : "–"}</td></tr>
+              ))}</tbody>
+            </table>
+            <div className="row gap wrap end-actions">
+              <a className="btn primary" href="#/" data-testid="ending-new-game">새 게임</a>
+              <a className="btn" href="#/news" data-testid="ending-keep-viewing">계속 살펴보기</a>
+            </div>
           </div>
         </Card>
       )}
@@ -108,7 +104,7 @@ export default function Home() {
           <a className="btn" href="#/">타이틀로</a>
         </Card>
       )}
-      {nx && op && (
+      {nx && op && !s.story?.ended && (
         <Card title={<>다음 경기 <span className="muted">· {STAGE_KO[nx.stage]} · Bo{nx.bo}</span></>} className="span2 next-match">
           <div className="vs">
             <div className="vs-team"><TeamChip t={s.team} size="lg" /><b>{TM[s.team]?.ko ?? s.team}</b><span className="muted">{started ? `${rankOf(s.team)}위 · ${myRow.w}승 ${myRow.l}패` : "개막전"}</span>{form5(myRow.last)}</div>
@@ -125,6 +121,7 @@ export default function Home() {
           <div className="row gap wrap"><a className="btn" href={`#/scout/${op}`}>{op} 밴픽 성향 보기</a><span className="muted sm">숫자는 포지션 내 종합 지표 백분위(2026 LCK). 상단 "{nx.day === s.day ? "경기 시작" : "진행하기"}"로 진행합니다.</span></div>
         </Card>
       )}
+      {!s.story?.ended && (
       <Card title="순위" right={<a href="#/standings" className="sm">전체 ›</a>}>
         <table className="tbl compact">
           <thead><tr><th>#</th><th>팀</th><th className="r">승-패</th><th className="r">득실</th></tr></thead>
@@ -133,6 +130,7 @@ export default function Home() {
           ))}</tbody>
         </table>
       </Card>
+      )}
       <Card title="소식" right={<a href="#/news" className="sm">전체 ›</a>}>
         <ul className="news-mini">{s.news.slice(0, 6).map((n) => (
           <li key={n.id} className={n.read ? "" : "unread"}><small>{dateKo(n.date)}</small><b>{n.title}</b><span className="muted">{n.body}</span></li>

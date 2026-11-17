@@ -109,6 +109,8 @@ input:focus,select:focus{border-color:var(--teal)}
 .sched-mini{list-style:none;padding:0;margin:0 0 8px}.sched-mini li{display:grid;grid-template-columns:110px 1fr auto;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
 .sched-mini li small{color:var(--dim)}.sched-mini li.today{color:var(--teal);font-weight:700}
 .hero-done{border-color:rgba(233,196,106,.45)}
+.hero-done .end-actions{margin-top:12px}
+.hero-done .tbl{margin:12px 0}
 
 /* news */
 .news-list{list-style:none;padding:0;margin:0}.news-list li{padding:14px 0;border-bottom:1px solid var(--line)}
