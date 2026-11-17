@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.2.0";
+export const PATCH_VERSION = "2.2.1";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.2.1", date: "2026-11-17",
+    items: [
+      "같은 시드의 스토리 진행이 Node와 브라우저에서 갈라지지 않도록, 카드 풀·스토브 입찰·순위 타이브레이크를 로케일이나 객체 삽입 순서에 의존하지 않게 고쳤습니다.",
+    ],
+  },
   {
     v: "2.2.0", date: "2026-11-17",
     items: [

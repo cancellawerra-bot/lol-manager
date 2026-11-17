@@ -1,9 +1,10 @@
 // 검증용 헬퍼. ?qa=1 또는 localStorage.lolmQa=1 일 때만 붙습니다.
 // 경기 승패를 조작하지 않으며, 스토브 입찰·자동 시뮬만 빠르게 밟습니다.
-import { CARDS } from "./data";
+import { CARDS, RANKED } from "./data";
 import { getSave, mutate, persist, setSave, loadSlot, lastSlot } from "./store";
 import { pumpStory, newStoryCareer, marketCards, storySalary, STORY_BUDGETS, type StoryDiff } from "./game/story";
 import { autoAdvanceOffseason, stepYear } from "./game/stove";
+import { Rng } from "./game/rng";
 import { resolveFranchise } from "./game/story";
 import type { Save } from "./game/season";
 
@@ -75,11 +76,32 @@ export function installQaHook(): void {
       setSave(s);
       return { cash: s.eco.cash, cap: s.eco.cap, names: picks.map((id) => CARDS[id].name) };
     },
-    exportJson: () => JSON.stringify(getSave()),
+    rankedReady: () => !!RANKED,
+    runToEnd: (opts: { acceptBuyIn?: boolean; signStars?: boolean } = {}) => {
+      const s = getSave();
+      if (!s?.story) return null;
+      const years: { year: number; phase: string; tier: string; cash: number; pay: number; trophies: { lck: number; msi: number; worlds: number } }[] = [];
+      const rng = new Rng(s.rng);
+      while (!s.story.ended && s.story.year <= 2027) {
+        const y = s.story.year;
+        years.push({
+          year: y, phase: s.story.phase, tier: s.story.tier, cash: s.eco.cash,
+          pay: Math.round(s.story.contracts.reduce((n, c) => n + c.salary, 0) * 100) / 100,
+          trophies: { ...s.story.trophies },
+        });
+        const reserved = (!s.story.franchised && s.story.year <= 2020) ? 3.5 : 0;
+        stepYear(s, rng, { acceptBuyIn: !!opts.acceptBuyIn, signStars: opts.signStars !== false, reserveCash: reserved });
+        if (s.story.year === y && !s.story.ended) break;
+      }
+      s.rng = rng.s;
+      persist();
+      return { year: s.story.year, split: s.story.split, phase: s.story.phase, tier: s.story.tier, ended: s.story.ended, cash: s.eco.cash, trophies: { ...s.story.trophies }, franchised: s.story.franchised, ranked: !!RANKED, years };
+    },
+        exportJson: () => JSON.stringify(getSave()),
     snapshot: () => {
       const s = getSave();
       if (!s) return null;
-      return { year: s.story?.year, split: s.story?.split, phase: s.story?.phase, tier: s.story?.tier, ended: s.story?.ended, cash: s.eco.cash, trophies: s.story?.trophies, week: s.story?.stove?.week, franchised: s.story?.franchised };
+      return { year: s.story?.year, split: s.story?.split, phase: s.story?.phase, tier: s.story?.tier, ended: s.story?.ended, cash: s.eco.cash, trophies: s.story?.trophies ? { ...s.story.trophies } : undefined, week: s.story?.stove?.week, franchised: s.story?.franchised };
     },
   };
 }

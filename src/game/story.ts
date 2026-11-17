@@ -8,6 +8,10 @@ import type { StoveState } from "./stove";
 import { addNews, dateKo, simSeries, standings } from "./season";
 import { moneyRound, fmtMoney } from "./money";
 
+/** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
+export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+export const cmpCard = (a: SeasonCard, b: SeasonCard): number => cmpStr(a.pkey, b.pkey) || cmpStr(a.id, b.id);
+
 export const STORY_START = 2018;
 export const STORY_END = 2027;
 export const STORY_BUDGETS = { easy: 5, normal: 3.2, hard: 2 } as const;
@@ -239,10 +243,10 @@ export function cardForYear(pkey: string, year: number, posIdx?: number): { card
   const y = Math.min(year, 2026); // 2027 → 2026 카드
   const all = Object.values(CARDS).filter((c) => c.pkey === pkey && c.year <= y && (posIdx == null || c.posIdx === posIdx));
   if (!all.length) return;
-  const same = all.filter((c) => c.year === y).sort((a, b) => b.games - a.games)[0];
+  const same = all.filter((c) => c.year === y).sort((a, b) => b.games - a.games || cmpCard(a, b))[0];
   // 데이터 마지막 해(2026) 공식 카드는 2027에도 추정 감쇠 없이 그대로 씁니다.
   if (same) return { card: same, estimated: false };
-  const prev = all.sort((a, b) => b.year - a.year || b.games - a.games)[0];
+  const prev = all.sort((a, b) => b.year - a.year || b.games - a.games || cmpCard(a, b))[0];
   return { card: prev, estimated: true };
 }
 
@@ -255,13 +259,14 @@ export function marketCards(year: number): SeasonCard[] {
   const y = Math.min(year, 2026);
   // 인물당 그해(또는 최신 과거) 한 장만, 데뷔 연도 이전은 제외
   const best = new Map<string, SeasonCard>();
-  for (const c of Object.values(CARDS)) {
+  for (const id of Object.keys(CARDS).sort(cmpStr)) {
+    const c = CARDS[id];
     if (c.year > y) continue;
     const k = c.pkey + "#" + c.posIdx;
     const cur = best.get(k);
     if (!cur || c.year > cur.year || (c.year === cur.year && c.games > cur.games)) best.set(k, c);
   }
-  return [...best.values()];
+  return [...best.values()].sort(cmpCard);
 }
 
 export function ensurePlayer(card: SeasonCard, year: number, estimated: boolean): string {
@@ -299,7 +304,7 @@ export function fillTeamRoster(short: string, year: number, used: Set<string>, r
   const starters: string[] = new Array(5).fill("");
   const own = cardsForOrg(short, year);
   for (let pos = 0; pos < 5; pos++) {
-    const cand = own.filter((c) => c.posIdx === pos && !used.has(c.pkey)).sort((a, b) => b.percentile - a.percentile);
+    const cand = own.filter((c) => c.posIdx === pos && !used.has(c.pkey)).sort((a, b) => b.percentile - a.percentile || cmpCard(a, b));
     const c = cand[0];
     if (c) {
       const r = cardForYear(c.pkey, year, pos)!;
@@ -309,7 +314,7 @@ export function fillTeamRoster(short: string, year: number, used: Set<string>, r
   }
   for (let pos = 0; pos < 5; pos++) {
     if (starters[pos]) continue;
-    const pool = marketCards(year).filter((c) => c.posIdx === pos && !used.has(c.pkey)).sort((a, b) => a.salary - b.salary || a.percentile - b.percentile);
+    const pool = marketCards(year).filter((c) => c.posIdx === pos && !used.has(c.pkey)).sort((a, b) => a.salary - b.salary || a.percentile - b.percentile || cmpCard(a, b));
     const pick = pool[Math.min(pool.length - 1, Math.floor(rng.next() * Math.min(8, pool.length)))] ?? pool[0];
     if (pick) {
       const r = cardForYear(pick.pkey, year, pos)!;
@@ -546,7 +551,7 @@ export function ensureStartingFive(s: Save): void {
       const ask = storySalary(c, st.tier);
       return ask <= Math.max(budget, st.tier === "CK" ? 0.5 : 8) && ask <= Math.max(roomPay, st.tier === "CK" ? 0.4 : 12);
     });
-    const cand = (affordable.length ? affordable : cands).sort((a, b) => rate(b) - rate(a) || storySalary(a, st.tier) - storySalary(b, st.tier))[0];
+    const cand = (affordable.length ? affordable : cands).sort((a, b) => rate(b) - rate(a) || storySalary(a, st.tier) - storySalary(b, st.tier) || cmpCard(a, b))[0];
     if (cand) {
       const r = cardForYear(cand.pkey, st.year, pos);
       const key = ensurePlayer(cand, st.year, r?.estimated ?? cand.year < year);
@@ -577,7 +582,7 @@ function forceSalesToCover(s: Save): void {
   };
   const sold: string[] = [];
   while (s.eco.cash < 0 && st.contracts.length) {
-    const c = [...st.contracts].sort((a, b) => score(b) - score(a))[0];
+    const c = [...st.contracts].sort((a, b) => score(b) - score(a) || cmpStr(a.key, b.key))[0];
     const fee = moneyRound(c.salary * Math.max(c.years, 1) * 0.5);
     st.contracts = st.contracts.filter((x) => x !== c);
     s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => k === c.key ? "" : k);
@@ -691,7 +696,7 @@ export function startPromo(s: Save): void {
 }
 
 function rankByPower(shorts: string[], year: number): string[] {
-  return [...shorts].sort((a, b) => teamPower(b, year) - teamPower(a, year));
+  return [...shorts].sort((a, b) => teamPower(b, year) - teamPower(a, year) || cmpStr(a, b));
 } // year used in powerOf
 export function teamPower(short: string, _year?: number): number {
   const keys = TM[short]?.starters ?? [];
@@ -864,7 +869,7 @@ export function advanceMSI(s: Save, rng: Rng): void {
     const rows = (meta.teams ?? []).map((t) => {
       const w = groups.filter((x) => x.winner === t).length;
       return { t, w };
-    }).sort((a, b) => b.w - a.w);
+    }).sort((a, b) => b.w - a.w || cmpStr(a.t, b.t));
     const top = rows.slice(0, 4).map((r) => r.t);
     const d = s.days.length;
     s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: 18, stage: "SF", label: "MSI 준결승" });
@@ -967,7 +972,7 @@ export function finishWorldsGroups(s: Save, rng: Rng): void {
       const won = s.series.filter((x) => x.id.startsWith(`W-G${gi}`) && x.winner === t).length;
       const lost = s.series.filter((x) => x.id.startsWith(`W-G${gi}`) && (x.a === t || x.b === t) && x.winner && x.winner !== t).length;
       return { t, w: won, l: lost };
-    }).sort((a, b) => b.w - a.w || a.l - b.l);
+    }).sort((a, b) => b.w - a.w || a.l - b.l || cmpStr(a.t, b.t));
     adv.push(rows[0].t, rows[1].t);
   });
   // QF: A1-B2, B1-A2, C1-D2, D1-C2
@@ -1097,7 +1102,7 @@ export function resolveFranchise(s: Save, accept: boolean): string | null {
     // replace weakest 2021 LCK team
     const yearTeams = lckTeamsOf(2021).map((t) => t.short);
     applyStoryWorld(s);
-    const weak = [...yearTeams].sort((a, b) => teamPower(a, 2021) - teamPower(b, 2021)).find((t) => t !== s.team) ?? yearTeams[yearTeams.length - 1];
+    const weak = [...yearTeams].sort((a, b) => teamPower(a, 2021) - teamPower(b, 2021) || cmpStr(a, b)).find((t) => t !== s.team) ?? yearTeams[yearTeams.length - 1];
     st.lck = yearTeams.map((t) => t === weak ? s.team : t);
     st.ck = st.ck.filter((t) => t !== s.team);
     addNews(s, "season", "프랜차이즈 매수 합의", `${fmtMoney(cost)}으로 2021 LCK에 진입합니다. 이 게임에서는 전력 최하위 구단(${weak}) 자리를 대신합니다.`, s.team);

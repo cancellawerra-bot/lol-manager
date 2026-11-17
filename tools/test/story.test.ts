@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, TM, PL } from "../../src/data";
-import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf } from "../../src/game/story";
+import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard } from "../../src/game/story";
 import { autoAdvanceOffseason, stepYear, payIncome } from "../../src/game/stove";
 import { PL } from "../../src/data";
 import { Rng } from "../../src/game/rng";
@@ -167,6 +167,12 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
   if (br2.story!.ended !== "bankrupt") throw new Error("expected bankrupt at -40, got " + br2.story!.ended);
   if (br2.eco.cash > -5) throw new Error("bankrupt path should keep deep cash for the ending");
   console.log("OK bankrupt", { cash: br2.eco.cash });
+  if (cmpStr("KT", "KZ") >= 0) throw new Error("cmpStr should be code-point order");
+  const m2019 = marketCards(2019).map((c) => c.id);
+  const mSorted = m2019.slice().sort((a, b) => cmpStr(CARDS[a].pkey, CARDS[b].pkey) || cmpStr(a, b));
+  if (m2019.join() !== mSorted.join()) throw new Error("marketCards should be in pkey/id order");
+  if (cmpCard(CARDS[m2019[0]], CARDS[m2019[0]]) !== 0) throw new Error("cmpCard equal");
+  console.log("OK deterministic market order", m2019.length);
 
 
   const hardCheap = cheapRoster(2018, STORY_BUDGETS.hard);

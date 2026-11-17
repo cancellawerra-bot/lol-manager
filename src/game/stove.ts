@@ -5,7 +5,7 @@ import { Rng } from "./rng";
 import type { Save } from "./season";
 import { addNews, standings } from "./season";
 import {
-  cardForYear, debutYear, ensurePlayer, marketCards, storySalary,
+  cardForYear, debutYear, ensurePlayer, marketCards, storySalary, cmpStr, cmpCard,
   teamPower, finishStove as rollYear, registerOffseason, currentLeague,
   resolveFranchise, pumpStory, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR, LCK_PAYROLL_SOFT,
   fmtMoney, lckPrizeOf, scaleLckIncome, ensureStartingFive,
@@ -74,7 +74,7 @@ export function prestige(s: Save, team: string): number {
 
 function topPowerTeams(s: Save, n = 5): string[] {
   const st = s.story!;
-  return [...st.lck, ...st.ck].sort((a, b) => teamPower(b) - teamPower(a)).slice(0, n);
+  return [...st.lck, ...st.ck].sort((a, b) => teamPower(b) - teamPower(a) || cmpStr(a, b)).slice(0, n);
 }
 
 function contractAsk(card: SeasonCard, tier: Tier): number {
@@ -108,7 +108,7 @@ export function chooseTeam(s: Save, person: string, offers: Bid[], rng: Rng): Bi
     if (!why) why = "조건이 가장 균형 있다고 판단했습니다";
     return { o, score: score + rng.next() * 4, why };
   });
-  scored.sort((a, b) => b.score - a.score);
+  scored.sort((a, b) => b.score - a.score || cmpStr(a.o.team, b.o.team));
   const win = scored[0];
   const rejected = scored.slice(1).map((x) => {
     let why = "다른 팀의 조건이 더 맞았습니다";
@@ -170,7 +170,7 @@ function buildAwards(s: Save): AwardRow[] {
       const score = st && st.g > 0 ? st.rsum / st.g + st.mvp * 0.3 + (st.w / st.g) : (p.pct.ovr ?? 50) / 20;
       cands.push({ key: k, name: p.label ?? p.name, team: t, score, note: recNote(k) });
     }
-    cands.sort((a, b) => b.score - a.score);
+    cands.sort((a, b) => b.score - a.score || cmpStr(a.key, b.key));
     rows.push({ pos, first: cands[0], second: cands[1] });
   }
   return rows;
@@ -188,7 +188,7 @@ function tryoutPool(s: Save, stove: StoveState): string[] {
     if (c.year < year - 3 && c.percentile > 70) continue;
     if (debut >= year - 2 || c.salary <= 8) ids.push(c.id);
   }
-  return ids.sort((a, b) => (debutYear(CARDS[a].pkey) ?? 99) - (debutYear(CARDS[b].pkey) ?? 99) || CARDS[a].salary - CARDS[b].salary).slice(0, 24);
+  return ids.sort((a, b) => (debutYear(CARDS[a].pkey) ?? 99) - (debutYear(CARDS[b].pkey) ?? 99) || CARDS[a].salary - CARDS[b].salary || cmpStr(a, b)).slice(0, 24);
 }
 
 function faPool(s: Save, stove: StoveState): string[] {
@@ -201,7 +201,7 @@ function faPool(s: Save, stove: StoveState): string[] {
     const prev = best.get(k);
     if (!prev || c.year > prev.year || (c.year === prev.year && c.games > prev.games)) best.set(k, c);
   }
-  return [...best.values()].sort((a, b) => b.percentile - a.percentile).map((c) => c.id);
+  return [...best.values()].sort((a, b) => b.percentile - a.percentile || cmpCard(a, b)).map((c) => c.id);
 }
 
 export function payIncome(s: Save): void {
@@ -283,7 +283,8 @@ export function resolveTryout(s: Save, rng: Rng): void {
     const arr = byP.get(o.person) ?? []; arr.push(o); byP.set(o.person, arr);
   }
   const results: BidResult[] = [];
-  for (const [person, offers] of byP) {
+  for (const person of [...byP.keys()].sort(cmpStr)) {
+    const offers = byP.get(person)!;
     const r = chooseTeam(s, person, offers, rng);
     results.push(r);
     if (r.winner) signToTeam(s, r.winner, offers.find((o) => o.team === r.winner)!, rng);
@@ -369,7 +370,8 @@ export function expiryDone(s: Save, rng: Rng): void {
     }
   }
   // AI expiry: some released to FA
-  for (const [t, list] of Object.entries(stove.aiContracts)) {
+  for (const t of Object.keys(stove.aiContracts).sort(cmpStr)) {
+    const list = stove.aiContracts[t];
     const keep: Contract[] = [];
     for (const c of list) {
       if (c.years <= 1 && hash(c.key + t) % 3 === 0) {
@@ -425,8 +427,9 @@ function aiFaBids(s: Save, rng: Rng): Bid[] {
     const budget = 8 + teamPower(t) / 10;
     let spent = 0;
     const want = rng.shuffle(pool).sort((a, b) => {
-      const hole = need.includes(a.posIdx) ? -50 : 0;
-      return (b.percentile + hole) - (a.percentile);
+      const ha = need.includes(a.posIdx) ? -50 : 0;
+      const hb = need.includes(b.posIdx) ? -50 : 0;
+      return (b.percentile + ha) - (a.percentile + hb) || cmpCard(a, b);
     }).slice(0, 2 + (holes.length ? 1 : 0));
     for (const c of want) {
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
@@ -611,7 +614,7 @@ function aiFillHoles(s: Save, rng: Rng): void {
     while (cur.length < 5) cur.push("");
     for (let pos = 0; pos < 5; pos++) {
       if (cur[pos]) continue;
-      const cands = stove.faPool.map((x) => CARDS[x]).filter((c) => c && c.posIdx === pos).sort((a, b) => storySalary(a, s.story!.lck.includes(t) ? "LCK" : "CK") - storySalary(b, s.story!.lck.includes(t) ? "LCK" : "CK"));
+      const cands = stove.faPool.map((x) => CARDS[x]).filter((c) => c && c.posIdx === pos).sort((a, b) => storySalary(a, s.story!.lck.includes(t) ? "LCK" : "CK") - storySalary(b, s.story!.lck.includes(t) ? "LCK" : "CK") || cmpCard(a, b));
       const id = t === s.team ? cands[0] : cands[Math.floor(rng.next() * Math.min(3, cands.length)) ] ?? cands[0];
       if (!id) continue;
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
@@ -664,7 +667,7 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
 
 function minFaCost(s: Save, pos: number): number {
   const st = s.story!; const stove = st.stove!;
-  const cheap = stove.faPool.map((id) => CARDS[id]).filter((c) => c && c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier))[0];
+  const cheap = stove.faPool.map((id) => CARDS[id]).filter((c) => c && c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || cmpCard(a, b))[0];
   if (cheap) return storySalary(cheap, st.tier);
   return st.tier === "LCK" ? 3 : 0.2;
 }
@@ -698,15 +701,15 @@ function legalStarBids(s: Save, reserve = 0): void {
   // 1) 주전 구멍부터 저렴한 카드로
   const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i]);
   for (const pos of holes) {
-    const opts = cards.filter((c) => c.posIdx === pos).sort((a, b) => a.percentile - b.percentile ? storySalary(a, st.tier) - storySalary(b, st.tier) : b.percentile - a.percentile);
+    const opts = cards.filter((c) => c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
     // prefer reasonable floor (not the absolute weakest if we can afford a mid card)
     const mid = opts.filter((c) => c.percentile >= 45);
-    const pool = (mid.length ? mid : opts).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile);
+    const pool = (mid.length ? mid : opts).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
     for (const c of pool) { if (bidFor(c, true)) break; }
   }
   // 2) 여유 자금으로 업그레이드 (포지션당 최대 1)
   const taken = new Set<number>();
-  const upgrades = cards.slice().sort((a, b) => b.percentile - a.percentile);
+  const upgrades = cards.slice().sort((a, b) => b.percentile - a.percentile || cmpCard(a, b));
   for (const c of upgrades) {
     if (taken.has(c.posIdx)) continue;
     const cur = s.starters[s.team]?.[c.posIdx];

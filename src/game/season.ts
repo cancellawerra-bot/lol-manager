@@ -136,7 +136,7 @@ export function standings(s: Save): Row[] {
   const h2h = (a: string, b: string): number => done.filter((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a)).reduce((n, x) => n + (x.winner === a ? 1 : -1), 0);
   const rows = Object.values(R);
   for (const r of rows) { let n = 0; const L = r.last; for (let i = L.length - 1; i >= 0 && L[i] === L[L.length - 1]; i--) n++; r.streak = L.length ? `${n}${L[L.length - 1] === "W" ? "연승" : "연패"}` : "–"; r.last = L.slice(-5); }
-  return rows.sort((a, b) => b.w - a.w || (b.gw - b.gl) - (a.gw - a.gl) || -h2h(a.t, b.t) || a.t.localeCompare(b.t));
+  return rows.sort((a, b) => b.w - a.w || (b.gw - b.gl) - (a.gw - a.gl) || -h2h(a.t, b.t) || (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
 }
 
 // ----- 세트 준비 -----
@@ -186,7 +186,7 @@ function seriesNews(s: Save, sr: SeriesRec, before: Row[]): void {
   const mine = w === s.team || l === s.team;
   const mvpCount: Record<string, number> = {};
   sr.games.filter((g) => g.winner === w).forEach((g) => { mvpCount[g.mvp] = (mvpCount[g.mvp] ?? 0) + 1; });
-  const pom = Object.entries(mvpCount).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const pom = Object.entries(mvpCount).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
   const rank = (t: string): number => before.findIndex((r) => r.t === t) + 1;
   const stageTxt = STAGE_KO[sr.stage];
   const gameTxt = sr.games.map((g, i) => `${i + 1}세트 ${g.winner}(${g.dur}분)`).join(", ");
