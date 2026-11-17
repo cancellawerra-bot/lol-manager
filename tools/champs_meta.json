@@ -1,0 +1,2803 @@
+{
+"Garen": {
+"name": "가렌",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 1,
+"m": 1,
+"ut": 1
+},
+"Galio": {
+"name": "갈리오",
+"tags": "TM",
+"pos": [
+"M",
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Gangplank": {
+"name": "갱플랭크",
+"tags": "F",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 2,
+"groups": [
+"split"
+]
+},
+"Gragas": {
+"name": "그라가스",
+"tags": "FM",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 1
+},
+"Graves": {
+"name": "그레이브즈",
+"tags": "K",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 2,
+"ut": 2
+},
+"Gwen": {
+"name": "그웬",
+"tags": "F",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Gnar": {
+"name": "나르",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": true,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Nami": {
+"name": "나미",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2
+},
+"Nasus": {
+"name": "나서스",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Naafiri": {
+"name": "나피리",
+"tags": "AF",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Nautilus": {
+"name": "노틸러스",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Nocturne": {
+"name": "녹턴",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 2,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Nunu": {
+"name": "누누와 윌럼프",
+"tags": "TM",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 2,
+"m": 1,
+"ut": 2
+},
+"Nidalee": {
+"name": "니달리",
+"tags": "AM",
+"pos": [
+"T",
+"J"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 2,
+"groups": [
+"pick",
+"poke"
+]
+},
+"Neeko": {
+"name": "니코",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight",
+"pick"
+]
+},
+"Nilah": {
+"name": "닐라",
+"tags": "FA",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 2
+},
+"Darius": {
+"name": "다리우스",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 1
+},
+"Diana": {
+"name": "다이애나",
+"tags": "FA",
+"pos": [
+"J",
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Draven": {
+"name": "드레이븐",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 1
+},
+"Ryze": {
+"name": "라이즈",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 2
+},
+"Rakan": {
+"name": "라칸",
+"tags": "S",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 2,
+"c": 3,
+"m": 3,
+"ut": 3,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Rammus": {
+"name": "람머스",
+"tags": "T",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 1
+},
+"Lux": {
+"name": "럭스",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 2,
+"groups": [
+"poke"
+]
+},
+"Rumble": {
+"name": "럼블",
+"tags": "FM",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Renata": {
+"name": "레나타 글라스크",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight",
+"protect"
+]
+},
+"Renekton": {
+"name": "레넥톤",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Leona": {
+"name": "레오나",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"RekSai": {
+"name": "렉사이",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 2
+},
+"Rell": {
+"name": "렐",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 2,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Rengar": {
+"name": "렝가",
+"tags": "AF",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Locke": {
+"name": "로크",
+"tags": "AM",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Lucian": {
+"name": "루시안",
+"tags": "KA",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 1
+},
+"Lulu": {
+"name": "룰루",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Leblanc": {
+"name": "르블랑",
+"tags": "AM",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"pick"
+]
+},
+"LeeSin": {
+"name": "리 신",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Riven": {
+"name": "리븐",
+"tags": "FA",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Lissandra": {
+"name": "리산드라",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 2,
+"ut": 1,
+"groups": [
+"teamfight",
+"pick"
+]
+},
+"Lillia": {
+"name": "릴리아",
+"tags": "FM",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 2
+},
+"MasterYi": {
+"name": "마스터 이",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 1
+},
+"Maokai": {
+"name": "마오카이",
+"tags": "TS",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight"
+]
+},
+"Malzahar": {
+"name": "말자하",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2
+},
+"Malphite": {
+"name": "말파이트",
+"tags": "TM",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Mel": {
+"name": "멜",
+"tags": "MS",
+"pos": [
+"M",
+"A"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Mordekaiser": {
+"name": "모데카이저",
+"tags": "FM",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 1,
+"ut": 2
+},
+"Morgana": {
+"name": "모르가나",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2
+},
+"DrMundo": {
+"name": "문도 박사",
+"tags": "TF",
+"pos": [
+"J",
+"T"
+],
+"dmg": "X",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 1,
+"m": 1,
+"ut": 1
+},
+"MissFortune": {
+"name": "미스 포츈",
+"tags": "KM",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Milio": {
+"name": "밀리오",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Bard": {
+"name": "바드",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 3,
+"m": 2,
+"ut": 3,
+"groups": [
+"teamfight",
+"pick"
+]
+},
+"Varus": {
+"name": "바루스",
+"tags": "KM",
+"pos": [
+"A",
+"T"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"pick",
+"poke"
+]
+},
+"Vi": {
+"name": "바이",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 3,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Veigar": {
+"name": "베이가",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 1
+},
+"Vayne": {
+"name": "베인",
+"tags": "KA",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Vex": {
+"name": "벡스",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Belveth": {
+"name": "벨베스",
+"tags": "F",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1
+},
+"Velkoz": {
+"name": "벨코즈",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Volibear": {
+"name": "볼리베어",
+"tags": "FT",
+"pos": [
+"J",
+"T"
+],
+"dmg": "X",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Braum": {
+"name": "브라움",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 2,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"protect"
+]
+},
+"Briar": {
+"name": "브라이어",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 3,
+"m": 3,
+"ut": 1
+},
+"Brand": {
+"name": "브랜드",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1
+},
+"Vladimir": {
+"name": "블라디미르",
+"tags": "MF",
+"pos": [
+"M",
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 1,
+"ut": 1
+},
+"Blitzcrank": {
+"name": "블리츠크랭크",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 2,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"pick"
+]
+},
+"Viego": {
+"name": "비에고",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Viktor": {
+"name": "빅토르",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Poppy": {
+"name": "뽀삐",
+"tags": "TF",
+"pos": [
+"S",
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Samira": {
+"name": "사미라",
+"tags": "KA",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1
+},
+"Sion": {
+"name": "사이온",
+"tags": "TF",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Sylas": {
+"name": "사일러스",
+"tags": "MA",
+"pos": [
+"M",
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Shaco": {
+"name": "샤코",
+"tags": "A",
+"pos": [
+"J"
+],
+"dmg": "X",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 2
+},
+"Senna": {
+"name": "세나",
+"tags": "SK",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Seraphine": {
+"name": "세라핀",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight",
+"poke"
+]
+},
+"Sejuani": {
+"name": "세주아니",
+"tags": "T",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 3,
+"m": 2,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Sett": {
+"name": "세트",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Sona": {
+"name": "소나",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 2,
+"groups": [
+"protect"
+]
+},
+"Soraka": {
+"name": "소라카",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Shen": {
+"name": "쉔",
+"tags": "T",
+"pos": [
+"S",
+"T"
+],
+"dmg": "X",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 2,
+"ut": 3,
+"groups": [
+"split",
+"protect"
+]
+},
+"Shyvana": {
+"name": "쉬바나",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "X",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 1,
+"m": 2,
+"ut": 1
+},
+"Smolder": {
+"name": "스몰더",
+"tags": "KM",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 1
+},
+"Swain": {
+"name": "스웨인",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 1
+},
+"Skarner": {
+"name": "스카너",
+"tags": "TF",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Sivir": {
+"name": "시비르",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 2,
+"groups": [
+"poke"
+]
+},
+"XinZhao": {
+"name": "신 짜오",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Syndra": {
+"name": "신드라",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"pick",
+"poke"
+]
+},
+"Singed": {
+"name": "신지드",
+"tags": "TM",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Thresh": {
+"name": "쓰레쉬",
+"tags": "ST",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 2,
+"c": 3,
+"m": 1,
+"ut": 3,
+"groups": [
+"pick"
+]
+},
+"Ahri": {
+"name": "아리",
+"tags": "MA",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"pick"
+]
+},
+"Amumu": {
+"name": "아무무",
+"tags": "TS",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"AurelionSol": {
+"name": "아우렐리온 솔",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Ivern": {
+"name": "아이번",
+"tags": "SM",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 3,
+"m": 2,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Azir": {
+"name": "아지르",
+"tags": "MK",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Akali": {
+"name": "아칼리",
+"tags": "A",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Akshan": {
+"name": "아크샨",
+"tags": "KA",
+"pos": [
+"M"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 2
+},
+"Aatrox": {
+"name": "아트록스",
+"tags": "F",
+"pos": [
+"T",
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 3,
+"c": 2,
+"m": 2,
+"ut": 2,
+"groups": [
+"split"
+]
+},
+"Aphelios": {
+"name": "아펠리오스",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Alistar": {
+"name": "알리스타",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"dive"
+]
+},
+"Ambessa": {
+"name": "암베사",
+"tags": "FA",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive",
+"split"
+]
+},
+"Annie": {
+"name": "애니",
+"tags": "MS",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight"
+]
+},
+"Anivia": {
+"name": "애니비아",
+"tags": "M",
+"pos": [
+"M",
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight"
+]
+},
+"Ashe": {
+"name": "애쉬",
+"tags": "KS",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight",
+"pick"
+]
+},
+"Yasuo": {
+"name": "야스오",
+"tags": "FA",
+"pos": [
+"M",
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 2
+},
+"Ekko": {
+"name": "에코",
+"tags": "AM",
+"pos": [
+"J",
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 3,
+"ut": 1
+},
+"Elise": {
+"name": "엘리스",
+"tags": "AM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"MonkeyKing": {
+"name": "오공",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Aurora": {
+"name": "오로라",
+"tags": "MA",
+"pos": [
+"M",
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Ornn": {
+"name": "오른",
+"tags": "T",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 3,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight"
+]
+},
+"Orianna": {
+"name": "오리아나",
+"tags": "MS",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 2,
+"groups": [
+"teamfight"
+]
+},
+"Olaf": {
+"name": "올라프",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Yone": {
+"name": "요네",
+"tags": "FA",
+"pos": [
+"M"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Yorick": {
+"name": "요릭",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 2,
+"groups": [
+"split"
+]
+},
+"Udyr": {
+"name": "우디르",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "X",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Urgot": {
+"name": "우르곳",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": true,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 1
+},
+"Warwick": {
+"name": "워윅",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "X",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 1
+},
+"Yunara": {
+"name": "유나라",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 0,
+"groups": [
+"teamfight"
+]
+},
+"Yuumi": {
+"name": "유미",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Irelia": {
+"name": "이렐리아",
+"tags": "FA",
+"pos": [
+"T",
+"M"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 3,
+"ut": 2,
+"groups": [
+"dive",
+"split"
+]
+},
+"Evelynn": {
+"name": "이블린",
+"tags": "AM",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 1,
+"m": 2,
+"ut": 2
+},
+"Ezreal": {
+"name": "이즈리얼",
+"tags": "KM",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Illaoi": {
+"name": "일라오이",
+"tags": "FT",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 1,
+"ut": 1
+},
+"JarvanIV": {
+"name": "자르반 4세",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 2,
+"groups": [
+"dive"
+]
+},
+"Xayah": {
+"name": "자야",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 2,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Zyra": {
+"name": "자이라",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 1
+},
+"Zac": {
+"name": "자크",
+"tags": "TF",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 1
+},
+"Zaahen": {
+"name": "자헨",
+"tags": "F",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Janna": {
+"name": "잔나",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 1,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Jax": {
+"name": "잭스",
+"tags": "F",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Zed": {
+"name": "제드",
+"tags": "A",
+"pos": [
+"M",
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 1
+},
+"Xerath": {
+"name": "제라스",
+"tags": "MS",
+"pos": [
+"M",
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Zeri": {
+"name": "제리",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 0
+},
+"Jayce": {
+"name": "제이스",
+"tags": "FK",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 2,
+"groups": [
+"poke"
+]
+},
+"Zoe": {
+"name": "조이",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"pick",
+"poke"
+]
+},
+"Ziggs": {
+"name": "직스",
+"tags": "M",
+"pos": [
+"A"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Jhin": {
+"name": "진",
+"tags": "KM",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Zilean": {
+"name": "질리언",
+"tags": "SM",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Jinx": {
+"name": "징크스",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Chogath": {
+"name": "초가스",
+"tags": "TM",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 1,
+"ut": 1
+},
+"Karma": {
+"name": "카르마",
+"tags": "MS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": true,
+"d": 2,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 2,
+"groups": [
+"poke",
+"protect"
+]
+},
+"Camille": {
+"name": "카밀",
+"tags": "FA",
+"pos": [
+"S",
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive",
+"split"
+]
+},
+"Kassadin": {
+"name": "카사딘",
+"tags": "AM",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1
+},
+"Karthus": {
+"name": "카서스",
+"tags": "M",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 2
+},
+"Cassiopeia": {
+"name": "카시오페아",
+"tags": "M",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Kaisa": {
+"name": "카이사",
+"tags": "KM",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 0,
+"m": 3,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Khazix": {
+"name": "카직스",
+"tags": "A",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 1
+},
+"Katarina": {
+"name": "카타리나",
+"tags": "AM",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 1
+},
+"Kalista": {
+"name": "칼리스타",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 2
+},
+"Kennen": {
+"name": "케넨",
+"tags": "M",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 1,
+"groups": [
+"teamfight"
+]
+},
+"Caitlyn": {
+"name": "케이틀린",
+"tags": "K",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Kayn": {
+"name": "케인",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 3,
+"ut": 1
+},
+"Kayle": {
+"name": "케일",
+"tags": "KM",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 3
+},
+"KogMaw": {
+"name": "코그모",
+"tags": "KM",
+"pos": [
+"A",
+"M"
+],
+"dmg": "X",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 1,
+"ut": 1
+},
+"Corki": {
+"name": "코르키",
+"tags": "KM",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 1,
+"groups": [
+"poke"
+]
+},
+"Quinn": {
+"name": "퀸",
+"tags": "KA",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"KSante": {
+"name": "크산테",
+"tags": "TF",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 3,
+"m": 2,
+"ut": 2,
+"groups": [
+"teamfight"
+]
+},
+"Kled": {
+"name": "클레드",
+"tags": "F",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 3,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"Qiyana": {
+"name": "키아나",
+"tags": "A",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Kindred": {
+"name": "킨드레드",
+"tags": "K",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 2
+},
+"Taric": {
+"name": "타릭",
+"tags": "ST",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 1,
+"u": 2,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Talon": {
+"name": "탈론",
+"tags": "A",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 1
+},
+"Taliyah": {
+"name": "탈리야",
+"tags": "MS",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"teamfight",
+"poke"
+]
+},
+"TahmKench": {
+"name": "탐 켄치",
+"tags": "TS",
+"pos": [
+"S"
+],
+"dmg": "M",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 2,
+"m": 1,
+"ut": 3,
+"groups": [
+"protect"
+]
+},
+"Trundle": {
+"name": "트런들",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 3,
+"c": 1,
+"m": 1,
+"ut": 2,
+"groups": [
+"dive",
+"split"
+]
+},
+"Tristana": {
+"name": "트리스타나",
+"tags": "KA",
+"pos": [
+"A",
+"T",
+"M"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 1
+},
+"Tryndamere": {
+"name": "트린다미어",
+"tags": "FA",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 1,
+"m": 2,
+"ut": 1,
+"groups": [
+"split"
+]
+},
+"TwistedFate": {
+"name": "트위스티드 페이트",
+"tags": "MK",
+"pos": [
+"M",
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 2,
+"ut": 2,
+"groups": [
+"pick",
+"split"
+]
+},
+"Twitch": {
+"name": "트위치",
+"tags": "KA",
+"pos": [
+"A"
+],
+"dmg": "P",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 1,
+"m": 2,
+"ut": 1
+},
+"Teemo": {
+"name": "티모",
+"tags": "KM",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 2
+},
+"Pyke": {
+"name": "파이크",
+"tags": "SA",
+"pos": [
+"S"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 1,
+"c": 3,
+"m": 3,
+"ut": 1,
+"groups": [
+"pick"
+]
+},
+"Pantheon": {
+"name": "판테온",
+"tags": "FA",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive",
+"pick"
+]
+},
+"Fiddlesticks": {
+"name": "피들스틱",
+"tags": "MS",
+"pos": [
+"J"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 1
+},
+"Fiora": {
+"name": "피오라",
+"tags": "FA",
+"pos": [
+"T"
+],
+"dmg": "P",
+"ranged": false,
+"d": 3,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 2,
+"groups": [
+"split"
+]
+},
+"Fizz": {
+"name": "피즈",
+"tags": "AF",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": false,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 3,
+"ut": 1
+},
+"Heimerdinger": {
+"name": "하이머딩거",
+"tags": "MS",
+"pos": [
+"T"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 2,
+"m": 1,
+"ut": 2
+},
+"Hecarim": {
+"name": "헤카림",
+"tags": "FT",
+"pos": [
+"J"
+],
+"dmg": "P",
+"ranged": false,
+"d": 2,
+"u": 2,
+"c": 2,
+"m": 2,
+"ut": 1,
+"groups": [
+"dive"
+]
+},
+"Hwei": {
+"name": "흐웨이",
+"tags": "MS",
+"pos": [
+"M"
+],
+"dmg": "M",
+"ranged": true,
+"d": 3,
+"u": 1,
+"c": 3,
+"m": 1,
+"ut": 2,
+"groups": [
+"poke"
+]
+}
+}
