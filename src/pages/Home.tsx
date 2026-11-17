@@ -52,8 +52,19 @@ export default function Home() {
           {["awards", "tryout", "expiry", "stove"].includes(s.story.phase) && <p><a className="btn primary" href="#/stove" data-testid="goto-stove">스토브리그 본편으로</a></p>}
         </Card>
       )}
+      {s.story && !s.story.ended && (s.story.financeWarn || s.eco.cash < 0) && (
+        <Card title="구단주 경고" className="span2">
+          <div data-testid="finance-warning">
+            <p className="big">{s.eco.cash < 0 ? "적자 운영" : "잔고 부족"} — 잔고 {fmtMoney(s.eco.cash)}</p>
+            <p>{s.eco.cash < 0
+              ? "적자가 한도를 넘거나 이어지면 강제 매각 또는 구단주 해임·파산으로 스토리가 끝납니다."
+              : "자금이 빠듯합니다. 적자가 누적되면 강제 매각이나 해임 위험이 있습니다."}</p>
+          </div>
+        </Card>
+      )}
       {s.story?.phase === "franchise" && (
         <Card title="2021 프랜차이즈 전환" className="span2">
+          <div data-testid="franchise-screen">
           {s.story.tier === "LCK"
             ? <><p>2020 시즌을 LCK에서 마쳤습니다. 프랜차이즈 슬롯을 받을 수 있습니다. 이후 승강전은 없습니다.</p>
                 <button className="btn primary" data-testid="franchise-yes" onClick={() => acceptFranchise(true)}>슬롯 확정</button></>
@@ -62,6 +73,7 @@ export default function Home() {
                   <button className="btn primary" data-testid="franchise-yes" onClick={() => { const e = acceptFranchise(true); if (e) alert(e); }}>매수 수락</button>
                   <button className="btn" data-testid="franchise-no" onClick={() => acceptFranchise(false)}>2부에 남는다</button>
                 </div></>}
+          </div>
         </Card>
       )}
       {s.story?.ended === "clear" && (
@@ -77,6 +89,14 @@ export default function Home() {
           <div data-testid="fail-screen">
             <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>
             <p>LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회. {s.story.tier === "CK" && !s.story.franchised ? "2부에서 프랜차이즈 슬롯을 받지 못해 월즈에 나가지 못했습니다." : ""}</p>
+          </div>
+        </Card>
+      )}
+      {s.story?.ended === "bankrupt" && (
+        <Card title="구단주 해임" className="span2">
+          <div data-testid="bankrupt-screen">
+            <p className="big">파산 — 누적 적자로 구단 운영이 중단되었습니다.</p>
+            <p>잔고 {fmtMoney(s.eco.cash)}. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회.</p>
           </div>
         </Card>
       )}
@@ -123,7 +143,7 @@ export default function Home() {
           <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th><th className="r">폼</th></tr></thead>
           <tbody>{s.starters[s.team].map((k, i) => {
             const f = formVal(s, k);
-            return <tr key={k}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r"><Pct v={PL[k].pct.ovr} /></td><td className="r">{s.form[k]?.length ? <span className={f > 0.15 ? "up" : f < -0.15 ? "down" : ""}>{f > 0.15 ? "▲" : f < -0.15 ? "▼" : "–"} {(s.form[k].reduce((a, b) => a + b, 0) / s.form[k].length).toFixed(1)}</span> : <span className="muted">–</span>}</td></tr>;
+            return <tr key={k}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r">{PL[k] ? <Pct v={PL[k].pct.ovr} /> : "–"}</td><td className="r">{s.form[k]?.length ? <span className={f > 0.15 ? "up" : f < -0.15 ? "down" : ""}>{f > 0.15 ? "▲" : f < -0.15 ? "▼" : "–"} {(s.form[k].reduce((a, b) => a + b, 0) / s.form[k].length).toFixed(1)}</span> : <span className="muted">–</span>}</td></tr>;
           })}</tbody>
         </table>
         <p className="muted sm">폼은 이번 커리어 최근 3경기 평점 평균입니다(게임 안 기록).</p>

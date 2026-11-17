@@ -37,6 +37,16 @@ function openingRoster(best: boolean, cap: number): string[] {
   return picks;
 }
 
+function weakRoster(): string[] {
+  const used = new Set<string>();
+  const picks: string[] = [];
+  for (let pos = 0; pos < 5; pos++) {
+    const c = marketCards(2018).filter((x) => x.posIdx === pos && !used.has(x.pkey)).sort((a, b) => a.percentile - b.percentile || storySalary(a, "CK") - storySalary(b, "CK"))[0];
+    used.add(c.pkey); picks.push(c.id);
+  }
+  return picks;
+}
+
 export function installQaHook(): void {
   if (typeof window === "undefined") return;
   const q = window.location.search + window.location.hash;
@@ -53,9 +63,9 @@ export function installQaHook(): void {
     franchise: (ok: boolean) => { let e: string | null = null; mutate((s) => { e = resolveFranchise(s, ok); }); return e; },
     stepYear: (opts: { acceptBuyIn?: boolean; signStars?: boolean; reserveCash?: number } = {}) =>
       mutate((s, rng) => { if (s.story) stepYear(s, rng, opts); }),
-    startStory: (opts: { seed: number; difficulty?: StoryDiff; best?: boolean }) => {
+    startStory: (opts: { seed: number; difficulty?: StoryDiff; best?: boolean; weak?: boolean }) => {
       const difficulty = opts.difficulty ?? "easy";
-      const picks = openingRoster(!!opts.best, STORY_BUDGETS[difficulty]);
+      const picks = opts.weak ? weakRoster() : openingRoster(!!opts.best, STORY_BUDGETS[difficulty]);
       const s = newStoryCareer("SGU", "김감독", 1, opts.seed, {
         club: { name: "신구 이글스", short: "SGU", color: "#2DD4BF" },
         managerInfo: { name: "김감독", birth: "1988-03-15", nation: "한국", career: "amateur" },

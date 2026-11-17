@@ -99,7 +99,7 @@ def main() -> None:
         "minGames": 8,
         "eligibleMinGames": 10,
         "formula": "round(3 + 47 * (p/100)^2.5)",
-        "salaryNote": "게임용 가상 금액(억 원). 실제 LCK 계약과 무관합니다.",
+        "salaryNote": "게임용 가상 금액입니다. 1억 미만은 만원으로 표시합니다(예: 3,500만). 실제 LCK 계약과 무관합니다.",
         "sources": [
             "Oracle's Elixir (Tim Sevenhuysen)",
             "Leaguepedia/LoL Esports Wiki Cargo",

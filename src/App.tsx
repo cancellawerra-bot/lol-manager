@@ -48,7 +48,7 @@ export default function App() {
   const hash = useHash();
   const save = useSave();
   useEffect(() => {
-    loadCore().then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market|stove)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
+    loadCore().then(() => loadRanked()).then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market|stove)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
   }, []);
   useEffect(() => { if (save) loadRanked(); }, [save]);
   useEffect(() => { setMenu(false); setNote(""); }, [hash]);

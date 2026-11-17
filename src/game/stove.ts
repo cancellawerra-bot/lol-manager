@@ -7,7 +7,8 @@ import { addNews, standings } from "./season";
 import {
   cardForYear, debutYear, ensurePlayer, marketCards, storySalary,
   teamPower, finishStove as rollYear, registerOffseason, currentLeague,
-  resolveFranchise, pumpStory, CK_OPS, fmtMoney,
+  resolveFranchise, pumpStory, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR, LCK_PAYROLL_SOFT,
+  fmtMoney, lckPrizeOf, scaleLckIncome, ensureStartingFive,
   type Contract, type Tier,
 } from "./story";
 import { moneyRound } from "./money";
@@ -203,19 +204,22 @@ function faPool(s: Save, stove: StoveState): string[] {
   return [...best.values()].sort((a, b) => b.percentile - a.percentile).map((c) => c.id);
 }
 
-function payIncome(s: Save): void {
+export function payIncome(s: Save): void {
   const st = s.story!;
+  if (st.tier === "LCK") scaleLckIncome(s);
   const rows = standings(s);
-  const rank = rows.findIndex((r) => r.t === s.team) + 1;
+  const fromTable = rows.findIndex((r) => r.t === s.team) + 1;
+  const rank = st.lastRank || fromTable;
   const prize = st.tier === "LCK"
-    ? Math.max(1, 9 - Math.min(rank || 9, 8))
+    ? lckPrizeOf(rank)
     : ([0.7, 0.45, 0.3, 0.15][Math.min(Math.max((rank || 4) - 1, 0), 3)]);
-  const share = st.franchised && st.tier === "LCK" ? 8 : 0;
-  const sp = s.eco.sponsor?.amount ?? (st.tier === "LCK" ? 4 : 0.5);
-  const ops = st.tier === "CK" ? CK_OPS : 0;
+  const share = st.tier === "LCK" ? (st.franchised ? LCK_SHARE : LCK_SHARE_PRE) : 0;
+  const sp = s.eco.sponsor?.amount ?? (st.tier === "LCK" ? LCK_SPONSOR : 0.5);
+  const ops = st.tier === "CK" ? CK_OPS : LCK_OPS;
   s.eco.cash = moneyRound(s.eco.cash + prize + share + sp - ops);
-  const opsTxt = ops ? `, 운영비 −${fmtMoney(ops)}` : "";
-  addNews(s, "season", `${st.year} 시즌 수입`, `성적 ${fmtMoney(prize)}, 스폰서 ${fmtMoney(sp)}${share ? `, 프랜차이즈 배분 ${fmtMoney(share)}` : ""}${opsTxt}. 잔고 ${fmtMoney(s.eco.cash)}(게임용 가상 금액).`, s.team);
+  const opsTxt = `, 운영비 −${fmtMoney(ops)}`;
+  addNews(s, "season", `${st.year} 시즌 수입`,
+    `성적 ${fmtMoney(prize)}(${rank || "?"}위), 스폰서 ${fmtMoney(sp)}${share ? `, ${st.franchised ? "프랜차이즈" : "LCK 중계"} 배분 ${fmtMoney(share)}` : ""}${opsTxt}. 잔고 ${fmtMoney(s.eco.cash)}(게임용 가상 금액).`, s.team);
 }
 
 export function beginOffseason(s: Save): void {
@@ -603,15 +607,17 @@ function aiFillHoles(s: Save, rng: Rng): void {
   const stove = s.story!.stove!;
   const year = Math.min(s.story!.year + 1, 2026);
   for (const t of allTeams(s)) {
-    if (t === s.team) continue;
     const cur = [...(s.starters[t] ?? ["", "", "", "", ""])];
     while (cur.length < 5) cur.push("");
     for (let pos = 0; pos < 5; pos++) {
       if (cur[pos]) continue;
-      const id = stove.faPool.map((x) => CARDS[x]).find((c) => c && c.posIdx === pos);
+      const cands = stove.faPool.map((x) => CARDS[x]).filter((c) => c && c.posIdx === pos).sort((a, b) => storySalary(a, s.story!.lck.includes(t) ? "LCK" : "CK") - storySalary(b, s.story!.lck.includes(t) ? "LCK" : "CK"));
+      const id = t === s.team ? cands[0] : cands[Math.floor(rng.next() * Math.min(3, cands.length)) ] ?? cands[0];
       if (!id) continue;
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
-      const bid: Bid = { team: t, person: id.pkey, cardId: id.id, salary: contractAsk(id, tier), years: 2, starter: true, bonuses: {}, kind: "fa" };
+      const ask = contractAsk(id, tier);
+      if (t === s.team && s.eco.cash < ask) continue;
+      const bid: Bid = { team: t, person: id.pkey, cardId: id.id, salary: ask, years: 2, starter: true, bonuses: {}, kind: "fa" };
       signToTeam(s, t, bid, rng);
     }
   }
@@ -622,6 +628,8 @@ export function finishOffseason(s: Save, rng: Rng): void {
   const st = s.story!;
   const stove = st.stove;
   if (stove && !stove.closed && stove.week < stove.maxWeek) return;
+  aiFillHoles(s, rng);
+  ensureStartingFive(s);
   rollYear(s, rng);
   st.stove = undefined;
 }
@@ -638,7 +646,8 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
   if (st.phase === "expiry") {
     for (const k of st.stove.expiryKeys) {
       if (!st.stove.expiryDecided[k]) {
-        const err = decideExpiry(s, k, "resign");
+        const weak = (PL[k]?.pct.ovr ?? 50) < 45;
+        const err = decideExpiry(s, k, weak ? "release" : "resign");
         if (err) decideExpiry(s, k, "release");
       }
     }
@@ -653,27 +662,59 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
   if (st.stove?.closed) finishOffseason(s, rng);
 }
 
+function minFaCost(s: Save, pos: number): number {
+  const st = s.story!; const stove = st.stove!;
+  const cheap = stove.faPool.map((id) => CARDS[id]).filter((c) => c && c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier))[0];
+  if (cheap) return storySalary(cheap, st.tier);
+  return st.tier === "LCK" ? 3 : 0.2;
+}
+
+function holeReserve(s: Save, exceptPos?: number): number {
+  const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i] && i !== exceptPos);
+  return holes.reduce((n, pos) => n + minFaCost(s, pos), 0);
+}
+
 function legalStarBids(s: Save, reserve = 0): void {
   const st = s.story!; const stove = st.stove!;
+  const cards = stove.faPool.map((id) => CARDS[id]).filter(Boolean);
+  const bidFor = (c: typeof cards[0], asHole: boolean): boolean => {
+    const cur = s.starters[s.team]?.[c.posIdx];
+    const ask = contractAsk(c, st.tier);
+    const keep = reserve + holeReserve(s, asHole ? c.posIdx : undefined);
+    const room = s.eco.cash - keep;
+    if (room < ask * 0.85) return false;
+    const offer = moneyRound(Math.min(room, ask * (prestige(s, s.team) < 60 ? 1.45 : 1.12)));
+    const pendingOurs = stove.pendingBids.filter((b) => b.team === s.team).reduce((n, b) => n + b.salary, 0);
+    const payroll = st.contracts.reduce((n, x) => n + x.salary, 0) + pendingOurs;
+    const oldPay = (cur && st.contracts.find((x) => x.key === cur)?.salary) || 0;
+    const cap = st.tier === "LCK" ? LCK_PAYROLL_SOFT : 2.8;
+    if (payroll - oldPay + offer > cap) {
+      if (!asHole) return false;
+      // 구멍이라도 스타 연봉으로 총액을 넘기면 다음 해 강제 매각으로 로스터가 무너집니다.
+      if (offer > (st.tier === "LCK" ? 18 : 0.6)) return false;
+    }
+    return !placeFaBid(s, { team: s.team, person: c.pkey, cardId: c.id, salary: offer, years: 2, starter: true, bonuses: {}, kind: "fa" });
+  };
+  // 1) 주전 구멍부터 저렴한 카드로
   const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i]);
-  const payroll = st.contracts.reduce((n, c) => n + c.salary, 0);
-  const cards = stove.faPool.map((id) => CARDS[id]).filter(Boolean).sort((a, b) => b.percentile - a.percentile);
-  const takenPos = new Set<number>();
-  for (const c of cards) {
+  for (const pos of holes) {
+    const opts = cards.filter((c) => c.posIdx === pos).sort((a, b) => a.percentile - b.percentile ? storySalary(a, st.tier) - storySalary(b, st.tier) : b.percentile - a.percentile);
+    // prefer reasonable floor (not the absolute weakest if we can afford a mid card)
+    const mid = opts.filter((c) => c.percentile >= 45);
+    const pool = (mid.length ? mid : opts).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile);
+    for (const c of pool) { if (bidFor(c, true)) break; }
+  }
+  // 2) 여유 자금으로 업그레이드 (포지션당 최대 1)
+  const taken = new Set<number>();
+  const upgrades = cards.slice().sort((a, b) => b.percentile - a.percentile);
+  for (const c of upgrades) {
+    if (taken.has(c.posIdx)) continue;
     const cur = s.starters[s.team]?.[c.posIdx];
     const curOvr = cur && PL[cur]?.pct?.ovr != null ? PL[cur].pct.ovr : 0;
-    const upgrade = c.percentile >= curOvr + 8 || holes.includes(c.posIdx);
-    if (!upgrade) continue;
-    const ask = contractAsk(c, st.tier);
-    const room = s.eco.cash - reserve;
-    if (room < ask * 0.85) continue;
-    const offer = moneyRound(Math.min(room, ask * (prestige(s, s.team) < 60 ? 1.45 : 1.12)));
-    const oldPay = (cur && st.contracts.find((x) => x.key === cur)?.salary) || 0;
-    if (st.tier === "LCK" && payroll - oldPay + offer > 36 && !holes.includes(c.posIdx)) continue;
-    if (st.tier === "CK" && payroll - oldPay + offer > 2.8 && !holes.includes(c.posIdx)) continue;
-    if (placeFaBid(s, { team: s.team, person: c.pkey, cardId: c.id, salary: offer, years: 2, starter: true, bonuses: {}, kind: "fa" })) continue;
-    takenPos.add(c.posIdx);
-    if (takenPos.size >= (holes.length || 2)) break;
+    if (!(c.percentile >= curOvr + 8 || curOvr < 50)) continue;
+    if (!bidFor(c, false)) continue;
+    taken.add(c.posIdx);
+    if (taken.size >= 5) break;
   }
 }
 
@@ -687,7 +728,7 @@ export function allExpiryDecided(s: Save): boolean {
 export function stepYear(s: Save, rng: Rng, opts: { acceptBuyIn?: boolean; signStars?: boolean; reserveCash?: number } = {}): void {
   const st = s.story;
   if (!st || st.ended) return;
-  if (!["awards", "tryout", "expiry", "stove", "franchise", "clear", "fail"].includes(st.phase)) {
+  if (!["awards", "tryout", "expiry", "stove", "franchise", "clear", "fail", "bankrupt"].includes(st.phase)) {
     pumpStory(s, rng);
   }
   if (st.ended) return;

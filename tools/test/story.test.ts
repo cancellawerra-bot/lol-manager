@@ -1,8 +1,9 @@
 import { readFileSync } from "fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
-import { loadCore, loadRanked, CARDS, TM } from "../../src/data";
-import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN } from "../../src/game/story";
-import { autoAdvanceOffseason, stepYear } from "../../src/game/stove";
+import { loadCore, loadRanked, CARDS, TM, PL } from "../../src/data";
+import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf } from "../../src/game/story";
+import { autoAdvanceOffseason, stepYear, payIncome } from "../../src/game/stove";
+import { PL } from "../../src/data";
 import { Rng } from "../../src/game/rng";
 import type { Save } from "../../src/game/season";
 
@@ -60,6 +61,17 @@ function careerBest(seed: number, difficulty: "easy" | "normal" = "easy") {
   });
 }
 
+function weakRoster(year: number): string[] {
+  const used = new Set<string>();
+  const picks: string[] = [];
+  for (let pos = 0; pos < 5; pos++) {
+    const c = marketCards(year).filter((x) => x.posIdx === pos && !used.has(x.pkey)).sort((a, b) => a.percentile - b.percentile || storySalary(a, "CK") - storySalary(b, "CK"))[0];
+    if (!c) throw new Error("no card pos " + pos);
+    used.add(c.pkey); picks.push(c.id);
+  }
+  return picks;
+}
+
 function career(seed: number, difficulty: "easy" | "normal" = "easy"): Save {
   const cheap = cheapRoster(2018, STORY_BUDGETS[difficulty]);
   return newStoryCareer("SGU", "김감독", 1, seed, {
@@ -82,6 +94,24 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
 (async () => {
   await loadCore(); await loadRanked();
 
+  // 실패 경로: 약한 로스터로 2부 잔류, 매수 거절 → 2027 미클리어
+  const weak = weakRoster(2018);
+  const sf = newStoryCareer("SGU", "김감독", 1, 42, {
+    club: { name: "신구 이글스", short: "SGU", color: "#2DD4BF" },
+    managerInfo: { name: "김감독", birth: "1988-01-01", nation: "한국", career: "amateur" },
+    cards: weak, starters: weak, difficulty: "easy",
+  });
+  const rf = new Rng(sf.rng);
+  while (!sf.story!.ended && sf.story!.year <= 2027) {
+    const y = sf.story!.year;
+    stepYear(sf, rf, { acceptBuyIn: false, signStars: false, reserveCash: FRANCHISE_BUYIN.easy });
+    if (sf.story!.year === y && !sf.story!.ended) throw new Error("year did not advance from " + y + " phase=" + sf.story!.phase);
+  }
+  if (sf.story!.ended !== "fail") throw new Error("expected fail ending, got " + sf.story!.ended);
+  if (sf.story!.franchised) throw new Error("fail path should not be franchised");
+  console.log("OK fail path", { year: sf.story!.year, tier: sf.story!.tier, trophies: sf.story!.trophies });
+
+
   // 2부 연봉이 1억으로 평탄화되지 않음
   const ckPrices = marketCards(2018).map((c) => storySalary(c, "CK"));
   const uniq = new Set(ckPrices.map((n) => n.toFixed(2)));
@@ -95,6 +125,49 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
   // LCK formula unchanged
   const lck = marketCards(2018)[0];
   if (storySalary(lck, "LCK") !== lck.salary) throw new Error("LCK salary mutated");
+
+  // 2027는 2026 공식 카드를 감쇠 없이 사용
+  const official = Object.values(CARDS).find((c) => c.year === 2026 && c.percentile >= 80);
+  if (!official) throw new Error("no 2026 card");
+  const r27 = cardForYear(official.pkey, 2027, official.posIdx);
+  if (!r27 || r27.estimated) throw new Error("2026 official card should not be estimated in 2027");
+  if (r27.card.year !== 2026) throw new Error("expected 2026 card in 2027");
+  const k27 = ensurePlayer(r27.card, 2027, r27.estimated);
+  if (Math.abs((PL[k27].pct.ovr ?? 0) - official.percentile) > 1) throw new Error("2027 ovr decayed: " + PL[k27].pct.ovr + " vs " + official.percentile);
+  const oldOnly = Object.values(CARDS).find((c) => c.year <= 2018 && !Object.values(CARDS).some((x) => x.pkey === c.pkey && x.year >= 2024));
+  if (oldOnly) {
+    const rOld = cardForYear(oldOnly.pkey, 2027, oldOnly.posIdx);
+    if (!rOld?.estimated) throw new Error("missing-year card should be estimated in 2027");
+  }
+
+  // LCK 수입: 2부 스폰서가 승격 규모로 오르고, 일정 삭제 후에도 lastRank 상금
+  const inc = careerBest(3, "easy");
+  inc.story!.tier = "LCK"; inc.story!.franchised = true; inc.story!.lastRank = 1;
+  inc.eco.sponsor = { name: "2부 스폰서", amount: 0.45, goal: "po", years: 1 };
+  inc.series = []; // 월즈 일정 교체 후에도 lastRank로 상금이 계산되는지
+  const cash0 = inc.eco.cash;
+  payIncome(inc);
+  if ((inc.eco.sponsor?.amount ?? 0) !== LCK_SPONSOR) throw new Error("sponsor not scaled, " + inc.eco.sponsor?.amount);
+  const gained = inc.eco.cash - cash0;
+  const expect = lckPrizeOf(1) + LCK_SHARE + LCK_SPONSOR - LCK_OPS;
+  if (Math.abs(gained - expect) > 0.05) throw new Error("LCK income " + gained + " expected " + expect);
+  console.log("OK LCK income", { gained, expect, sponsor: inc.eco.sponsor?.amount });
+
+  // 적자: 강제 매각으로 폭주 적자를 막고, 한도 이하면 파산
+  const br = career(7, "easy");
+  br.eco.cash = 0;
+  for (const c of br.story!.contracts) { c.salary = 20; c.prepaid = false; c.years = Math.max(c.years, 1); }
+  settlePayrollAndSolvency(br);
+  if (br.eco.cash <= -10) throw new Error("runaway deficit after forced sales: " + br.eco.cash);
+  console.log("OK forced sales", { cash: br.eco.cash, left: br.story!.contracts.length, ended: br.story!.ended, warn: br.story!.financeWarn });
+  const br2 = career(8, "easy");
+  br2.eco.cash = -40;
+  br2.story!.contracts = [];
+  settlePayrollAndSolvency(br2);
+  if (br2.story!.ended !== "bankrupt") throw new Error("expected bankrupt at -40, got " + br2.story!.ended);
+  if (br2.eco.cash > -5) throw new Error("bankrupt path should keep deep cash for the ending");
+  console.log("OK bankrupt", { cash: br2.eco.cash });
+
 
   const hardCheap = cheapRoster(2018, STORY_BUDGETS.hard);
   const hardSpent = hardCheap.reduce((n, id) => n + storySalary(CARDS[id], "CK"), 0);
@@ -128,18 +201,6 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
   stove(s1, r1, false);
   if (s1.story!.year !== 2019 || s1.story!.phase !== "regular") throw new Error("expected 2019 regular, got " + JSON.stringify({ y: s1.story!.year, p: s1.story!.phase }));
   console.log("OK stove rollover", { year: s1.story!.year, cash: s1.eco.cash, contracts: s1.story!.contracts.length });
-
-  // 실패 경로: 매수 거절 → 2027 미클리어
-  const sf = career(42, "easy");
-  const rf = new Rng(sf.rng);
-  while (!sf.story!.ended && sf.story!.year <= 2027) {
-    const y = sf.story!.year;
-    stepYear(sf, rf, { acceptBuyIn: false, signStars: false, reserveCash: FRANCHISE_BUYIN.easy });
-    if (sf.story!.year === y && !sf.story!.ended) throw new Error("year did not advance from " + y + " phase=" + sf.story!.phase);
-  }
-  if (sf.story!.ended !== "fail") throw new Error("expected fail ending, got " + sf.story!.ended);
-  if (sf.story!.franchised) throw new Error("fail path should not be franchised");
-  console.log("OK fail path", { year: sf.story!.year, tier: sf.story!.tier, trophies: sf.story!.trophies });
 
   // 클리어 경로 시도: 매수 수락 + 합법 스타 영입, 여러 시드
   let cleared: { seed: number; trophies: typeof sf.story.trophies; cash: number } | null = null;
