@@ -432,12 +432,13 @@ function aiFaBids(s: Save, rng: Rng): Bid[] {
     const roomPay = Math.max(0, cap - existingPay);
     const budget = aiWeeklyFaBudget(t, roomPay, storyDiff(s));
     let spent = 0;
-    const extra = storyDiff(s) === "hard" ? 2 : storyDiff(s) === "easy" ? 0 : 1;
+    // 보통은 2.3.3과 동일한 인원(2, 구멍 있으면 +1). 쉬움은 1명 적게, 어려움은 1명 많게.
+    const extra = storyDiff(s) === "hard" ? 1 : storyDiff(s) === "easy" ? -1 : 0;
     const want = rng.shuffle(pool).sort((a, b) => {
       const ha = need.includes(a.posIdx) ? -50 : 0;
       const hb = need.includes(b.posIdx) ? -50 : 0;
       return (b.percentile + ha) - (a.percentile + hb) || cmpCard(a, b);
-    }).slice(0, 2 + extra + (holes.length ? 1 : 0));
+    }).slice(0, Math.max(1, 2 + extra + (holes.length ? 1 : 0)));
     for (const c of want) {
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
       const ask = contractAsk(c, tier);

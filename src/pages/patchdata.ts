@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.4.0";
+export const PATCH_VERSION = "2.4.1";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.4.1", date: "2026-11-18",
+    items: [
+      "쉬움 월즈 해외 시드 추정 전력을 한 단계 더 낮춥니다(1시드 70). 보통은 2.3.3과 같고, AI 보통 입찰 인원도 2.3.3과 같게 되돌립니다.",
+    ],
+  },
   {
     v: "2.4.0", date: "2026-11-18",
     items: [
