@@ -36,7 +36,7 @@ export default function PlayerPage({ k }: { k: string }) {
         <div className="pc-attrs">
           {(["lane", "fight", "farm", "vision", "pool"] as const).map((g) => (
             <div key={g} className="attr">
-              <div className="row between"><b>{GROUP_KO[g]}</b><span><Pct v={p.pct[g]} /> <small className="muted">가중치 {Math.round((w[g] ?? 0) * 100)}%</small></span></div>
+              <div className="row between nowrap-row"><b>{GROUP_KO[g]}</b><span><Pct v={p.pct[g]} /> <small className="muted">가중치 {Math.round((w[g] ?? 0) * 100)}%</small></span></div>
               <Bar v={p.pct[g]} />
               <ul>{raw[g].map((x) => <li key={x}>{x}</li>)}</ul>
             </div>

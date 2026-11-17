@@ -341,3 +341,4 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
   .shell.in-match .bnav{display:none}.shell.in-match .content{padding-bottom:24px}
   .res-banner{flex-direction:column;align-items:flex-start;gap:4px}
 }
+.nowrap-row{flex-wrap:nowrap;gap:6px}.nowrap-row>*{white-space:nowrap}
