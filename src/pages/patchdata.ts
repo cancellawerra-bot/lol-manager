@@ -1,5 +1,13 @@
-export const PATCH_VERSION = "2.3.3";
+export const PATCH_VERSION = "2.4.0";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.4.0", date: "2026-11-18",
+    items: [
+      "난이도에 따라 월즈·MSI 해외 시드 추정 전력이 달라집니다. 보통은 2.3.3과 같고(1시드 80), 쉬움은 낮고 어려움은 높습니다.",
+      "AI 구단의 주간 FA 예산도 난이도를 따릅니다. 쉬움은 덜 쓰고, 어려움은 더 씁니다. 보통은 기존과 같습니다.",
+      "쉬움에서는 잔고와 정산 여유만 있으면 종합 60 미만 주전도 자동 감독이 먼저 바꿉니다. 경기 결과는 조작하지 않습니다.",
+    ],
+  },
   {
     v: "2.3.3", date: "2026-11-18",
     items: [

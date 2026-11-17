@@ -29,7 +29,14 @@ export const LCK_PAYROLL_SOFT = 115; // 2021 이후 자동 감독 권고 총액.
 export const LCK_PAYROLL_SOFT_PRE = 70; // 프랜차이즈 전(2020 시즌까지) 권고 총액. 배분 25억대 수입(~67–87억)에 맞춥니다.
 export const RELEASE_OVR = 55; // 만료 시 이 미만이면 재계약하지 않습니다.
 export const REPLACE_OVR = 55; // 자동 감독이 이 미만 주전을 먼저 교체합니다.
+/** 쉬움에서만 잔고가 있으면 종합 60 미만도 교체·만료 방출합니다. 보통·어려움은 55. */
+export const REPLACE_OVR_EASY = 60;
 export const CASH_BANKRUPT = -5; // 이 이하 적자면 해임·파산
+/** 월즈·MSI 해외 시드 추정 종합. 보통은 v2.3.3과 같고, 쉬움은 낮고 어려움은 높습니다. */
+export const INTL_BAND = { s1: 80, s2: 74, s3: 69, rest: 58 } as const;
+export const INTL_BAND_DELTA = { easy: -6, normal: 0, hard: 5 } as const;
+/** AI 구단의 주간 FA 예산 배수. 보통은 기존과 같고, 쉬움은 덜 쓰고 어려움은 더 씁니다. */
+export const AI_FA_BUDGET_MULT = { easy: 0.55, normal: 1, hard: 1.5 } as const;
 
 /** 오프시즌이면 다음 시즌, 시즌 중이면 올해. 연봉 한도와 로스터 연도에 씁니다. */
 export function payrollYear(s: Save): number {
@@ -46,6 +53,17 @@ export function payrollSoftCap(s: Save, tier?: Tier): number {
 /** 이번 정산에서 나갈, 아직 선납하지 않은 기존 연봉. exceptKey는 이번 입찰로 교체할 주전입니다. */
 export function upcomingSalaryDue(contracts: Contract[], exceptKey?: string): number {
   return contracts.filter((c) => !c.prepaid && c.key !== exceptKey).reduce((n, c) => n + c.salary, 0);
+}
+export function storyDiff(s: Save): StoryDiff {
+  return s.eco?.difficulty ?? "normal";
+}
+/** 만료 방출·주전 교체 기준. 쉬움은 잔고가 있을 때 더 적극적으로 바꿉니다. */
+export function replaceOvrOf(s: Save): number {
+  return storyDiff(s) === "easy" ? REPLACE_OVR_EASY : REPLACE_OVR;
+}
+export function intlGhostBand(tag: string, diff: StoryDiff = "normal"): number {
+  const base = /LPL-1/.test(tag) ? INTL_BAND.s1 : /LPL-2|LEC-1/.test(tag) ? INTL_BAND.s2 : /LPL|LEC-2|LCS-1/.test(tag) ? INTL_BAND.s3 : INTL_BAND.rest;
+  return Math.max(40, Math.min(95, base + INTL_BAND_DELTA[diff]));
 }
 export const DECAY_PCT = 15; // 해당 연도 공식 카드가 없을 때만 적용. 데이터 마지막 해(2026) 카드는 2027에도 그대로 씁니다.
 export { fmtMoney };
@@ -750,6 +768,12 @@ export function teamPower(short: string, _year?: number): number {
   const avg = keys.reduce((n, k) => n + (PL[k]?.pct.ovr ?? 40), 0) / keys.length;
   return avg;
 }
+/** AI 구단이 이번 주 FA에 쓸 수 있는 예산. 연봉 한도 잔여(roomPay)를 넘기지 않습니다. */
+export function aiWeeklyFaBudget(team: string, roomPay: number, diff: StoryDiff): number {
+  const base = 8 + teamPower(team) / 10;
+  const adj = base * AI_FA_BUDGET_MULT[diff];
+  return Math.min(adj, roomPay || adj);
+}
 
 function promoMeta(s: Save): PromoState { return JSON.parse(s.story!.note || "{}"); }
 function savePromo(s: Save, p: PromoState): void { s.story!.note = JSON.stringify(p); }
@@ -887,7 +911,7 @@ export function startMSI(s: Save, lckSeeds: string[]): void {
     if (!TM[t]) {
       TM[t] = { id: 810, short: t, name: t, ko: t.includes("-") ? t.replace("-", " ") + "시드" : t, color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
     }
-    if (t.includes("-") && (s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year);
+    if (t.includes("-")) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
   }
   const date = `${st.year}-05-10`;
   const d0 = s.days.length;
@@ -966,7 +990,7 @@ export function startWorlds(s: Save): void {
     if (!TM[t]) {
       TM[t] = { id: 800, short: t, name: t, ko: intlName(t), color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
     }
-    if ((s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year);
+    if (t.includes("-")) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
   }
   const groups: string[][] = [[], [], [], []];
   teams.forEach((t, i) => groups[i % 4].push(t));
@@ -988,24 +1012,28 @@ function intlName(t: string): string {
   const [lg, n] = t.split("-");
   return `${lg} ${n}시드`;
 }
-function ghostLineup(tag: string, _year: number): string[] {
-  // create 5 anonymous PL entries with banded ratings, no padded real stats
-  const band = /LPL-1/.test(tag) ? 80 : /LPL-2|LEC-1/.test(tag) ? 74 : /LPL|LEC-2|LCS-1/.test(tag) ? 69 : 58;
+export function ghostLineup(tag: string, _year: number, diff: StoryDiff = "normal"): string[] {
+  // 난이도별 밴드를 매번 반영합니다. 이전 커리어·다른 난이도의 캐시를 그대로 쓰지 않습니다.
+  const band = intlGhostBand(tag, diff);
   const keys: string[] = [];
   for (let pos = 0; pos < 5; pos++) {
     const key = `intl-${tag}-${pos}`;
+    const zFight = (band - 50) / 20;
     if (!PL[key]) {
       PL[key] = {
         key, name: `${intlName(tag)} ${["탑", "정글", "미드", "원딜", "서폿"][pos]}`, full: intlName(tag), team: -1, pos: pos as 0 | 1 | 2 | 3 | 4,
         games: 0, gamesPos: 0, wins: 0, teamsPlayed: {}, m: { gd: null, csd: null, xpd: null, kda: 0, kp: 0, dpm: 0, dsh: 0, gpm: 0, cspm: 0, vspm: 0, wk: 0, pool: 0 },
-        kdaRaw: [0, 0, 0], pool: [], z: { lane: 0, fight: (band - 50) / 20, farm: 0, vision: 0, pool: 0, ovr: (band - 50) / 20 },
+        kdaRaw: [0, 0, 0], pool: [], z: { lane: 0, fight: zFight, farm: 0, vision: 0, pool: 0, ovr: zFight },
         pct: { lane: band, fight: band, farm: band, vision: 50, pool: 50, ovr: band },
         small: true, label: `${intlName(tag)} · 기록 없음(추정)`, limited: true,
       };
+    } else {
+      PL[key].z = { ...PL[key].z, fight: zFight, ovr: zFight };
+      PL[key].pct = { ...PL[key].pct, lane: band, fight: band, farm: band, ovr: band };
     }
     keys.push(key);
   }
-  TM[tag].starters = keys; TM[tag].players = keys;
+  if (TM[tag]) { TM[tag].starters = keys; TM[tag].players = keys; }
   return keys;
 }
 

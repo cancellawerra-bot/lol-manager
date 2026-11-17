@@ -1,9 +1,8 @@
 import { readFileSync } from "fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, TM, PL } from "../../src/data";
-import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard, payrollSoftCap, upcomingSalaryDue, LCK_PAYROLL_SOFT, LCK_PAYROLL_SOFT_PRE } from "../../src/game/story";
+import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard, payrollSoftCap, upcomingSalaryDue, LCK_PAYROLL_SOFT, LCK_PAYROLL_SOFT_PRE, intlGhostBand, ghostLineup, aiWeeklyFaBudget, AI_FA_BUDGET_MULT, replaceOvrOf, REPLACE_OVR, REPLACE_OVR_EASY } from "../../src/game/story";
 import { autoAdvanceOffseason, stepYear, payIncome } from "../../src/game/stove";
-import { PL } from "../../src/data";
 import { Rng } from "../../src/game/rng";
 import type { Save } from "../../src/game/season";
 
@@ -244,7 +243,32 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
     });
     const latest = Math.max(...years);
     if (latest < 2019) throw new Error("AI roster still on pre-2019 cards for " + tm + ": " + (s.starters[tm] ?? []).join(",") + " years " + years.join(","));
+
     console.log("OK AI roster year", { team: tm, years, worldBuiltYear: s.story!.worldBuiltYear });
+  }
+  {
+    const n1 = intlGhostBand("LPL-1", "normal");
+    const e1 = intlGhostBand("LPL-1", "easy");
+    const h1 = intlGhostBand("LPL-1", "hard");
+    if (n1 !== 80) throw new Error("normal LPL-1 should stay 80, got " + n1);
+    if (!(e1 < n1 && n1 < h1)) throw new Error("bands should be easy < normal < hard, got " + [e1, n1, h1]);
+    if (intlGhostBand("LPL-2", "normal") !== 74 || intlGhostBand("LEC-1", "normal") !== 74) throw new Error("normal s2 band");
+    ghostLineup("LPL-1", 2027, "easy");
+    const k = "intl-LPL-1-0";
+    if (PL[k].pct.ovr !== e1) throw new Error("easy ghost ovr " + PL[k].pct.ovr);
+    ghostLineup("LPL-1", 2027, "hard");
+    if (PL[k].pct.ovr !== h1) throw new Error("ghost should refresh on difficulty change, got " + PL[k].pct.ovr);
+    const room = 20;
+    const be = aiWeeklyFaBudget("GEN", room, "easy");
+    const bn = aiWeeklyFaBudget("GEN", room, "normal");
+    const bh = aiWeeklyFaBudget("GEN", room, "hard");
+    if (!(be < bn && bn < bh)) throw new Error("AI budget should be easy < normal < hard, got " + [be, bn, bh]);
+    if (Math.abs(AI_FA_BUDGET_MULT.normal - 1) > 1e-9) throw new Error("normal AI budget mult should be 1");
+    const easy = careerBest(7, "easy");
+    const hard = careerBest(7, "hard");
+    if (replaceOvrOf(easy) !== REPLACE_OVR_EASY) throw new Error("easy replace " + replaceOvrOf(easy));
+    if (replaceOvrOf(hard) !== REPLACE_OVR) throw new Error("hard replace " + replaceOvrOf(hard));
+    console.log("OK difficulty bands and AI budget", { e1, n1, h1, be, bn, bh, easyReplace: replaceOvrOf(easy) });
   }
 
   let cleared: { seed: number; trophies: typeof sf.story.trophies; cash: number } | null = null;

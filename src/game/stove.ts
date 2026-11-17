@@ -8,7 +8,8 @@ import {
   cardForYear, debutYear, ensurePlayer, marketCards, storySalary, cmpStr, cmpCard,
   teamPower, finishStove as rollYear, registerOffseason, currentLeague,
   resolveFranchise, pumpStory, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR,
-  payrollSoftCap, upcomingSalaryDue, RELEASE_OVR, REPLACE_OVR,
+  payrollSoftCap, upcomingSalaryDue,
+  storyDiff, replaceOvrOf, aiWeeklyFaBudget,
   fmtMoney, lckPrizeOf, scaleLckIncome, ensureStartingFive,
   type Contract, type Tier,
 } from "./story";
@@ -429,13 +430,14 @@ function aiFaBids(s: Save, rng: Rng): Bid[] {
     const existingPay = (stove.aiContracts[t] ?? []).reduce((n, c) => n + c.salary, 0);
     const cap = payrollSoftCap(s, tier0);
     const roomPay = Math.max(0, cap - existingPay);
-    const budget = Math.min(8 + teamPower(t) / 10, roomPay || 8 + teamPower(t) / 10);
+    const budget = aiWeeklyFaBudget(t, roomPay, storyDiff(s));
     let spent = 0;
+    const extra = storyDiff(s) === "hard" ? 2 : storyDiff(s) === "easy" ? 0 : 1;
     const want = rng.shuffle(pool).sort((a, b) => {
       const ha = need.includes(a.posIdx) ? -50 : 0;
       const hb = need.includes(b.posIdx) ? -50 : 0;
       return (b.percentile + ha) - (a.percentile + hb) || cmpCard(a, b);
-    }).slice(0, 2 + (holes.length ? 1 : 0));
+    }).slice(0, 2 + extra + (holes.length ? 1 : 0));
     for (const c of want) {
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
       const ask = contractAsk(c, tier);
@@ -660,7 +662,7 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
   if (st.phase === "expiry") {
     for (const k of st.stove.expiryKeys) {
       if (!st.stove.expiryDecided[k]) {
-        const weak = (PL[k]?.pct.ovr ?? 50) < RELEASE_OVR;
+        const weak = (PL[k]?.pct.ovr ?? 50) < replaceOvrOf(s);
         const err = decideExpiry(s, k, weak ? "release" : "resign");
         if (err) decideExpiry(s, k, "release");
       }
@@ -715,28 +717,29 @@ function legalStarBids(s: Save, reserve = 0): void {
   const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i]);
   for (const pos of holes) {
     const opts = cards.filter((c) => c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
-    const mid = opts.filter((c) => c.percentile >= REPLACE_OVR);
+    const mid = opts.filter((c) => c.percentile >= replaceOvrOf(s));
     const pool = (mid.length ? mid : opts).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
     for (const c of pool) { if (bidFor(c, true)) break; }
   }
   const taken = new Set<number>(holes);
-  // 2) 가장 약한 주전(종합 55 미만)부터 교체
+  // 2) 가장 약한 주전(쉬움 60 미만, 그 외 55 미만)부터 교체. 잔고·정산 유보는 bidFor가 지킵니다.
   const weakPos = [0, 1, 2, 3, 4]
     .filter((i) => !taken.has(i))
     .map((i) => ({ i, ovr: PL[s.starters[s.team]?.[i]]?.pct.ovr ?? 0 }))
-    .filter((x) => x.ovr < REPLACE_OVR)
+    .filter((x) => x.ovr < replaceOvrOf(s))
     .sort((a, b) => a.ovr - b.ovr || a.i - b.i);
   for (const { i, ovr } of weakPos) {
     const opts = cards.filter((c) => c.posIdx === i && c.percentile >= ovr + 5).sort((a, b) => b.percentile - a.percentile || storySalary(a, st.tier) - storySalary(b, st.tier) || cmpCard(a, b));
     for (const c of opts) { if (bidFor(c, false)) { taken.add(i); break; } }
   }
-  // 3) 여유 자금으로 업그레이드 (포지션당 최대 1)
+  // 3) 여유 자금으로 업그레이드 (포지션당 최대 1). 쉬움은 +5, 그 외 +8.
+  const gap = storyDiff(s) === "easy" ? 5 : 8;
   const upgrades = cards.slice().sort((a, b) => b.percentile - a.percentile || cmpCard(a, b));
   for (const c of upgrades) {
     if (taken.has(c.posIdx)) continue;
     const cur = s.starters[s.team]?.[c.posIdx];
     const curOvr = cur && PL[cur]?.pct?.ovr != null ? PL[cur].pct.ovr : 0;
-    if (!(c.percentile >= curOvr + 8 || curOvr < REPLACE_OVR)) continue;
+    if (!(c.percentile >= curOvr + gap || curOvr < replaceOvrOf(s))) continue;
     if (!bidFor(c, false)) continue;
     taken.add(c.posIdx);
     if (taken.size >= 5) break;
