@@ -976,12 +976,12 @@ export function startWorlds(s: Save): void {
   groups.forEach((g, gi) => {
     for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
       s.days.push({ date: addDays(date, day), week: 30, stage: "R", label: `월즈 조${"ABCD"[gi]} ${g[i]} vs ${g[j]}` });
-      s.series.push({ id: `W-G${gi}-${i}-${j}`, day, stage: "R", a: g[i], b: g[j], bo: 1 as unknown as 3, games: [], sa: 0, sb: 0 });
+      s.series.push({ id: `W-G${gi}-${i}-${j}`, day, stage: "R", a: g[i], b: g[j], bo: 3, games: [], sa: 0, sb: 0 });
       day++;
     }
   });
   s.story!.note = JSON.stringify({ groups, lckSeeds, step: "groups" });
-  addNews(s, "season", `${st.year} 월즈 개막 · 16팀 4개조`, `LCK 시드: ${lckSeeds.join(", ")}. 해외 팀은 리그 시드 이름으로만 등장하며 개별 선수 기록은 없습니다(추정 전력).`, s.team);
+  addNews(s, "season", `${st.year} 월즈 개막 · 16팀 4개조`, `LCK 시드: ${lckSeeds.join(", ")}. 조별은 Bo3, 토너먼트는 Bo5입니다. 해외 팀은 리그 시드 이름으로만 등장하며 개별 선수 기록은 없습니다(추정 전력).`, s.team);
 }
 
 function intlName(t: string): string {

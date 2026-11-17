@@ -1,6 +1,12 @@
 export const PATCH_VERSION = "2.3.0";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
   {
+    v: "2.3.2", date: "2026-11-18",
+    items: [
+      "월즈 조별 예선을 단판(Bo1)에서 Bo3로 바꿉니다. 조별 한 경기의 분산으로 2027 클리어가 너무 드물던 점을 줄입니다.",
+    ],
+  },
+  {
     v: "2.3.0", date: "2026-11-18",
     items: [
       "자동 감독과 AI 구단은 새 입찰 전에, 이번 정산에서 나갈 기존 연봉을 먼저 남겨 둡니다. 잔고만 보고 영입했다가 정산 후 파산하던 경로를 막습니다.",
