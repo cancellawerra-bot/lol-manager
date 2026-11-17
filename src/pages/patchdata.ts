@@ -1,4 +1,4 @@
-export const PATCH_VERSION = "2.3.0";
+export const PATCH_VERSION = "2.3.3";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
   {
     v: "2.3.3", date: "2026-11-18",
