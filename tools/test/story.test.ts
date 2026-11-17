@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, TM, PL } from "../../src/data";
-import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard } from "../../src/game/story";
+import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard, payrollSoftCap, upcomingSalaryDue, LCK_PAYROLL_SOFT, LCK_PAYROLL_SOFT_PRE } from "../../src/game/story";
 import { autoAdvanceOffseason, stepYear, payIncome } from "../../src/game/stove";
 import { PL } from "../../src/data";
 import { Rng } from "../../src/game/rng";
@@ -209,6 +209,44 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
   console.log("OK stove rollover", { year: s1.story!.year, cash: s1.eco.cash, contracts: s1.story!.contracts.length });
 
   // 클리어 경로 시도: 매수 수락 + 합법 스타 영입, 여러 시드
+  // v2.3 payroll cap, upcoming reserve, AI year rosters
+  {
+    const s = careerBest(7, "easy");
+    if (payrollSoftCap(s) !== 2.8) throw new Error("CK cap " + payrollSoftCap(s));
+    s.story!.tier = "LCK";
+    if (Math.abs(payrollSoftCap(s) - LCK_PAYROLL_SOFT_PRE) > 1e-9) throw new Error("2018 LCK cap should be 70, got " + payrollSoftCap(s));
+    s.story!.year = 2020; s.story!.phase = "regular";
+    if (payrollSoftCap(s) !== 70) throw new Error("2020 regular cap " + payrollSoftCap(s));
+    s.story!.phase = "stove";
+    if (payrollSoftCap(s) !== LCK_PAYROLL_SOFT) throw new Error("2020 stove is for 2021, cap should be 115, got " + payrollSoftCap(s));
+    s.story!.year = 2021; s.story!.phase = "regular";
+    if (payrollSoftCap(s) !== 115) throw new Error("2021 cap " + payrollSoftCap(s));
+    const due = upcomingSalaryDue([
+      { key: "a", cardId: "a", years: 1, salary: 40, person: "a" },
+      { key: "b", cardId: "b", years: 1, salary: 20, person: "b", prepaid: true },
+      { key: "c", cardId: "c", years: 1, salary: 10, person: "c" },
+    ], "c");
+    if (Math.abs(due - 40) > 1e-9) throw new Error("upcoming due should skip prepaid and exceptKey, got " + due);
+    console.log("OK payroll cap and reserve", { pre: LCK_PAYROLL_SOFT_PRE, post: LCK_PAYROLL_SOFT, due });
+  }
+  {
+    const s = careerBest(11, "easy");
+    const rng = new Rng(s.rng);
+    stepYear(s, rng, { acceptBuyIn: true, signStars: true, reserveCash: FRANCHISE_BUYIN.easy });
+    if (s.story!.year !== 2019) throw new Error("expected 2019 after one year, got " + s.story!.year);
+    if (s.story!.worldBuiltYear !== 2019) throw new Error("worldBuiltYear " + s.story!.worldBuiltYear);
+    const tm = s.story!.lck.find((x) => x !== s.team && (s.starters[x] ?? []).length === 5);
+    if (!tm) throw new Error("no AI LCK roster");
+    const years = (s.starters[tm] ?? []).map((k) => {
+      const m = /-(\d{4})$/.exec(k);
+      if (m) return Number(m[1]);
+      return CARDS[k]?.year ?? 0;
+    });
+    const latest = Math.max(...years);
+    if (latest < 2019) throw new Error("AI roster still on pre-2019 cards for " + tm + ": " + (s.starters[tm] ?? []).join(",") + " years " + years.join(","));
+    console.log("OK AI roster year", { team: tm, years, worldBuiltYear: s.story!.worldBuiltYear });
+  }
+
   let cleared: { seed: number; trophies: typeof sf.story.trophies; cash: number } | null = null;
   const tried: string[] = [];
   for (const seed of [404, 808]) {

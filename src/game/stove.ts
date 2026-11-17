@@ -7,7 +7,8 @@ import { addNews, standings } from "./season";
 import {
   cardForYear, debutYear, ensurePlayer, marketCards, storySalary, cmpStr, cmpCard,
   teamPower, finishStove as rollYear, registerOffseason, currentLeague,
-  resolveFranchise, pumpStory, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR, LCK_PAYROLL_SOFT,
+  resolveFranchise, pumpStory, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR,
+  payrollSoftCap, upcomingSalaryDue, RELEASE_OVR, REPLACE_OVR,
   fmtMoney, lckPrizeOf, scaleLckIncome, ensureStartingFive,
   type Contract, type Tier,
 } from "./story";
@@ -424,7 +425,11 @@ function aiFaBids(s: Save, rng: Rng): Bid[] {
     if (t === s.team) continue;
     const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[t]?.[i]);
     const need = holes.length ? holes : [];
-    const budget = 8 + teamPower(t) / 10;
+    const tier0: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
+    const existingPay = (stove.aiContracts[t] ?? []).reduce((n, c) => n + c.salary, 0);
+    const cap = payrollSoftCap(s, tier0);
+    const roomPay = Math.max(0, cap - existingPay);
+    const budget = Math.min(8 + teamPower(t) / 10, roomPay || 8 + teamPower(t) / 10);
     let spent = 0;
     const want = rng.shuffle(pool).sort((a, b) => {
       const ha = need.includes(a.posIdx) ? -50 : 0;
@@ -435,6 +440,7 @@ function aiFaBids(s: Save, rng: Rng): Bid[] {
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
       const ask = contractAsk(c, tier);
       if (spent + ask > budget) continue;
+      if (existingPay + spent + ask > cap && !need.includes(c.posIdx)) continue;
       const starter = need.includes(c.posIdx) || !s.starters[t]?.[c.posIdx];
       out.push({ team: t, person: c.pkey, cardId: c.id, salary: ask, years: 2, starter, bonuses: {}, kind: "fa" });
       spent += ask;
@@ -619,7 +625,12 @@ function aiFillHoles(s: Save, rng: Rng): void {
       if (!id) continue;
       const tier: Tier = s.story!.lck.includes(t) ? "LCK" : "CK";
       const ask = contractAsk(id, tier);
-      if (t === s.team && s.eco.cash < ask) continue;
+      if (t === s.team && s.eco.cash < ask + upcomingSalaryDue(s.story!.contracts)) continue;
+      if (t !== s.team) {
+        const cap = payrollSoftCap(s, s.story!.lck.includes(t) ? "LCK" : "CK");
+        const existingPay = (stove.aiContracts[t] ?? []).reduce((n, c) => n + c.salary, 0);
+        if (existingPay + ask > cap) continue;
+      }
       const bid: Bid = { team: t, person: id.pkey, cardId: id.id, salary: ask, years: 2, starter: true, bonuses: {}, kind: "fa" };
       signToTeam(s, t, bid, rng);
     }
@@ -649,7 +660,7 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
   if (st.phase === "expiry") {
     for (const k of st.stove.expiryKeys) {
       if (!st.stove.expiryDecided[k]) {
-        const weak = (PL[k]?.pct.ovr ?? 50) < 45;
+        const weak = (PL[k]?.pct.ovr ?? 50) < RELEASE_OVR;
         const err = decideExpiry(s, k, weak ? "release" : "resign");
         if (err) decideExpiry(s, k, "release");
       }
@@ -683,42 +694,56 @@ function legalStarBids(s: Save, reserve = 0): void {
   const bidFor = (c: typeof cards[0], asHole: boolean): boolean => {
     const cur = s.starters[s.team]?.[c.posIdx];
     const ask = contractAsk(c, st.tier);
-    const keep = reserve + holeReserve(s, asHole ? c.posIdx : undefined);
+    // 교체 입찰이면 나가는 주전의 연봉은 이번 정산에서 빼도 됩니다(계약이 교체로 해제됩니다).
+    const due = upcomingSalaryDue(st.contracts, cur || undefined);
+    const keep = reserve + holeReserve(s, asHole ? c.posIdx : undefined) + due;
     const room = s.eco.cash - keep;
     if (room < ask * 0.85) return false;
     const offer = moneyRound(Math.min(room, ask * (prestige(s, s.team) < 60 ? 1.45 : 1.12)));
     const pendingOurs = stove.pendingBids.filter((b) => b.team === s.team).reduce((n, b) => n + b.salary, 0);
     const payroll = st.contracts.reduce((n, x) => n + x.salary, 0) + pendingOurs;
     const oldPay = (cur && st.contracts.find((x) => x.key === cur)?.salary) || 0;
-    const cap = st.tier === "LCK" ? LCK_PAYROLL_SOFT : 2.8;
+    const cap = payrollSoftCap(s, st.tier);
     if (payroll - oldPay + offer > cap) {
       if (!asHole) return false;
       // 구멍이라도 스타 연봉으로 총액을 넘기면 다음 해 강제 매각으로 로스터가 무너집니다.
-      if (offer > (st.tier === "LCK" ? 18 : 0.6)) return false;
+      if (offer > (st.tier === "LCK" ? (payrollYearCapStar(s)) : 0.6)) return false;
     }
     return !placeFaBid(s, { team: s.team, person: c.pkey, cardId: c.id, salary: offer, years: 2, starter: true, bonuses: {}, kind: "fa" });
   };
-  // 1) 주전 구멍부터 저렴한 카드로
+  // 1) 주전 구멍부터, 가능한 한 종합 55 이상
   const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i]);
   for (const pos of holes) {
     const opts = cards.filter((c) => c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
-    // prefer reasonable floor (not the absolute weakest if we can afford a mid card)
-    const mid = opts.filter((c) => c.percentile >= 45);
+    const mid = opts.filter((c) => c.percentile >= REPLACE_OVR);
     const pool = (mid.length ? mid : opts).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
     for (const c of pool) { if (bidFor(c, true)) break; }
   }
-  // 2) 여유 자금으로 업그레이드 (포지션당 최대 1)
-  const taken = new Set<number>();
+  const taken = new Set<number>(holes);
+  // 2) 가장 약한 주전(종합 55 미만)부터 교체
+  const weakPos = [0, 1, 2, 3, 4]
+    .filter((i) => !taken.has(i))
+    .map((i) => ({ i, ovr: PL[s.starters[s.team]?.[i]]?.pct.ovr ?? 0 }))
+    .filter((x) => x.ovr < REPLACE_OVR)
+    .sort((a, b) => a.ovr - b.ovr || a.i - b.i);
+  for (const { i, ovr } of weakPos) {
+    const opts = cards.filter((c) => c.posIdx === i && c.percentile >= ovr + 5).sort((a, b) => b.percentile - a.percentile || storySalary(a, st.tier) - storySalary(b, st.tier) || cmpCard(a, b));
+    for (const c of opts) { if (bidFor(c, false)) { taken.add(i); break; } }
+  }
+  // 3) 여유 자금으로 업그레이드 (포지션당 최대 1)
   const upgrades = cards.slice().sort((a, b) => b.percentile - a.percentile || cmpCard(a, b));
   for (const c of upgrades) {
     if (taken.has(c.posIdx)) continue;
     const cur = s.starters[s.team]?.[c.posIdx];
     const curOvr = cur && PL[cur]?.pct?.ovr != null ? PL[cur].pct.ovr : 0;
-    if (!(c.percentile >= curOvr + 8 || curOvr < 50)) continue;
+    if (!(c.percentile >= curOvr + 8 || curOvr < REPLACE_OVR)) continue;
     if (!bidFor(c, false)) continue;
     taken.add(c.posIdx);
     if (taken.size >= 5) break;
   }
+}
+function payrollYearCapStar(s: Save): number {
+  return payrollSoftCap(s, "LCK") <= 70 ? 12 : 18;
 }
 
 export function allExpiryDecided(s: Save): boolean {

@@ -25,8 +25,28 @@ export const LCK_SHARE_PRE = 25; // 2018–2020 LCK 중계 배분(억)
 export const LCK_SPONSOR = 40; // LCK 기본 스폰서·미디어 수입(억). 2부 계약을 승격 시 이 규모로 올립니다.
 export const LCK_OPS = 8; // LCK 연간 운영비(억)
 export const LCK_PRIZE = [30, 22, 16, 12, 10, 10, 7, 7, 5, 5] as const; // 서머 정규 순위 상금(억)
-export const LCK_PAYROLL_SOFT = 115; // 자동 감독 권고 총액. LCK 중위 연간 수입(~112억)을 넘기지 않게 해 강제 매각으로 로스터가 무너지지 않습니다.
+export const LCK_PAYROLL_SOFT = 115; // 2021 이후 자동 감독 권고 총액. LCK 중위 연간 수입(~112억)에 맞춥니다.
+export const LCK_PAYROLL_SOFT_PRE = 70; // 프랜차이즈 전(2020 시즌까지) 권고 총액. 배분 25억대 수입(~67–87억)에 맞춥니다.
+export const RELEASE_OVR = 55; // 만료 시 이 미만이면 재계약하지 않습니다.
+export const REPLACE_OVR = 55; // 자동 감독이 이 미만 주전을 먼저 교체합니다.
 export const CASH_BANKRUPT = -5; // 이 이하 적자면 해임·파산
+
+/** 오프시즌이면 다음 시즌, 시즌 중이면 올해. 연봉 한도와 로스터 연도에 씁니다. */
+export function payrollYear(s: Save): number {
+  const st = s.story;
+  if (!st) return STORY_START;
+  if (["awards", "tryout", "expiry", "stove", "franchise"].includes(st.phase)) return st.year + 1;
+  return st.year;
+}
+export function payrollSoftCap(s: Save, tier?: Tier): number {
+  const t = tier ?? s.story?.tier ?? "CK";
+  if (t !== "LCK") return 2.8;
+  return payrollYear(s) <= 2020 ? LCK_PAYROLL_SOFT_PRE : LCK_PAYROLL_SOFT;
+}
+/** 이번 정산에서 나갈, 아직 선납하지 않은 기존 연봉. exceptKey는 이번 입찰로 교체할 주전입니다. */
+export function upcomingSalaryDue(contracts: Contract[], exceptKey?: string): number {
+  return contracts.filter((c) => !c.prepaid && c.key !== exceptKey).reduce((n, c) => n + c.salary, 0);
+}
 export const DECAY_PCT = 15; // 해당 연도 공식 카드가 없을 때만 적용. 데이터 마지막 해(2026) 카드는 2027에도 그대로 씁니다.
 export { fmtMoney };
 export type StoryDiff = keyof typeof STORY_BUDGETS;
@@ -67,6 +87,8 @@ export interface StoryState {
   splitSeeds?: string[];
   deficitYears?: number;
   financeWarn?: "low" | "deficit";
+  /** AI 로스터를 마지막으로 짠 시즌 연도. 같은 해에 다시 호출하면 유지합니다. */
+  worldBuiltYear?: number;
 }
 
 export const STORY_BUDGET_NOTE = "기본 자금(창단 한도)은 쉬움 5억, 보통 3.2억, 어려움 2억입니다. 개막 로스터 연봉은 시작할 때 차감합니다. 모두 게임용 가상 금액입니다.";
@@ -349,9 +371,9 @@ function reviveKey(k: string, year: number, posIdx?: number): void {
     }
   }
 }
-export function applyStoryWorld(s: Save): void {
+export function applyStoryWorld(s: Save, yearOverride?: number): void {
   const st = s.story; if (!st) return;
-  const year = st.year;
+  const year = yearOverride ?? st.year;
   const used = new Set<string>();
   // user people reserved
   for (const c of s.story?.contracts ?? []) used.add(c.person);
@@ -366,8 +388,8 @@ export function applyStoryWorld(s: Save): void {
       injectEraTeam(t, stt.length === 5 ? stt : fillAndKeep(s, year), s.cards);
       continue;
     }
-    if (s.starters[t.short]?.length === 5 && year === st.year) {
-      // keep existing if already built this year
+    if (s.starters[t.short]?.length === 5 && st.worldBuiltYear === year) {
+      // 이미 그해 로스터를 짰으면 시즌 중에 다시 만들지 않습니다.
       const keys = s.starters[t.short];
       keys.forEach((k) => { const p = PL[k]; if (p?.personKey) used.add(p.personKey); });
       injectEraTeam(t, keys);
@@ -377,6 +399,7 @@ export function applyStoryWorld(s: Save): void {
     s.starters[t.short] = roster;
     injectEraTeam(t, roster);
   }
+  st.worldBuiltYear = year;
 }
 
 function fillAndKeep(s: Save, _year: number): string[] {
@@ -550,7 +573,7 @@ export function ensureStartingFive(s: Save): void {
     };
     const cands = marketCards(year).filter((c) => c.posIdx === pos && !used.has(c.pkey));
     const payroll = st.contracts.reduce((n, x) => n + x.salary, 0);
-    const roomPay = Math.max(0, (st.tier === "LCK" ? LCK_PAYROLL_SOFT : 2.8) - payroll);
+    const roomPay = Math.max(0, payrollSoftCap(s, st.tier) - payroll);
     const affordable = cands.filter((c) => {
       const ask = storySalary(c, st.tier);
       return ask <= Math.max(budget, st.tier === "CK" ? 0.5 : 8) && ask <= Math.max(roomPay, st.tier === "CK" ? 0.4 : 12);
@@ -1080,7 +1103,7 @@ export function finishStove(s: Save, _rng: Rng): void {
   // salaries for next year + 적자 한도
   const pay = st.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
   settlePayrollAndSolvency(s);
-  applyStoryWorld(s);
+  applyStoryWorld(s, next); // AI는 다음 시즌 카드로 다시 짭니다. 이전에는 year===st.year 조건이 항상 참이라 2018 로스터가 남았습니다.
   if (st.ended) return;
   if (next > STORY_END) { endStory(s, st.trophies.worlds > 0 && st.year >= STORY_END ? "clear" : "fail"); return; }
   beginSplit(s, next, "spring");
