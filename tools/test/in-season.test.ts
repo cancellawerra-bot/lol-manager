@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, PL, TM } from "../../src/data";
-import { newStoryCareer, marketCards, storySalary, applyStoryWorld, beginSplit, payrollSoftCap } from "../../src/game/story";
+import { newStoryCareer, marketCards, storySalary, applyStoryWorld, beginSplit, payrollSoftCap, settlePayrollAndSolvency } from "../../src/game/story";
+import { hydrateSave } from "../../src/game/cards";
 import { initializeInSeason, prepareInSeason, seasonCandidates, seasonMarketWeek, seasonSalaryDue, seasonReserve, startSeasonNegotiation, seasonClubReply, seasonPlayerReply, seasonMarketClosed, answerSeasonIncoming, setSeasonAutomatic } from "../../src/game/inSeason";
 import { advanceTeamTraining, trainingDate } from "../../src/game/trainingRuntime";
 import { beginOffseason } from "../../src/game/stove";
@@ -23,7 +24,7 @@ function healthy(s: Save) {
   for (const t of [...s.story!.lck, ...s.story!.ck]) {
     const own = t === s.team ? s.story!.contracts : s.inSeason!.rosters[t];
     assert(own.length <= 8); assert.equal(s.starters[t].length, 5);
-    s.starters[t].forEach((key, pos) => { assert.equal(PL[key].pos, pos); assert(own.some((c) => c.key === key)); });
+    s.starters[t].forEach((key, pos) => { assert.equal(PL[key].pos, pos, `${t}/${key}: position ${pos}`); assert(own.some((c) => c.key === key)); });
     people.push(...own.map((c) => c.person));
     if (t !== s.team) assert(s.inSeason!.cash[t] >= 0);
   }
@@ -32,7 +33,7 @@ function healthy(s: Save) {
 {
   const s = fixture(), rng = s.rng, before = JSON.stringify(s.inSeason); prepareInSeason(s);
   assert.equal(s.rng, rng); assert.equal(JSON.stringify(s.inSeason), before);
-  const restored = copy(s); applyStoryWorld(restored); prepareInSeason(restored); assert.deepEqual(restored.inSeason, copy(s.inSeason));
+  const restored = copy(s); hydrateSave(restored); applyStoryWorld(restored); prepareInSeason(restored); assert.deepEqual(restored.inSeason, copy(s.inSeason)); healthy(restored);
   assert.equal(seasonCandidates(s).length, new Set(seasonCandidates(s).map((c) => c.person)).size);
   assert(seasonCandidates(s).every((c) => c.card.year <= 2021)); healthy(s);
   console.log("OK weekly idempotence, separate market RNG, reload, one person and no future records");
@@ -50,6 +51,23 @@ function healthy(s: Save) {
   console.log("OK invalid money, no cash, contract duration, competition/session locks are atomic");
 }
 let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefined, transferBefore: Save | undefined, saleBefore: Save | undefined;
+{
+  const base = fixture(); let refused = false;
+  for (const t of seasonCandidates(base).filter((c) => c.owner !== "FA" && c.ovr < 80 && c.salary < 8 && c.fee < 10)) {
+    const s = copy(base); applyStoryWorld(s);
+    if (startSeasonNegotiation(s, t.card.id, t.fee) || seasonClubReply(s)) continue;
+    const cash = s.eco.cash, rng = s.rng, contracts = copy(s.story!.contracts);
+    const answer = seasonPlayerReply(s, t.salary, 1, false);
+    if (!answer.ok && answer.message.includes("선수가")) {
+      assert.equal(s.eco.cash, cash); assert.equal(s.rng, rng); assert.deepEqual(s.story!.contracts, contracts);
+      assert(startSeasonNegotiation(s, t.card.id, t.fee)?.includes("답변")); refused = true; break;
+    }
+  }
+  assert(refused, "구단이 동의해도 선수는 잔류를 선택할 수 있음");
+  const s = fixture(), t = free(s); startSeasonNegotiation(s, t.card.id, 0); s.day = 3;
+  const cash = s.eco.cash; assert(!seasonPlayerReply(s, t.salary, 1, true).ok); assert.equal(s.eco.cash, cash);
+  console.log("OK actual player refusal, no charge/RNG change, no repeat answer and negotiation expiry");
+}
 {
   const s = fixture(), target = free(s), oldStarter = s.starters[s.team][target.card.posIdx];
   const salary = Math.min(20, Math.max(target.salary * 2, 5)), cash = s.eco.cash, rng = s.rng;
@@ -132,6 +150,9 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
   const ai = copy(s.inSeason!.rosters); beginOffseason(s);
   assert.equal(s.story!.contracts.find((c) => c.person === player.person)!.years, 1);
   for (const [t, list] of Object.entries(ai)) assert.deepEqual(s.story!.stove!.aiContracts[t], list, "스토브 진입 시 AI 벤치 계약 유지");
+  const nextPayroll = copy(s); nextPayroll.eco.cash = 200;
+  const due = nextPayroll.story!.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
+  settlePayrollAndSolvency(nextPayroll); assert.equal(nextPayroll.eco.cash, +(200 - due).toFixed(2));
   console.log("OK remaining contract and AI bench survive offseason transition");
 }
 {

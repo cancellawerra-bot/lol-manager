@@ -327,7 +327,7 @@ export function ensurePlayer(card: SeasonCard, year: number, estimated: boolean)
   let p = playerFromCard(card);
   if (estimated) {
     const pct = Math.max(5, Math.round(card.percentile) - DECAY_PCT);
-    p = { ...p, key: `${card.pkey}-est-${year}`, pct: { ...p.pct, ovr: pct, fight: pct }, label: `${cardLabel(card)} · 추정`, small: true };
+    p = { ...p, key: `${card.pkey}-est-${year}-p${card.posIdx}`, pct: { ...p.pct, ovr: pct, fight: pct }, label: `${cardLabel(card)} · 추정`, small: true };
   }
   if (!PL[p.key]) PL[p.key] = p;
   return p.key;
@@ -393,10 +393,10 @@ function hash(s: string): number { let h = 0; for (let i = 0; i < s.length; i++)
 function reviveKey(k: string, year: number, posIdx?: number): void {
   if (!k || PL[k]) return;
   if (CARDS[k]) { PL[k] = playerFromCard(CARDS[k]); return; }
-  const m = /^(.*)-est-(\d+)$/.exec(k);
+  const m = /^(.*)-est-(\d+)(?:-p([0-4]))?$/.exec(k);
   if (m) {
     const y = Number(m[2]) || year;
-    const r = cardForYear(m[1], y, posIdx);
+    const r = cardForYear(m[1], y, m[3] == null ? posIdx : Number(m[3]));
     if (r) {
       const nk = ensurePlayer(r.card, y, true);
       if (!PL[k]) PL[k] = nk === k ? PL[nk] : { ...PL[nk], key: k };
