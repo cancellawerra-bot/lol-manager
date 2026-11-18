@@ -7,6 +7,7 @@ import { Card } from "../ui";
 import { go } from "../nav";
 import { fmtMoney } from "../game/money";
 import { franchisePlayers } from "../game/story";
+import InSeasonMarket from "./InSeasonMarket";
 
 export function CardTile({ c, on, disabled, reason, onClick, price, personView }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean }) {
   return (
@@ -98,11 +99,7 @@ export default function MarketPage() {
   if (!s) { go("#/"); return null; }
   const selected = s.cards.length ? s.cards : (s.starters[s.team] ?? []);
   if (s.mode === "story" && s.story) {
-    const people = [...new Map(s.story.contracts.map((ct) => [ct.person, ct])).values()];
-    return <Card title="영입 · 선수 명단" right={<span className="muted sm">선수당 한 명 · 선발 5 + 벤치 최대 3</span>}>
-      <p className="muted sm">시즌 기록은 자동으로 적용합니다. 영입·이적·재계약은 시즌 종료 후 스토브리그에서 진행합니다. 연봉은 게임용 가상 금액입니다.</p>
-      <div className="card-grid">{people.map((ct) => CARDS[ct.cardId] ? <CardTile key={ct.person} c={CARDS[ct.cardId]} price={ct.salary} personView on /> : <div key={ct.person} className="card-tile"><b>{ct.person}</b><p>기록 없음</p></div>)}</div>
-    </Card>;
+    return <InSeasonMarket s={s} />;
   }
   return (
     <Card title="영입 · 시즌 카드 시장" right={<span className="muted sm">같은 실존 인물은 로스터에 한 장만 · 선발 5 + 벤치 최대 3</span>}>

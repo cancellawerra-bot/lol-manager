@@ -11,6 +11,7 @@ import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, a
 import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
 import { initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
+import { prepareInSeason } from "./game/inSeason";
 
 const KEY = (slot: number): string => `lolm.slot.${slot}`;
 const LAST = "lolm.last";
@@ -72,6 +73,7 @@ export function advance(): "match" | "day" | "done" | "sched" | "franchise" | "s
   if (s.session) return "match";
   if (isStory(s) && s.story!.phase === "franchise") return "franchise";
   if (isStory(s) && ["awards", "tryout", "expiry", "stove"].includes(s.story!.phase)) return "stove";
+  mutate((x) => prepareInSeason(x));
   const my = mySeriesToday(s);
   if (my) {
     if (!s.schedOk) return "sched";

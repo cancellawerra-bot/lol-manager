@@ -6,6 +6,7 @@ import { Rng } from "./rng";
 import type { StoryState } from "./story";
 import { prepareSeriesTraining, matchTraining, type TrainingState } from "./trainingRuntime";
 import type { TrainingSummary } from "./training";
+import { prepareInSeason, type InSeasonState } from "./inSeason";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -50,6 +51,7 @@ export interface Save {
   ownerNote?: string;
   story?: StoryState;
   training?: TrainingState;
+  inSeason?: InSeasonState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -173,6 +175,7 @@ export function recordGame(s: Save, sr: SeriesRec, d: DraftState, res: GameResul
 }
 
 export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
+  if (sr.day === s.day && !sr.winner) prepareInSeason(s);
   prepareSeriesTraining(s, sr);
   while (!sr.winner) {
     const gi = sr.games.length;

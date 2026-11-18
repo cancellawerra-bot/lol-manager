@@ -53,7 +53,7 @@ export function playerTraining(s: Save, key: string): TrainingProgress | undefin
   return s.training?.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0 };
 }
 function roster(s: Save, team: string): string[] {
-  return [...new Set([...(s.starters[team] ?? []), ...(team === s.team ? s.story?.contracts.map((c) => c.key) ?? [] : [])])];
+  return [...new Set([...(s.starters[team] ?? []), ...(team === s.team ? s.story?.contracts.map((c) => c.key) ?? [] : s.inSeason?.year === s.story?.year ? s.inSeason?.rosters[team]?.map((c) => c.key) ?? [] : [])])];
 }
 /** 새 스플릿의 공백 기간은 훈련으로 소급 적립하지 않습니다. 성장 XP는 유지하고 긴 휴식의 피로는 회복합니다. */
 export function beginTrainingPeriod(s: Save, date: string): void {

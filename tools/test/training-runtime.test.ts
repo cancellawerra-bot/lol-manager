@@ -10,6 +10,7 @@ import { simSeries, selectionFor, aiSelection, lockedChamps, formMap, recordGame
 import { newDraft, autoDraft } from "../../src/game/draft";
 import { simulateGame, factorsFor } from "../../src/game/sim";
 import { Rng } from "../../src/game/rng";
+import { prepareInSeason } from "../../src/game/inSeason";
 await loadCore(); await loadRanked();
 const originalCards = JSON.stringify(CARDS);
 function fixture(seed = 17) {
@@ -72,6 +73,7 @@ console.log("OK verified public birth registry", Object.keys(PLAYER_BIRTHDATES).
 }
 {
   const a = fixture(27), b = JSON.parse(JSON.stringify(a));
+  prepareInSeason(b);
   const sa = a.series.find((sr) => sr.a === a.team || sr.b === a.team)!;
   const sb = b.series.find((sr) => sr.id === sa.id)!;
   const ra = new Rng(a.rng), rb = new Rng(b.rng);

@@ -9,6 +9,7 @@ import { addNews, dateKo, simSeries, standings } from "./season";
 import { moneyRound, fmtMoney } from "./money";
 import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
 import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
+import { prepareInSeason } from "./inSeason";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
 export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -410,6 +411,9 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
   for (const c of s.story?.contracts ?? []) used.add(c.person);
   for (const id of s.cards ?? []) if (CARDS[id]) used.add(CARDS[id].pkey);
   for (const keys of Object.values(s.starters ?? {})) keys.forEach((k, pos) => reviveKey(k, year, pos));
+  if (s.inSeason?.year === year) for (const list of Object.values(s.inSeason.rosters)) for (const c of list) {
+    const card = CARDS[c.cardId]; if (card) { reviveKey(c.key, year, card.posIdx); used.add(c.person); }
+  }
   const rng = new Rng(s.seed ^ year * 17);
   const user = s.club ? { short: s.club.short, ko: s.club.name, name: s.club.name, color: s.club.color } : undefined;
   // 일정에 올라 있는 구단(승강 결과가 반영된 st.lck/st.ck) 기준으로 짭니다.
@@ -425,7 +429,7 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
     if (s.starters[short]?.length === 5 && st.worldBuiltYear === year) {
       const keys = s.starters[short];
       keys.forEach((k) => { const p = PL[k]; if (p?.personKey) used.add(p.personKey); });
-      injectEraTeam(t, keys);
+      injectEraTeam(t, keys, s.inSeason?.year === year ? s.inSeason.rosters[short]?.map((c) => c.key) : undefined);
       continue;
     }
     const roster = fillTeamRoster(short, year, used, rng);
@@ -1203,18 +1207,15 @@ export function finishStove(s: Save, _rng: Rng): void {
   s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => keep.has(k) ? k : "");
   // age cards to next year
   const next = st.year + 1;
-  const newKeys: string[] = [];
-  const nextStarters = (s.starters[s.team] ?? []).map((k) => {
-    if (!k) return k;
-    const p = PL[k]; const pkey = p?.personKey; if (!pkey) return k;
-    const r = cardForYear(pkey, next, p.pos);
-    if (!r) return k;
+  const nextKeys = new Map<string, string>();
+  for (const ct of st.contracts) {
+    const pos = PL[ct.key]?.pos ?? CARDS[ct.cardId]?.posIdx;
+    const r = cardForYear(ct.person, next, pos);
+    if (!r) continue;
     const nk = ensurePlayer(r.card, next, r.estimated);
-    const ct = st.contracts.find((c) => c.person === pkey || c.key === k);
-    if (ct) { ct.key = nk; ct.cardId = r.card.id; }
-    newKeys.push(nk); return nk;
-  });
-  s.starters[s.team] = nextStarters;
+    nextKeys.set(ct.key, nk); ct.key = nk; ct.cardId = r.card.id;
+  }
+  s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => nextKeys.get(k) ?? k);
   s.cards = st.contracts.map((c) => c.key);
   // salaries for next year + 적자 한도
   const pay = st.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
@@ -1275,7 +1276,7 @@ export function simRestOfPhase(s: Save, rng: Rng, onlyOthers = false): void {
   const cur = s.story!.phase;
   let g = 0;
   while (g++ < 80 && s.story!.phase === cur && !s.story!.ended) {
-    for (const sr of s.series.filter((x) => !x.winner)) {
+    for (const sr of s.series.filter((x) => !x.winner && (cur !== "regular" || x.day === s.day))) {
       try { simSeries(s, sr, rng); } catch { /* */ }
     }
     const day0 = s.day;
@@ -1309,6 +1310,7 @@ export function makeContracts(cardIds: string[], years: number, tier: Tier): Con
 export function finishStoryDay(s: Save, rng: Rng): void {
   const st = s.story!;
   if (st.phase === "clear" || st.phase === "fail" || st.phase === "bankrupt" || st.ended) { s.phase = "done"; return; }
+  prepareInSeason(s);
   const date = s.days[Math.min(s.day, s.days.length - 1)]?.date;
   if (date) advanceTeamTraining(s, s.team, date);
   for (const sr of s.series.filter((x) => x.day === s.day && !x.winner)) {
