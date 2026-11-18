@@ -114,13 +114,13 @@ export default function Home() {
             <div className="vs-mid"><span className="vs-x">VS</span><b>{dateKo(s.days[nx.day].date)}</b><span className="muted">{s.days[nx.day].label}</span>{h2h.length > 0 && <span className="muted sm">이번 시즌 상대 전적 {h2h.filter((x) => x.winner === s.team).length}승 {h2h.filter((x) => x.winner !== s.team).length}패</span>}</div>
             <div className="vs-team"><TeamChip t={op} size="lg" /><b>{TM[op]?.ko ?? op}</b><span className="muted">{started ? `${rankOf(op)}위 · ${rowOf(op).w}승 ${rowOf(op).l}패` : "개막전"}</span>{form5(rowOf(op).last)}</div>
           </div>
-          <table className="tbl lineup-cmp">
+          <div className="tbl-wrap"><table className="tbl lineup-cmp">
             <thead><tr><th>{s.team}</th><th className="c">포지션</th><th className="r">{op}</th></tr></thead>
             <tbody>{[0, 1, 2, 3, 4].map((i) => {
               const a = PL[s.starters[s.team]?.[i]], b = PL[s.starters[op]?.[i]];
               return <tr key={i}><td>{a ? <><PName k={a.key} /> <Pct v={a.pct.ovr} />{a.small && <span className="tag warn">표본 부족</span>}</> : "–"}</td><td className="c muted">{POS_KO[i]}</td><td className="r">{b ? <>{b.small && <span className="tag warn">표본 부족</span>}<Pct v={b.pct.ovr} /> <PName k={b.key} /></> : "–"}</td></tr>;
             })}</tbody>
-          </table>
+          </table></div>
           <div className="row gap wrap"><a className="btn" href={`#/scout/${op}`}>{op} 밴픽 성향 보기</a><span className="muted sm">숫자는 포지션 내 종합 지표 백분위(2026 LCK). 상단 "{nx.day === s.day ? "경기 시작" : "진행하기"}"로 진행합니다.</span></div>
         </Card>
       )}

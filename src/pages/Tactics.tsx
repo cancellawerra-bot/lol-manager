@@ -37,7 +37,7 @@ export function TacticsReview({ record, side }: { record?: TacticsRecord; side: 
     <p className="sm" data-testid="tactic-observed">실제 14분 골드: {record.lanes15.map((n, i) => `${POS_KO[i]} ${signed(n * sign)}`).join(" / ")}</p>
     {plan.focus !== "balanced" && <p data-testid="tactic-execution">집중 목표: {record.execution[side].target} · {record.execution[side].success ? "달성 — 중후반 운영에 보탬" : "미달성 — 중후반 운영 부담"}</p>}
     {own && <p>{TACTIC_STAGE_LABEL[own.stage]}은 {own.winner === side ? `${label} 확보` : `${record.teamNames[other]} 확보`}. {own.winner === side ? "계획한 방향의 초반 오브젝트를 가져왔습니다." : "지원 계획이 있어도 확보로 이어지지는 않았습니다."}</p>}
-    <div className="table-wrap"><table className="tbl compact"><thead><tr><th>판정</th><th>전술 직접 보정</th><th>실제 결과</th></tr></thead><tbody>{record.decisions.map((x) => <tr key={x.stage}><td>{TACTIC_STAGE_LABEL[x.stage]}</td><td>{signed((x.after - x.before) * 100 * sign, 2)}%p</td><td>{record.teamNames[x.winner]}</td></tr>)}</tbody></table></div>
+    <div className="tbl-wrap"><table className="tbl compact"><thead><tr><th>판정</th><th>전술 직접 보정</th><th>실제 결과</th></tr></thead><tbody>{record.decisions.map((x) => <tr key={x.stage}><td>{TACTIC_STAGE_LABEL[x.stage]}</td><td>{signed((x.after - x.before) * 100 * sign, 2)}%p</td><td>{record.teamNames[x.winner]}</td></tr>)}</tbody></table></div>
     <p className="muted xs">직접 보정은 해당 판정 순간에 전술 보정을 뺐을 때와 비교한 확률 차이입니다. 전체 승률 증가량이나 단독 승리 원인이 아닙니다. 라인 골드 배분에는 상대 전술도 반영되며 선수 기량·밴픽·훈련·경기 흐름이 함께 작용합니다.</p>
   </section>;
 }

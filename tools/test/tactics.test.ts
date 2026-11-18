@@ -68,4 +68,18 @@ console.log("OK neutral plan preserves all match numbers and RNG; redistribution
   console.log("OK coach uses current evidence only and remains neutral when evidence is unavailable");
 }
 assert.equal(JSON.stringify({ CARDS, PL, RANKED }), original);
+{
+  const values = new Map<string, string>();
+  (globalThis as any).localStorage = { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => values.set(k, v) };
+  const { setSave, setTacticPlan, setMeet, runSim, toResult } = await import("../../src/store");
+  const s = newCareer("GEN", "검증", 1, 17), sr = s.series.find((x) => x.a === "GEN" && x.b === "T1" || x.a === "T1" && x.b === "GEN")!;
+  s.session = { seriesId: sr.id, gameIdx: 0, holder: "GEN", stage: "meet", simStep: 0, blue: "GEN", red: "T1", draft: d };
+  setSave(s); setTacticPlan(attack); runSim();
+  const snapshot = JSON.stringify(s.session.result), rng = s.rng, plan = JSON.stringify(s.tactics);
+  setTacticPlan(safe); setMeet("safe"); runSim();
+  assert.equal(JSON.stringify(s.session.result), snapshot); assert.equal(s.rng, rng); assert.equal(JSON.stringify(s.tactics), plan);
+  toResult(); toResult(); assert.equal(sr.games.length, 1); assert(sr.games[0].tactics);
+  setSave(null);
+  console.log("OK actual store freezes started plan, ignores rerun and records one result only");
+}
 console.log("OK tactics integration complete; original stats unchanged");
