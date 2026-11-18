@@ -1,0 +1,1664 @@
+{
+  "version": "2.6.0",
+  "date": "2026-11-18",
+  "timezone": "Asia/Seoul",
+  "baselineCommit": "e5d0c05450a6319727f7163798a06bdae2744e3d",
+  "implementationCommit": "89dad5413aace3a2aa729991eb9e8778e3d37658",
+  "codeCommit": "fdf9818b593199525242c6bacb6e6f528871b368",
+  "generator": "tools/test/clear_rate.ts",
+  "generatedFromActualRuns": true,
+  "forcedMatchResults": false,
+  "balanceGoalSatisfied": true,
+  "deployedAtMeasurement": false,
+  "ageTrainingApplied": true,
+  "verifiedBirthdates": 11,
+  "unknownBirthNeutral": true,
+  "olderTrainingFatigue": {
+    "maximumMultiplier": 1.16,
+    "automaticRestAt": 60
+  },
+  "calibration": {
+    "deltas": {
+      "easy": -16,
+      "normal": -4,
+      "hard": 5
+    },
+    "trials": [],
+    "note": "기존 난이도 밴드와 재정 설정을 유지하고, 나이별 훈련·피로를 활성화한 최종 경기 코드를 세 난이도 모두 재측정했습니다."
+  },
+  "measurements": [
+    {
+      "command": "npx tsx tools/test/clear_rate.ts easy 1 40",
+      "codeCommit": "fdf9818b593199525242c6bacb6e6f528871b368",
+      "summary": {
+        "difficulty": "easy",
+        "start": 1,
+        "n": 40,
+        "clear": 6,
+        "fail": 34,
+        "bank": 0,
+        "franch": 40,
+        "anyW": 29,
+        "clearRate": 0.15,
+        "w27": [
+          8,
+          14,
+          25,
+          28,
+          38,
+          39
+        ],
+        "deepNeg": 0
+      },
+      "rows": [
+        {
+          "seed": 1,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 2,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 3,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 4,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 2
+          },
+          "cash": 10.12,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 5,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 2
+          },
+          "cash": 81.05,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 6,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 2
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 7,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 8,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 3
+          },
+          "cash": 26.9,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 9,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 10,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 27.12,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 11,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0.11,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 12,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": -1.54,
+          "year": 2027
+        },
+        {
+          "seed": 13,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 2.24,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 14,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 5,
+            "msi": 2,
+            "worlds": 2
+          },
+          "cash": 57.37,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 15,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 87.05,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 16,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 30.9,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 17,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 36.33,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 18,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 2.5,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 19,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 1.12,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 20,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 2
+          },
+          "cash": 35.96,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 21,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 22,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 71.4,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 23,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 2,
+            "worlds": 1
+          },
+          "cash": 72.02,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 24,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 6.87,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 25,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 4,
+            "msi": 3,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 26,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 5,
+            "msi": 3,
+            "worlds": 1
+          },
+          "cash": 53.28,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 27,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 28,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 29,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 115.26,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 30,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 10.33,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 31,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0.6,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 32,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 33,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 55.85,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 34,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 4
+          },
+          "cash": 114.04,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 35,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 20,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 36,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 5.03,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 37,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 38,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 5,
+            "msi": 2,
+            "worlds": 1
+          },
+          "cash": 24.04,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 39,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 4
+          },
+          "cash": 74.19,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 40,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        }
+      ]
+    },
+    {
+      "command": "npx tsx tools/test/clear_rate.ts normal 200 40",
+      "codeCommit": "fdf9818b593199525242c6bacb6e6f528871b368",
+      "summary": {
+        "difficulty": "normal",
+        "start": 200,
+        "n": 40,
+        "clear": 5,
+        "fail": 35,
+        "bank": 0,
+        "franch": 40,
+        "anyW": 18,
+        "clearRate": 0.125,
+        "w27": [
+          201,
+          207,
+          215,
+          221,
+          224
+        ],
+        "deepNeg": 0
+      },
+      "rows": [
+        {
+          "seed": 200,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 13.07,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 201,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 3,
+            "worlds": 2
+          },
+          "cash": 60.92,
+          "minCash": -0.88,
+          "year": 2027
+        },
+        {
+          "seed": 202,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.88,
+          "year": 2027
+        },
+        {
+          "seed": 203,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 2,
+            "worlds": 0
+          },
+          "cash": 29.77,
+          "minCash": -0.88,
+          "year": 2027
+        },
+        {
+          "seed": 204,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 205,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 2,
+            "worlds": 3
+          },
+          "cash": 52.8,
+          "minCash": -1.03,
+          "year": 2027
+        },
+        {
+          "seed": 206,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 18.07,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 207,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 208,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 7,
+            "msi": 5,
+            "worlds": 2
+          },
+          "cash": 51.44,
+          "minCash": -1.03,
+          "year": 2027
+        },
+        {
+          "seed": 209,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 23.56,
+          "minCash": -0.63,
+          "year": 2027
+        },
+        {
+          "seed": 210,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 42.92,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 211,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -1.18,
+          "year": 2027
+        },
+        {
+          "seed": 212,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 48.31,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 213,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 1.72,
+          "minCash": -0.63,
+          "year": 2027
+        },
+        {
+          "seed": 214,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.63,
+          "year": 2027
+        },
+        {
+          "seed": 215,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 1,
+            "worlds": 2
+          },
+          "cash": 41.44,
+          "minCash": -0.88,
+          "year": 2027
+        },
+        {
+          "seed": 216,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 15.92,
+          "minCash": -1.18,
+          "year": 2027
+        },
+        {
+          "seed": 217,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 6,
+            "msi": 2,
+            "worlds": 2
+          },
+          "cash": 81.68,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 218,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 17.95,
+          "minCash": -0.88,
+          "year": 2027
+        },
+        {
+          "seed": 219,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 53.09,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 220,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 4,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 14.14,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 221,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 1,
+            "worlds": 3
+          },
+          "cash": 0,
+          "minCash": -1.18,
+          "year": 2027
+        },
+        {
+          "seed": 222,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 4,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 223,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 45.07,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 224,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 4,
+            "msi": 2,
+            "worlds": 2
+          },
+          "cash": 26.72,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 225,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.88,
+          "year": 2027
+        },
+        {
+          "seed": 226,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 7.56,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 227,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 5,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 34,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 228,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.63,
+          "year": 2027
+        },
+        {
+          "seed": 229,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 230,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 7,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 30,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 231,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.63,
+          "year": 2027
+        },
+        {
+          "seed": 232,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 30.93,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 233,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 1.8,
+          "minCash": -1.18,
+          "year": 2027
+        },
+        {
+          "seed": 234,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 5,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 14.44,
+          "minCash": -1.18,
+          "year": 2027
+        },
+        {
+          "seed": 235,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": -1.03,
+          "year": 2027
+        },
+        {
+          "seed": 236,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 237,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -1.03,
+          "year": 2027
+        },
+        {
+          "seed": 238,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 4,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 239,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 11.45,
+          "minCash": 0,
+          "year": 2027
+        }
+      ]
+    },
+    {
+      "command": "npx tsx tools/test/clear_rate.ts hard 300 40",
+      "codeCommit": "fdf9818b593199525242c6bacb6e6f528871b368",
+      "summary": {
+        "difficulty": "hard",
+        "start": 300,
+        "n": 40,
+        "clear": 2,
+        "fail": 38,
+        "bank": 0,
+        "franch": 39,
+        "anyW": 8,
+        "clearRate": 0.05,
+        "w27": [
+          307,
+          339
+        ],
+        "deepNeg": 0
+      },
+      "rows": [
+        {
+          "seed": 300,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 301,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 302,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 7,
+            "msi": 0,
+            "worlds": 2
+          },
+          "cash": 80.98,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 303,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 304,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 6,
+            "msi": 2,
+            "worlds": 0
+          },
+          "cash": 23.32,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 305,
+          "ended": "fail",
+          "franchised": false,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 306,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 18,
+          "minCash": -0.25,
+          "year": 2027
+        },
+        {
+          "seed": 307,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 6,
+            "msi": 1,
+            "worlds": 3
+          },
+          "cash": 102.44,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 308,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 309,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 0,
+            "worlds": 2
+          },
+          "cash": 11.6,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 310,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.4,
+          "year": 2027
+        },
+        {
+          "seed": 311,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.25,
+          "year": 2027
+        },
+        {
+          "seed": 312,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 313,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 314,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 315,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 316,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.25,
+          "year": 2027
+        },
+        {
+          "seed": 317,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 6.18,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 318,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 319,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 2,
+            "worlds": 2
+          },
+          "cash": 61.12,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 320,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 4.92,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 321,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 1.58,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 322,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 323,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.25,
+          "year": 2027
+        },
+        {
+          "seed": 324,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 3,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 9.78,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 325,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": 0,
+          "year": 2027
+        },
+        {
+          "seed": 326,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.4,
+          "year": 2027
+        },
+        {
+          "seed": 327,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 328,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 0.87,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 329,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 330,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 1,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 331,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0.4,
+          "minCash": -0.25,
+          "year": 2027
+        },
+        {
+          "seed": 332,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 1.56,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 333,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 5,
+            "msi": 1,
+            "worlds": 1
+          },
+          "cash": 85.25,
+          "minCash": -0.25,
+          "year": 2027
+        },
+        {
+          "seed": 334,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 2,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 335,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 336,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 337,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 338,
+          "ended": "fail",
+          "franchised": true,
+          "trophies": {
+            "lck": 1,
+            "msi": 0,
+            "worlds": 0
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        },
+        {
+          "seed": 339,
+          "ended": "clear",
+          "franchised": true,
+          "trophies": {
+            "lck": 0,
+            "msi": 0,
+            "worlds": 1
+          },
+          "cash": 0,
+          "minCash": -0.55,
+          "year": 2027
+        }
+      ]
+    }
+  ]
+}
