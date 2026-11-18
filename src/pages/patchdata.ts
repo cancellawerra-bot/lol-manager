@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.4.3";
+export const PATCH_VERSION = "2.4.4";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.4.4", date: "2026-11-18",
+    items: [
+      "쉬움 월즈 해외 시드 추정 전력을 조금 더 낮춥니다(1시드 70→68). 보통·어려움 밴드는 그대로입니다.",
+    ],
+  },
   {
     v: "2.4.3", date: "2026-11-18",
     items: [
