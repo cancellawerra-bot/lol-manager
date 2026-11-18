@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CARDS, PL, POS_KO, TM } from "../data";
 import type { Save } from "../game/season";
 import { mutate } from "../store";
@@ -14,6 +14,8 @@ export default function InSeasonMarket({ s }: { s: Save }) {
   useEffect(() => { if (!closed && (m?.year !== s.story?.year || m?.week !== week)) mutate((x) => prepareInSeason(x)); }, [closed, m?.year, m?.week, s.story?.year, week]);
   const list = seasonCandidates(s).filter((c) => (pos === "all" || c.card.posIdx === Number(pos)) && (source === "all" || (source === "FA" ? c.owner === "FA" : c.owner !== "FA")) && (!query.trim() || `${c.card.name} ${c.owner} ${TM[c.owner]?.ko ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a, b) => a.salary - b.salary || b.ovr - a.ovr);
   const tr = m?.negotiation, target = tr && seasonCandidates(s).find((c) => c.person === tr.person);
+  const negotiationRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (tr) negotiationRef.current?.scrollIntoView({ block: "start" }); }, [tr?.person, tr?.step]);
   const teamName = (t: string) => t === "FA" ? "자유계약" : TM[t]?.ko ?? t;
   const action = (fn: (x: Save) => string | undefined, success: string) => mutate((x) => setMessage(fn(x) ?? success));
   return <>
@@ -23,7 +25,7 @@ export default function InSeasonMarket({ s }: { s: Save }) {
       <label className="row gap"><input type="checkbox" data-testid="season-automatic" checked={m?.automatic ?? false} disabled={!!closed} onChange={(e) => mutate((x) => setSeasonAutomatic(x, e.target.checked))} />자동 감독에게 주간 보강 맡기기</label>
       <p className="muted sm">보유 벤치를 먼저 기용하고 예산 안에서 보강합니다. 필요한 자금은 실제로 도착한 벤치 이적 제안으로 마련합니다. 선수는 거절할 수 있습니다.</p>
       {message && <p role="status" data-testid="season-market-message" className="notice">{message}</p>}
-      {tr && target && <div className="notice" data-testid="season-negotiation">
+      {tr && target && <div ref={negotiationRef} style={{ scrollMarginTop: 110 }} className="notice" data-testid="season-negotiation">
         <h3>{target.card.name} · {tr.step === "club" ? "1. 구단 협상" : "2. 선수 계약"}</h3>
         <p>{teamName(tr.from)} · {POS_KO[target.card.posIdx]} · 연봉 희망 {fmtMoney(target.salary)} · 합의 이적료 {fmtMoney(tr.fee)}</p>
         {tr.step === "club" ? <button className="btn" disabled={!!closed} data-testid="season-club-reply" onClick={() => action(seasonClubReply, "구단 합의 완료. 선수 계약 조건을 제시해 주세요.")}>구단 답변 받기</button> : <>
@@ -54,7 +56,7 @@ export default function InSeasonMarket({ s }: { s: Save }) {
       <p className="muted sm">낮은 연봉 순 · {list.length}명. 카드의 금액은 연봉 희망이며, 계약 선수의 이적료는 별도입니다.</p>
       <div className="card-grid">{list.slice(0, 60).map((c) => <div key={c.person} data-testid={`season-candidate-${c.person}`}>
         <CardTile c={c.card} price={c.salary} personView disabled={!!closed} onClick={() => { setSalary(String(c.salary)); setYears(1); setStarter(true); action((x) => startSeasonNegotiation(x, c.card.id, Number(fee) || 0), c.owner === "FA" ? "선수에게 계약을 제시해 주세요." : "구단에 이적료를 제안했습니다."); }} />
-        <p className="sm">{teamName(c.owner)} · {c.stance}{c.owner !== "FA" && ` · 희망 이적료 ${fmtMoney(c.fee)}`}</p>
+        <p className="sm">현재 소속: {teamName(c.owner)} · {c.stance}{c.owner !== "FA" && ` · 희망 이적료 ${fmtMoney(c.fee)}`}</p>
       </div>)}</div>
       {list.length > 60 && <p className="muted sm">60명까지 표시합니다. 검색·포지션으로 범위를 좁혀 주세요.</p>}
       <h3>완료된 이적</h3>
