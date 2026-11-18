@@ -16,6 +16,9 @@ export function SeriesDetail({ sr }: { sr: SeriesRec }) {
             </div>
           ))}
           <div className="muted sm">MVP(평점 1위): {PL[g.mvp]?.name}</div>
+          {g.training && <div className="muted sm">훈련 성장·피로 (경기 당시 게임 효과): {(["B", "R"] as const).map((side) => {
+            const t = g.training![side];return `${side === "B" ? g.blue : g.red} 피지컬 +${(t.mechanics * 100).toFixed(2)}% / 전략 +${(t.strategy * 100).toFixed(2)}% / 피로 −${(t.fatigue * 100).toFixed(2)}%`;
+          }).join(" · ")}</div>}
         </div>
       ))}
     </div>

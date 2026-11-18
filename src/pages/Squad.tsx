@@ -2,6 +2,9 @@ import { POS_KO, PL } from "../data";
 import { useSave, mutate, fillSchedule, setStarter } from "../store";
 import { Card, PName, Pct } from "../ui";
 import type { DayAct } from "../game/season";
+import { playerTraining, trainingPlan, trainingPerson, trainingDate, setTrainingPlan } from "../game/trainingRuntime";
+import { trainingProfile, trainingBonuses } from "../game/training";
+import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
 
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 const ACT: { id: DayAct; t: string }[] = [{ id: "train", t: "훈련" }, { id: "scrim", t: "스크림" }, { id: "rest", t: "휴식" }, { id: "", t: "미정" }];
@@ -9,19 +12,22 @@ const ACT: { id: DayAct; t: string }[] = [{ id: "train", t: "훈련" }, { id: "s
 export default function Squad() {
   const s = useSave()!;
   const keys = s.starters[s.team] ?? [];
+  const story = s.mode === "story";
+  const date = trainingDate(s);
+  const plans = (k: string): DayAct[] => story ? trainingPlan(s, k) : s.sched[k] ?? ["", "", "", "", "", "", ""];
   const all = [...keys, ...((s.mode === "roster" ? [] : s.cards.filter((k) => !keys.includes(k))))];
   const setAct = (k: string, d: number, a: DayAct): void => {
     mutate((x) => {
-      const row = [...(x.sched[k] ?? ["", "", "", "", "", "", ""])];
-      row[d] = a; x.sched[k] = row;
+      const row = story ? trainingPlan(x, k) : [...(x.sched[k] ?? ["", "", "", "", "", "", ""])];
+      row[d] = a; setTrainingPlan(x, k, row);
       const people = x.starters[x.team] ?? [];
-      x.schedOk = people.every((p) => (x.sched[p] ?? []).every(Boolean) && (x.sched[p] ?? []).includes("rest"));
+      x.schedOk = people.every((p) => { const plan = story ? trainingPlan(x, p) : x.sched[p] ?? []; return plan.length === 7 && plan.every(Boolean) && plan.includes("rest"); });
     });
   };
   return (
     <div className="col gap">
       <Card title="선수단 일정" right={<button className="btn sm" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button>}>
-        <p className="muted sm">한 주에 하루는 휴식으로 두세요. 빈 칸이 있거나 휴식이 없으면 경기를 진행할 수 없습니다. 한 번 정하면 매주 같은 패턴이 이어집니다.</p>
+        <p className="muted sm">한 주에 하루는 휴식으로 두세요. {story ? "피지컬 훈련·전략 스크림·휴식을 현재 날짜에 맞춰 처리합니다. 수석코치에게 맡기면 나이에 맞춘 계획을 자동 배정합니다." : "빈 칸이 있거나 휴식이 없으면 경기를 진행할 수 없습니다. 한 번 정하면 매주 같은 패턴이 이어집니다."}</p>
         <div className="tbl-wrap">
           <table className="tbl sched-grid">
             <thead><tr><th>선수</th>{DAYS.map((d) => <th key={d}>{d}</th>)}</tr></thead>
@@ -29,10 +35,10 @@ export default function Squad() {
               {keys.map((k, i) => (
                 <tr key={k}>
                   <td><small className="muted">{POS_KO[i]}</small> <PName k={k} /></td>
-                  {(s.sched[k] ?? ["","","","","","",""]).map((a, d) => (
+                  {plans(k).map((a, d) => (
                     <td key={d}>
                       <select value={a} onChange={(e) => setAct(k, d, e.target.value as DayAct)}>
-                        {ACT.map((x) => <option key={x.id || "e"} value={x.id}>{x.t}</option>)}
+                        {ACT.map((x) => <option key={x.id || "e"} value={x.id}>{story && x.id === "train" ? "피지컬 훈련" : story && x.id === "scrim" ? "전략·스크림" : x.t}</option>)}
                       </select>
                     </td>
                   ))}
@@ -41,8 +47,23 @@ export default function Squad() {
             </tbody>
           </table>
         </div>
-        <p className={s.schedOk ? "ok sm" : "err sm"}>{s.schedOk ? "일정이 준비되었습니다." : "빈 칸을 채우고, 선수마다 휴식일을 하나 이상 넣어 주세요."}</p>
+        <p className={s.schedOk ? "ok sm" : "err sm"}>{s.schedOk ? "일정이 준비되었습니다." : story ? "권장 계획을 변경하거나 수석코치에게 맡겨 확정해 주세요. 선수마다 휴식일이 하나 이상 필요합니다." : "빈 칸을 채우고, 선수마다 휴식일을 하나 이상 넣어 주세요."}</p>
       </Card>
+      {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">{date}</span>}>
+        <p className="muted sm">훈련 숙련도는 선수 개인에게 쌓이고 시즌이 바뀌어도 유지됩니다. 원본 시즌 성적·종합·연봉과 구분되는 게임 효과입니다. 피지컬은 라인 실행력, 전략은 경기 준비에 반영하며 피로는 준비 효과를 낮춥니다.</p>
+        <div className="card-grid" data-testid="training-roster">{[...new Map([...keys, ...(s.story?.contracts.map((c) => c.key) ?? [])].map((k) => [trainingPerson(s, k), k])).values()].map((k) => {
+          const person = trainingPerson(s, k), p = playerTraining(s, k); if (!person || !p) return null;
+          const birth = PLAYER_BIRTHDATES[person], profile = trainingProfile(birth, date), bonus = trainingBonuses(p);
+          return <div className="card-tile" key={person} data-testid={`training-${person}`}>
+            <b>{PL[k]?.name ?? person}</b><div className="muted sm">{profile.known ? `만 ${profile.age}세` : "생년 정보 없음 · 나이 보정 없음"}</div>
+            <p className="sm">피지컬 숙련 {p.mechanicsXp.toFixed(1)} / 100<br />전략 숙련 {p.strategyXp.toFixed(1)} / 100<br />피로 {p.fatigue.toFixed(1)} / 100</p>
+            <div className="xs muted">학습 효율: 피지컬 {profile.mechanics.toFixed(2)}배 · 전략 {profile.strategy.toFixed(2)}배 · 회복 {profile.recovery.toFixed(2)}배</div>
+            <p className="sm">경기 보정: 피지컬 +{(bonus.mechanics * 100).toFixed(2)}% · 전략 +{(bonus.strategy * 100).toFixed(2)}% · 피로 −{(p.fatigue * 0.02).toFixed(2)}%</p>
+            {birth && <a className="xs" href={birth.sourceUrl} target="_blank" rel="noreferrer">생년 자료 출처</a>}
+          </div>;
+        })}</div>
+        <p className="muted xs">보정값은 승률이 아닙니다. 같은 날짜는 한 번만 처리하며 화면을 다시 열거나 불러와도 훈련을 중복 획득하지 않습니다. 생년이 확인된 선수만 나이 보정합니다.</p>
+      </Card>}
       <Card title="선발 라인업">
         <table className="tbl">
           <thead><tr><th>포지션</th><th>선수</th><th>종합</th><th>교체</th></tr></thead>

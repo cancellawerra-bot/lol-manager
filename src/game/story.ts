@@ -8,6 +8,7 @@ import type { StoveState } from "./stove";
 import { addNews, dateKo, simSeries, standings } from "./season";
 import { moneyRound, fmtMoney } from "./money";
 import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
+import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
 export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -503,6 +504,7 @@ export function beginSplit(s: Save, year: number, split: Split): void {
   const start = splitStartDate(year, split);
   const sch = buildSplitSchedule(teams, start, 3, `${year}${split === "spring" ? "S" : "U"}-`);
   s.days = sch.days; s.series = sch.series; s.day = 0; s.phase = "regular"; s.champion = undefined; s.seeds = undefined; s.schedOk = s.schedOk || false;
+  beginTrainingPeriod(s, start);
   const vs = s.series.find((x) => x.day === 0 && (x.a === s.team || x.b === s.team));
   addNews(s, "season", `${year} ${split === "spring" ? "스프링" : "서머"} 개막 · ${st.tier === "LCK" ? "LCK" : "2부"}`,
     `${s.club?.name ?? s.team}이(가) ${st.tier === "LCK" ? "LCK" : "챌린저스"} ${year} ${split === "spring" ? "스프링" : "서머"}를 시작합니다.${vs ? ` 첫 경기는 ${dateKo(sch.days[0].date)} ${vs.a === s.team ? vs.b : vs.a}전입니다.` : ""}`, s.team);
@@ -1265,7 +1267,7 @@ export function autoQualifyFranchiseIfLck(s: Save): void {
 export function simRestOfPhase(s: Save, rng: Rng, onlyOthers = false): void {
   if (onlyOthers) {
     for (const sr of s.series) {
-      if (sr.winner || sr.a === s.team || sr.b === s.team) continue;
+      if (sr.winner || sr.day !== s.day || sr.a === s.team || sr.b === s.team) continue;
       try { simSeries(s, sr, rng); } catch { /* */ }
     }
     return;
@@ -1307,6 +1309,8 @@ export function makeContracts(cardIds: string[], years: number, tier: Tier): Con
 export function finishStoryDay(s: Save, rng: Rng): void {
   const st = s.story!;
   if (st.phase === "clear" || st.phase === "fail" || st.phase === "bankrupt" || st.ended) { s.phase = "done"; return; }
+  const date = s.days[Math.min(s.day, s.days.length - 1)]?.date;
+  if (date) advanceTeamTraining(s, s.team, date);
   for (const sr of s.series.filter((x) => x.day === s.day && !x.winner)) {
     if ((s.starters[sr.a] ?? []).filter(Boolean).length < 5 || (s.starters[sr.b] ?? []).filter(Boolean).length < 5) {
       // still try if intl ghosts

@@ -1,9 +1,12 @@
-/** 연령별 훈련 적용 준비 코어. 원본 카드/PL/승패를 수정하지 않으며 아직 경기 루프에 연결하지 않습니다. */
-export const AGE_TRAINING_ENABLED = false;
+/** 훈련 진행도는 커리어의 게임 값이며 원본 시즌 기록과 분리합니다. */
+export const AGE_TRAINING_ENABLED = true;
 export type TrainingKind = "mechanics" | "strategy" | "recovery";
 export interface VerifiedBirth { date: string; sourceUrl: string; checkedAt: string }
 export interface TrainingProfile { age?: number; known: boolean; mechanics: number; strategy: number; recovery: number }
 export interface TrainingProgress { person: string; mechanicsXp: number; strategyXp: number; fatigue: number; lastDate?: string }
+export interface TrainingImpact { mechanics: number; strategy: number; fatigue: number }
+export type MatchTraining = Record<string, TrainingImpact>;
+export type TrainingSummary = { B: TrainingImpact; R: TrainingImpact };
 
 /** 게임용 학습 효율입니다. 실제 선수의 전성기·능력치를 측정한 수치가 아닙니다. */
 export const AGE_TRAINING_ANCHORS = [
@@ -57,7 +60,7 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
   return { progress: p, profile, applied: true };
 }
 
-/** 연결 시 사용할 최대 임시 보정 제안. 실제 카드나 경기에는 아직 반영하지 않습니다. */
+/** 경기 입력에 합성하는 성장 보정. 원본 카드 수치는 수정하지 않습니다. */
 export function trainingBonuses(p: TrainingProgress): { mechanics: number; strategy: number } {
   return { mechanics: clamp(p.mechanicsXp, 0, 100) / 100 * 0.03, strategy: clamp(p.strategyXp, 0, 100) / 100 * 0.03 };
 }

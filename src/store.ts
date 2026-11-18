@@ -10,6 +10,7 @@ import { hydrateSave } from "./game/cards";
 import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, applyStoryWorld, FRANCHISE_BUYIN } from "./game/story";
 import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
+import { initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
 
 const KEY = (slot: number): string => `lolm.slot.${slot}`;
 const LAST = "lolm.last";
@@ -40,9 +41,9 @@ export function persist(): boolean {
   cur.updated = new Date().toISOString();
   try { localStorage.setItem(KEY(cur.slot), JSON.stringify(cur)); localStorage.setItem(LAST, String(cur.slot)); return true; } catch { return false; }
 }
-export function setSave(s: Save | null): void { cur = s; if (s) { hydrateSave(s); if (s.mode === "story") applyStoryWorld(s); persist(); } emit(); }
+export function setSave(s: Save | null): void { cur = s; if (s) { hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); initializeTraining(s); } persist(); } emit(); }
 export function loadSlot(n: number): boolean {
-  try { const raw = localStorage.getItem(KEY(n)); if (!raw) return false; const s = JSON.parse(raw) as Save; if (s.v !== SAVE_V) return false; hydrateSave(s); if (s.mode === "story") applyStoryWorld(s); cur = s; localStorage.setItem(LAST, String(n)); emit(); return true; } catch { return false; }
+  try { const raw = localStorage.getItem(KEY(n)); if (!raw) return false; const s = JSON.parse(raw) as Save; if (s.v !== SAVE_V) return false; hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); initializeTraining(s); } cur = s; localStorage.setItem(LAST, String(n)); emit(); return true; } catch { return false; }
 }
 export function deleteSlot(n: number): void { localStorage.removeItem(KEY(n)); if (cur?.slot === n) cur = null; emit(); }
 export function exportJson(): string { return JSON.stringify(cur); }
@@ -50,7 +51,7 @@ export function importJson(text: string, slot: number): string | null {
   try {
     const s = JSON.parse(text) as Save;
     if (!s || s.v !== SAVE_V || !Array.isArray(s.series) || !s.team) return "LOL Manager 세이브 파일이 아니거나 버전이 다릅니다. v2부터는 새 형식이라 이전 세이브는 불러올 수 없습니다.";
-    s.slot = slot; hydrateSave(s); if (s.mode === "story") applyStoryWorld(s); cur = s; persist(); emit(); return null;
+    s.slot = slot; hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); initializeTraining(s); } cur = s; persist(); emit(); return null;
   } catch { return "파일을 읽지 못했습니다. JSON 형식인지 확인해 주세요."; }
 }
 
@@ -74,7 +75,7 @@ export function advance(): "match" | "day" | "done" | "sched" | "franchise" | "s
   const my = mySeriesToday(s);
   if (my) {
     if (!s.schedOk) return "sched";
-    mutate((x) => { x.session = { seriesId: my.id, gameIdx: my.games.length, holder: "", stage: "press", simStep: 0 }; }); return "match";
+    mutate((x) => { prepareSeriesTraining(x, my); x.session = { seriesId: my.id, gameIdx: my.games.length, holder: "", stage: "press", simStep: 0 }; }); return "match";
   }
   mutate((x, rng) => { if (isStory(x)) finishStoryDay(x, rng); else finishDay(x, rng); });
   return (s.phase as string) === "done" || s.story?.ended ? (s.story?.ended ? "endstory" : "done") : "day";
@@ -140,7 +141,8 @@ export function runSim(): void {
   mutate((s, rng) => {
     const ss = s.session!; const d = ss.draft as DraftState;
     if (turn(d)) return;
-    ss.result = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng);
+    prepareSeriesTraining(s, sessionSeries(s));
+    ss.result = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]));
     ss.simStep = 0; ss.stage = "sim";
   });
 }
@@ -182,7 +184,7 @@ export function fillSchedule(): void {
   mutate((s) => {
     const keys = s.starters[s.team] ?? [];
     const week: ("train" | "scrim" | "rest")[] = ["train", "train", "scrim", "rest", "train", "scrim", "rest"];
-    for (const k of keys) s.sched[k] = [...week];
+    for (const k of keys) setTrainingPlan(s, k, s.mode === "story" ? recommendedTraining(trainingPerson(s, k), trainingDate(s)) : week, true);
     s.schedOk = true;
   });
 }

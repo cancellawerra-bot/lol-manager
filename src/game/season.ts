@@ -4,6 +4,8 @@ import { DraftState, DPick, Side, autoDraft, newDraft, other } from "./draft";
 import { GameResult, simulateGame } from "./sim";
 import { Rng } from "./rng";
 import type { StoryState } from "./story";
+import { prepareSeriesTraining, matchTraining, type TrainingState } from "./trainingRuntime";
+import type { TrainingSummary } from "./training";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -12,6 +14,7 @@ export interface GameRec {
   blue: string; red: string; winner: string; firstSide: Side; holder: string;
   bans: Record<Side, string[]>; picks: Record<Side, DPick[]>; lineup: Record<Side, string[]>;
   dur: number; kills: [number, number]; gold15: number; mvp: string; pPre: number; res?: GameResult;
+  training?: TrainingSummary;
 }
 export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number } }
 export interface Day { date: string; week: number; stage: Stage; label: string }
@@ -46,6 +49,7 @@ export interface Save {
   session?: Session; phase: "regular" | "playoffs" | "done"; champion?: string; seen: string; seeds?: string[];
   ownerNote?: string;
   story?: StoryState;
+  training?: TrainingState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -156,7 +160,7 @@ export function recordGame(s: Save, sr: SeriesRec, d: DraftState, res: GameResul
   const winner = d.teams[res.winner];
   sr.games.push({
     blue: d.teams.B, red: d.teams.R, winner, firstSide: d.firstSide, holder, bans: d.bans, picks: d.picks, lineup: d.lineup,
-    dur: res.dur, kills: [res.kills.B, res.kills.R], gold15: res.gold15, mvp: res.mvp, pPre: res.pPre, res: keepDetail ? res : undefined,
+    dur: res.dur, kills: [res.kills.B, res.kills.R], gold15: res.gold15, mvp: res.mvp, pPre: res.pPre, res: keepDetail ? res : undefined, training: res.training,
   });
   if (winner === sr.a) sr.sa++; else sr.sb++;
   for (const p of res.perf) {
@@ -169,13 +173,14 @@ export function recordGame(s: Save, sr: SeriesRec, d: DraftState, res: GameResul
 }
 
 export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
+  prepareSeriesTraining(s, sr);
   while (!sr.winner) {
     const gi = sr.games.length;
     const holder = selectionFor(sr, gi, rng);
     const sel = aiSelection(holder, holder === sr.a ? sr.b : sr.a, rng);
     const d0 = newDraft(sel.blue, sel.red, s.starters[sel.blue], s.starters[sel.red], sel.firstSide, lockedChamps(sr));
     const d = autoDraft(d0, rng);
-    const res = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng);
+    const res = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]));
     recordGame(s, sr, d, res, holder, false);
   }
 }

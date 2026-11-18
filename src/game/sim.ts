@@ -4,6 +4,7 @@ import { CH, CORE, PL, TM, POS_KO, fmt } from "../data";
 import type { PosIdx } from "../types";
 import { DraftState, Side, comfort, rankedMu, rankedSyn, shrink, other } from "./draft";
 import { Rng, sigmoid, logit } from "./rng";
+import type { MatchTraining, TrainingImpact, TrainingSummary } from "./training";
 
 export interface Factor { key: string; label: string; v: number; lines: string[] }
 export interface GEvent { t: number; side?: Side; kind: "kill" | "drake" | "grub" | "herald" | "tower" | "baron" | "fight" | "lane" | "end" | "info"; text: string; lead?: number }
@@ -12,13 +13,22 @@ export interface GameResult {
   winner: Side; dur: number; kills: Record<Side, number>; gold15: number; lanes15: number[]; leadEnd: number;
   obj: Record<Side, { drake: number; baron: number; tower: number; grub: number; herald: number }>;
   events: GEvent[]; factors: Factor[]; pPre: number; pMid: number; perf: Perf[]; mvp: string;
+  training?: TrainingSummary;
 }
 export const COEF = { skill: 0.6, org: 0.5, comfortHi: 0.06, comfortStep: 0.006, comfortNone: -0.1, mu: 4, syn: 2, meta: 1, noFront: -0.15, oneDmg: -0.1, form: 0.3, laneZ: 1.0, laneMu: 10, laneBase: 300, laneNoise: 600, midGold: 3500, endGold: 2600, endL0: 0.5 };
 export const BLUE_EDGE = (): number => Math.log(CORE.meta.blueWins / CORE.meta.redWins);
 export const orgOf = (short: string): number => { const t = TM[short]; return logit((t.gw + 10) / (t.gw + t.gl + 20)); };
 const pctS = (x: number): string => `${(x * 100).toFixed(1)}%`;
 
-export function factorsFor(d: DraftState, form: Record<string, number>): Factor[] {
+export const TRAINING_COEF = { readiness: 2, mechanicsLane: 5 } as const;
+export function summarizeTraining(d: DraftState, training: MatchTraining): TrainingSummary {
+  const side = (s: Side): TrainingImpact => {
+    const mean = (attr: keyof TrainingImpact): number => d.lineup[s].reduce((n, k) => n + (training[k]?.[attr] ?? 0), 0) / d.lineup[s].length;
+    return { mechanics: mean("mechanics"), strategy: mean("strategy"), fatigue: mean("fatigue") };
+  };
+  return { B: side("B"), R: side("R") };
+}
+export function factorsFor(d: DraftState, form: Record<string, number>, training?: MatchTraining): Factor[] {
   const F: Factor[] = [];
   const pB = d.lineup.B.map((k) => PL[k]); const pR = d.lineup.R.map((k) => PL[k]);
   const mean = (a: number[]): number => a.reduce((x, y) => x + y, 0) / a.length;
@@ -93,12 +103,18 @@ export function factorsFor(d: DraftState, form: Record<string, number>): Factor[
     const fb = mean(d.lineup.B.map((k) => form[k] ?? 0)), fr = mean(d.lineup.R.map((k) => form[k] ?? 0));
     F.push({ key: "form", label: "최근 폼 (이번 커리어 경기)", v: COEF.form * (fb - fr), lines: [`${d.teams.B} ${fb >= 0 ? "+" : ""}${fb.toFixed(2)} · ${d.teams.R} ${fr >= 0 ? "+" : ""}${fr.toFixed(2)} (최근 3경기 평점 기준)`] });
   }
+  if (training) {
+    const summary = summarizeTraining(d, training);
+    const total = (s: Side): number => summary[s].mechanics + summary[s].strategy - summary[s].fatigue;
+    F.push({ key: "training", label: "훈련 성장·피로 (게임 효과)", v: TRAINING_COEF.readiness * (total("B") - total("R")),
+      lines: (["B", "R"] as Side[]).map((s) => `${d.teams[s]} 피지컬 +${(summary[s].mechanics * 100).toFixed(2)}% · 전략 +${(summary[s].strategy * 100).toFixed(2)}% · 피로 −${(summary[s].fatigue * 100).toFixed(2)}% (승률이 아닌 훈련 보정)`) });
+  }
   return F;
 }
 
 const ROLE_K = [0.18, 0.2, 0.26, 0.3, 0.06];
-export function simulateGame(d: DraftState, form: Record<string, number>, rng: Rng): GameResult {
-  const factors = factorsFor(d, form);
+export function simulateGame(d: DraftState, form: Record<string, number>, rng: Rng, training?: MatchTraining): GameResult {
+  const factors = factorsFor(d, form, training);
   const L0 = factors.reduce((a, f) => a + f.v, 0);
   const pPre = sigmoid(L0);
   const ev: GEvent[] = [];
@@ -110,7 +126,8 @@ export function simulateGame(d: DraftState, form: Record<string, number>, rng: R
   const lanes15: number[] = [];
   for (let pos = 0; pos < 5; pos++) {
     const b = d.picks.B.find((p) => p.pos === pos)!, r = d.picks.R.find((p) => p.pos === pos)!;
-    const zb = PL[d.lineup.B[pos]].z.lane, zr = PL[d.lineup.R[pos]].z.lane;
+    const zb = PL[d.lineup.B[pos]].z.lane + (training?.[d.lineup.B[pos]]?.mechanics ?? 0) * TRAINING_COEF.mechanicsLane;
+    const zr = PL[d.lineup.R[pos]].z.lane + (training?.[d.lineup.R[pos]]?.mechanics ?? 0) * TRAINING_COEF.mechanicsLane;
     const mu = rankedMu(pos, b.c, r.c);
     const edge = COEF.laneZ * (zb - zr) + (mu ? (shrink(mu.wr * mu.n, mu.n) - 0.5) * COEF.laneMu : 0) + L0 * 0.3;
     lanes15.push(Math.round(COEF.laneBase * edge + rng.normal() * COEF.laneNoise));
@@ -186,5 +203,5 @@ export function simulateGame(d: DraftState, form: Record<string, number>, rng: R
     }
   }
   const mvp = perf.filter((p) => p.side === W).sort((a, b) => b.rating - a.rating)[0].key;
-  return { winner: W, dur, kills, gold15, lanes15, leadEnd: lead, obj, events: ev, factors, pPre, pMid, perf, mvp };
+  return { winner: W, dur, kills, gold15, lanes15, leadEnd: lead, obj, events: ev, factors, pPre, pMid, perf, mvp, training: training ? summarizeTraining(d, training) : undefined };
 }

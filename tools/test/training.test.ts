@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { AGE_TRAINING_ENABLED, trainingProfile, trainingSession, trainingBonuses, type VerifiedBirth, type TrainingProgress } from "../../src/game/training";
 const birth: VerifiedBirth = { date: "1996-05-07", sourceUrl: "https://www.guinnessworldrecords.com/world-records/729977-oldest-player-to-win-the-league-of-legends-world-championship", checkedAt: "2026-11-18" };
-assert.equal(AGE_TRAINING_ENABLED, false);
+assert.equal(AGE_TRAINING_ENABLED, true);
 assert.equal(trainingProfile(birth, "2018-05-06").age, 21);
 assert.equal(trainingProfile(birth, "2018-05-07").age, 22);
 assert(Math.abs(trainingProfile(birth, "2018-05-06").mechanics - trainingProfile(birth, "2018-05-07").mechanics) < .001, "생일에 효율 급변 없음");
@@ -26,4 +26,4 @@ const tired = trainingSession({ ...p, fatigue: 100 }, "mechanics", "2014-05-07",
 assert(tired.progress.mechanicsXp < one.progress.mechanicsXp);
 assert.deepEqual(trainingBonuses({ ...p, mechanicsXp: 1000, strategyXp: -4 }), { mechanics: 0.03, strategy: 0 });
 assert.equal(trainingSession(p, "mechanics", "2027-01-01").progress.mechanicsXp, 10);
-console.log("OK age training core: birthday, interpolation, neutral missing data, fatigue, recovery, caps, person identity, save idempotence, disabled integration");
+console.log("OK age training core: birthday, interpolation, neutral missing data, fatigue, recovery, caps, person identity, save idempotence, enabled integration");
