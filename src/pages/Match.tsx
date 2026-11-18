@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
-import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, setMeet, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog } from "../store";
+import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
 import { STAGE_KO } from "../game/season";
 import type { GameResult } from "../game/sim";
@@ -8,6 +8,7 @@ import { sigmoid } from "../game/rng";
 import { ChampIcon, TeamChip, Pct } from "../ui";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
+import { TacticsControls, TacticsReview } from "./Tactics";
 
 export default function Match() {
   const s = useSave()!;
@@ -90,21 +91,13 @@ function Lineup() {
 }
 function Meet() {
   const s = useSave()!;
-  const plans = [
-    ["atk", "공격", "한타와 오브젝트를 적극적으로 노립니다."],
-    ["bal", "균형", "상황에 맞춰 표준적으로 운영합니다."],
-    ["safe", "안전", "라인전과 실수 줄이기를 우선합니다."],
-  ] as const;
   return (
     <div className="panel">
       <h2>경기 전 미팅</h2>
       <p className="muted">오늘 경기 방향을 정하세요. 수석코치에게 맡겨도 됩니다.</p>
-      <div className="mode-grid">
-        {plans.map(([id, t, d]) => <button key={id} className={"mode-card" + (s.session?.meetPlan === id ? " on" : "")} onClick={() => setMeet(id)}><b>{t}</b><p>{d}</p></button>)}
-      </div>
+      <TacticsControls draft={s.session?.draft} />
       <div className="row gap wrap" style={{ marginTop: 16 }}>
-        <button className="btn primary lg" data-testid="meet-next" onClick={() => { if (!s.session?.meetPlan) setMeet("bal"); afterMeet(); }}>경기 시작 ▶</button>
-        <button className="btn" onClick={() => { setMeet("bal"); afterMeet(); }}>수석코치에게 맡기기</button>
+        <button className="btn primary lg" data-testid="meet-next" onClick={afterMeet}>작전 확정 · 경기 시작 ▶</button>
       </div>
     </div>
   );
@@ -359,6 +352,7 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
       <div className={"res-banner " + (won ? "win" : "lose")}>
         <b>{won ? "승리" : "패배"}</b><span>{d.teams[r.winner]} 승 · {r.dur}분 · 킬 {r.kills.B}:{r.kills.R} · 시리즈 {sr.a === s.team ? sr.sa : sr.sb}:{sr.a === s.team ? sr.sb : sr.sa}</span>
       </div>
+      <TacticsReview record={r.tactics} side={me} />
       <div className="grid">
         <section className="card span2">
           <div className="card-h"><h2>왜 {won ? "이겼나" : "졌나"}</h2><span className="muted sm">경기 전 우리 승리 확률 {(pMe * 100).toFixed(0)}%</span></div>

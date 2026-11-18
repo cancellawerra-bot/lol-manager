@@ -12,6 +12,7 @@ import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
 import { initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
 import { prepareInSeason } from "./game/inSeason";
+import { matchTactics, normalizeTactic, type TacticPlan } from "./game/tactics";
 
 const KEY = (slot: number): string => `lolm.slot.${slot}`;
 const LAST = "lolm.last";
@@ -142,9 +143,11 @@ export function autoRest(): void {
 export function runSim(): void {
   mutate((s, rng) => {
     const ss = s.session!; const d = ss.draft as DraftState;
-    if (turn(d)) return;
+    if (ss.result || turn(d)) return;
     prepareSeriesTraining(s, sessionSeries(s));
-    ss.result = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]));
+    const orders = matchTactics(d, s.tactics), side = mySide(s);
+    orders[side] = normalizeTactic({ tempo: ss.meetPlan ?? orders[side].tempo, focus: ss.meetFocus ?? orders[side].focus });
+    ss.result = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]), orders);
     ss.simStep = 0; ss.stage = "sim";
   });
 }
@@ -171,7 +174,16 @@ export function setStarter(team: string, pos: number, key: string): void { mutat
 export function setPress(tone: string): void { mutate((s) => { if (s.session) s.session.pressTone = tone; }); }
 export function afterPress(): void { mutate((s) => { if (s.session) s.session.stage = "lineup"; }); }
 export function confirmLineup(): void { toSelection(); }
-export function setMeet(plan: "atk" | "bal" | "safe"): void { mutate((s) => { if (s.session) s.session.meetPlan = plan; }); }
+export function setTacticPlan(plan: TacticPlan): void {
+  mutate((s) => {
+    if (s.session && (s.session.result || ["sim", "pog", "result", "locker", "end"].includes(s.session.stage))) return;
+    const normalized = normalizeTactic(plan); (s.tactics ??= {})[s.team] = normalized;
+    if (s.session) { s.session.meetPlan = normalized.tempo; s.session.meetFocus = normalized.focus; }
+  });
+}
+export function setMeet(plan: "atk" | "bal" | "safe"): void {
+  const s = getSave(); if (s) setTacticPlan({ ...normalizeTactic(s.tactics?.[s.team]), tempo: plan });
+}
 export function afterMeet(): void { runSim(); }
 export function afterPog(): void { toResult(); }
 export function afterResult(): void {

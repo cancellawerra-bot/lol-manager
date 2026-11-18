@@ -5,6 +5,7 @@ import type { PosIdx } from "../types";
 import { DraftState, Side, comfort, rankedMu, rankedSyn, shrink, other } from "./draft";
 import { Rng, sigmoid, logit } from "./rng";
 import type { MatchTraining, TrainingImpact, TrainingSummary } from "./training";
+import { tacticEffects, tacticExecution, tacticsRecord, type TacticPlan, type TacticDecision, type TacticStage, type TacticsRecord } from "./tactics";
 
 export interface Factor { key: string; label: string; v: number; lines: string[] }
 export interface GEvent { t: number; side?: Side; kind: "kill" | "drake" | "grub" | "herald" | "tower" | "baron" | "fight" | "lane" | "end" | "info"; text: string; lead?: number }
@@ -14,6 +15,7 @@ export interface GameResult {
   obj: Record<Side, { drake: number; baron: number; tower: number; grub: number; herald: number }>;
   events: GEvent[]; factors: Factor[]; pPre: number; pMid: number; perf: Perf[]; mvp: string;
   training?: TrainingSummary;
+  tactics?: TacticsRecord;
 }
 export const COEF = { skill: 0.6, org: 0.5, comfortHi: 0.06, comfortStep: 0.006, comfortNone: -0.1, mu: 4, syn: 2, meta: 1, noFront: -0.15, oneDmg: -0.1, form: 0.3, laneZ: 1.0, laneMu: 10, laneBase: 300, laneNoise: 600, midGold: 3500, endGold: 2600, endL0: 0.5 };
 export const BLUE_EDGE = (): number => Math.log(CORE.meta.blueWins / CORE.meta.redWins);
@@ -113,7 +115,7 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
 }
 
 const ROLE_K = [0.18, 0.2, 0.26, 0.3, 0.06];
-export function simulateGame(d: DraftState, form: Record<string, number>, rng: Rng, training?: MatchTraining): GameResult {
+export function simulateGame(d: DraftState, form: Record<string, number>, rng: Rng, training?: MatchTraining, orders?: Record<Side, TacticPlan>): GameResult {
   const factors = factorsFor(d, form, training);
   const L0 = factors.reduce((a, f) => a + f.v, 0);
   const pPre = sigmoid(L0);
@@ -122,6 +124,11 @@ export function simulateGame(d: DraftState, form: Record<string, number>, rng: R
   const kills = { B: 0, R: 0 };
   const T = (s: Side): string => d.teams[s];
   const pick = (p: number): Side => (rng.chance(p) ? "B" : "R");
+  const effect = tacticEffects(orders), decisions: TacticDecision[] = [];
+  const decide = (stage: TacticStage, base: number, delta: number): Side => {
+    const before = sigmoid(base), after = sigmoid(base + delta), winner = pick(after);
+    decisions.push({ stage, before, after, winner }); return winner;
+  };
   // 라인전
   const lanes15: number[] = [];
   for (let pos = 0; pos < 5; pos++) {
@@ -130,17 +137,18 @@ export function simulateGame(d: DraftState, form: Record<string, number>, rng: R
     const zr = PL[d.lineup.R[pos]].z.lane + (training?.[d.lineup.R[pos]]?.mechanics ?? 0) * TRAINING_COEF.mechanicsLane;
     const mu = rankedMu(pos, b.c, r.c);
     const edge = COEF.laneZ * (zb - zr) + (mu ? (shrink(mu.wr * mu.n, mu.n) - 0.5) * COEF.laneMu : 0) + L0 * 0.3;
-    lanes15.push(Math.round(COEF.laneBase * edge + rng.normal() * COEF.laneNoise));
+    lanes15.push(Math.round(COEF.laneBase * edge + rng.normal() * COEF.laneNoise) + effect.lane[pos]);
   }
   let lead = lanes15.reduce((a, b) => a + b, 0);
-  const fb = pick(sigmoid(L0 * 0.6 + rng.normal() * 0.3));
+  const fb = decide("opening", L0 * 0.6 + rng.normal() * 0.3, effect.early);
   kills[fb] += 1;
   const fbPos = rng.pick([0, 1, 2, 3]);
   ev.push({ t: rng.int(3, 6), side: fb, kind: "kill", text: `${T(fb)} ${PL[d.lineup[fb][fbPos]].name}(${CH[d.picks[fb].find((p) => p.pos === fbPos)!.c].ko}) 퍼스트 블러드` });
-  const g1 = pick(sigmoid(L0 * 0.5 + lanes15[1] / 900)); const gn = rng.chance(0.5) ? 3 : 2;
+  const g1 = decide("river", L0 * 0.5 + (lanes15[1] - effect.lane[1]) / 900, effect.lane[1] / 900 + effect.early + effect.focus[0] / 900); const gn = rng.chance(0.5) ? 3 : 2;
   obj[g1].grub += gn; obj[other(g1)].grub += 3 - gn;
   ev.push({ t: 7, side: g1, kind: "grub", text: `공허 유충: ${T(g1)} ${gn}마리${gn < 3 ? `, ${T(other(g1))} ${3 - gn}마리` : ""}` });
-  const dr1 = pick(sigmoid(L0 * 0.5 + (lanes15[3] + lanes15[4] + lanes15[1]) / 1800));
+  const drDelta = (effect.lane[3] + effect.lane[4] + effect.lane[1]) / 1800;
+  const dr1 = decide("dragon", L0 * 0.5 + (lanes15[3] + lanes15[4] + lanes15[1]) / 1800 - drDelta, drDelta + effect.early);
   obj[dr1].drake++;
   ev.push({ t: rng.int(6, 8), side: dr1, kind: "drake", text: `첫 드래곤 ${T(dr1)}` });
   const extra = Math.round(rng.normal() * 2);
@@ -149,24 +157,27 @@ export function simulateGame(d: DraftState, form: Record<string, number>, rng: R
   const ls: Side = big[0] >= 0 ? "B" : "R";
   ev.push({ t: 14, kind: "lane", side: lead >= 0 ? "B" : "R", lead, text: `라인전 종료(14분): 골드 ${lead >= 0 ? T("B") : T("R")} +${fmt(Math.abs(lead))}. 가장 큰 차이는 ${POS_KO[big[1]]} (${T(ls)} +${fmt(Math.abs(big[0]))})` });
   const gold15 = lead;
+  const execution = tacticExecution(effect.plans, lanes15, g1, dr1);
+  const followThrough = execution.B.modifier - execution.R.modifier;
   // 중반
-  const pMid = sigmoid(L0 * 0.75 + lead / COEF.midGold);
+  const pMidBase = L0 * 0.75 + lead / COEF.midGold;
+  const pMid = sigmoid(pMidBase + effect.late * .5 + followThrough);
   const tw = pick(pMid); obj[tw].tower++;
+  decisions.push({ stage: "tower", before: sigmoid(pMidBase), after: pMid, winner: tw });
   ev.push({ t: rng.int(13, 16), side: tw, kind: "tower", text: `${T(tw)} 첫 포탑 파괴` });
   lead += tw === "B" ? 500 : -500;
   const hr = pick(pMid); obj[hr].herald++;
   ev.push({ t: 16, side: hr, kind: "herald", text: `협곡의 전령 ${T(hr)}` });
   const dr2 = pick(pMid); obj[dr2].drake++;
   ev.push({ t: rng.int(12, 14), side: dr2, kind: "drake", text: `두 번째 드래곤 ${T(dr2)}` });
-  const f1 = pick(sigmoid(L0 * 0.7 + lead / COEF.midGold + rng.normal() * 0.35));
+  const f1 = decide("fight", L0 * 0.7 + lead / COEF.midGold + rng.normal() * 0.35, effect.late * .5 + followThrough);
   const f1k = rng.int(2, 4), f1d = rng.int(0, 2);
   kills[f1] += f1k; kills[other(f1)] += f1d; lead += (f1 === "B" ? 1 : -1) * (f1k - f1d) * 350 + (f1 === "B" ? 600 : -600);
   ev.push({ t: rng.int(19, 22), side: f1, kind: "fight", lead, text: `드래곤 앞 한타 ${T(f1)} 승리 (${f1k}:${f1d})` });
   const dr3 = pick(sigmoid(L0 * 0.6 + lead / COEF.midGold)); obj[dr3].drake++;
   ev.push({ t: rng.int(19, 21) + 2, side: dr3, kind: "drake", text: `세 번째 드래곤 ${T(dr3)}` });
   // 승자 결정
-  const pEnd = sigmoid(COEF.endL0 * L0 + lead / COEF.endGold);
-  const W: Side = rng.chance(pEnd) ? "B" : "R"; const Lz = other(W);
+  const W = decide("closing", COEF.endL0 * L0 + lead / COEF.endGold, effect.late + followThrough); const Lz = other(W);
   const behind = (W === "B" && lead < 0) || (W === "R" && lead > 0);
   if (behind) {
     const k2 = rng.int(3, 5); kills[W] += k2; kills[Lz] += rng.int(0, 2);
@@ -203,5 +214,6 @@ export function simulateGame(d: DraftState, form: Record<string, number>, rng: R
     }
   }
   const mvp = perf.filter((p) => p.side === W).sort((a, b) => b.rating - a.rating)[0].key;
-  return { winner: W, dur, kills, gold15, lanes15, leadEnd: lead, obj, events: ev, factors, pPre, pMid, perf, mvp, training: training ? summarizeTraining(d, training) : undefined };
+  return { winner: W, dur, kills, gold15, lanes15, leadEnd: lead, obj, events: ev, factors, pPre, pMid, perf, mvp, training: training ? summarizeTraining(d, training) : undefined,
+    tactics: orders ? tacticsRecord(d, effect, lanes15, decisions, execution) : undefined };
 }

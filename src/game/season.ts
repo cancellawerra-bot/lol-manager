@@ -7,6 +7,7 @@ import type { StoryState } from "./story";
 import { prepareSeriesTraining, matchTraining, type TrainingState } from "./trainingRuntime";
 import type { TrainingSummary } from "./training";
 import { prepareInSeason, type InSeasonState } from "./inSeason";
+import { matchTactics, type TacticPlan, type Focus, type TacticsRecord } from "./tactics";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -16,6 +17,7 @@ export interface GameRec {
   bans: Record<Side, string[]>; picks: Record<Side, DPick[]>; lineup: Record<Side, string[]>;
   dur: number; kills: [number, number]; gold15: number; mvp: string; pPre: number; res?: GameResult;
   training?: TrainingSummary;
+  tactics?: TacticsRecord;
 }
 export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number } }
 export interface Day { date: string; week: number; stage: Stage; label: string }
@@ -27,6 +29,7 @@ export interface Session {
   blue?: string; red?: string; firstSide?: Side; choiceNote?: string; aiTook?: "first" | "blue";
   draft?: DraftState; result?: GameResult; simStep: number;
   pressTone?: string; meetPlan?: "atk" | "bal" | "safe"; locker?: { target: "team" | "one"; tone: "calm" | "firm" | "harsh"; key?: string };
+  meetFocus?: Focus;
   lineup?: Record<string, string[]>;
 }
 export type Mode = "story" | "club" | "roster" | "fantasy";
@@ -52,6 +55,7 @@ export interface Save {
   story?: StoryState;
   training?: TrainingState;
   inSeason?: InSeasonState;
+  tactics?: Record<string, TacticPlan>;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -162,7 +166,7 @@ export function recordGame(s: Save, sr: SeriesRec, d: DraftState, res: GameResul
   const winner = d.teams[res.winner];
   sr.games.push({
     blue: d.teams.B, red: d.teams.R, winner, firstSide: d.firstSide, holder, bans: d.bans, picks: d.picks, lineup: d.lineup,
-    dur: res.dur, kills: [res.kills.B, res.kills.R], gold15: res.gold15, mvp: res.mvp, pPre: res.pPre, res: keepDetail ? res : undefined, training: res.training,
+    dur: res.dur, kills: [res.kills.B, res.kills.R], gold15: res.gold15, mvp: res.mvp, pPre: res.pPre, res: keepDetail ? res : undefined, training: res.training, tactics: res.tactics,
   });
   if (winner === sr.a) sr.sa++; else sr.sb++;
   for (const p of res.perf) {
@@ -183,7 +187,7 @@ export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
     const sel = aiSelection(holder, holder === sr.a ? sr.b : sr.a, rng);
     const d0 = newDraft(sel.blue, sel.red, s.starters[sel.blue], s.starters[sel.red], sel.firstSide, lockedChamps(sr));
     const d = autoDraft(d0, rng);
-    const res = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]));
+    const res = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]), matchTactics(d, s.tactics));
     recordGame(s, sr, d, res, holder, false);
   }
 }

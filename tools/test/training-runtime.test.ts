@@ -11,6 +11,7 @@ import { newDraft, autoDraft } from "../../src/game/draft";
 import { simulateGame, factorsFor } from "../../src/game/sim";
 import { Rng } from "../../src/game/rng";
 import { prepareInSeason } from "../../src/game/inSeason";
+import { matchTactics } from "../../src/game/tactics";
 await loadCore(); await loadRanked();
 const originalCards = JSON.stringify(CARDS);
 function fixture(seed = 17) {
@@ -83,7 +84,7 @@ console.log("OK verified public birth registry", Object.keys(PLAYER_BIRTHDATES).
     const holder = selectionFor(sb, sb.games.length, rb);
     const sel = aiSelection(holder, holder === sb.a ? sb.b : sb.a, rb);
     const d = autoDraft(newDraft(sel.blue, sel.red, b.starters[sel.blue], b.starters[sel.red], sel.firstSide, lockedChamps(sb)), rb);
-    const result = simulateGame(d, formMap(b, [...d.lineup.B, ...d.lineup.R]), rb, matchTraining(b, [...d.lineup.B, ...d.lineup.R]));
+    const result = simulateGame(d, formMap(b, [...d.lineup.B, ...d.lineup.R]), rb, matchTraining(b, [...d.lineup.B, ...d.lineup.R]), matchTactics(d, b.tactics));
     recordGame(b, sb, d, result, holder, false);
   }
   assert.deepEqual(sa.games, sb.games, "수동/자동과 같은 경기 입력의 훈련/결과 일치");

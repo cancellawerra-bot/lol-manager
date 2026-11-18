@@ -3,6 +3,7 @@ import { useSave, fillSchedule, mutate, autoSimSplit, autoToOffseason, acceptFra
 import { standings, nextMySeries, dateKo, formVal, STAGE_KO, opp } from "../game/season";
 import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO, fmtMoney } from "../game/story";
 import { Card, Pct, TeamChip, form5, PName } from "../ui";
+import { TacticsControls } from "./Tactics";
 
 export default function Home() {
   const s = useSave()!;
@@ -53,6 +54,7 @@ export default function Home() {
           {["awards", "tryout", "expiry", "stove"].includes(s.story.phase) && <p><a className="btn primary" href="#/stove" data-testid="goto-stove">스토브리그 본편으로</a></p>}
         </Card>
       )}
+      {!s.story?.ended && <Card title="감독 작전" className="span2"><TacticsControls /></Card>}
       {s.story && !s.story.ended && (s.story.financeWarn || s.eco.cash < 0) && (
         <Card title="구단주 경고" className="span2">
           <div data-testid="finance-warning">
