@@ -56,12 +56,13 @@ export default function InSeasonMarket({ s }: { s: Save }) {
       <p className="muted sm">낮은 연봉 순 · {list.length}명. 카드의 금액은 연봉 희망이며, 계약 선수의 이적료는 별도입니다.</p>
       <div className="card-grid">{list.slice(0, 60).map((c) => <div key={c.person} data-testid={`season-candidate-${c.person}`}>
         <CardTile c={c.card} price={c.salary} personView disabled={!!closed} onClick={() => { setSalary(String(c.salary)); setYears(1); setStarter(true); action((x) => startSeasonNegotiation(x, c.card.id, Number(fee) || 0), c.owner === "FA" ? "선수에게 계약을 제시해 주세요." : "구단에 이적료를 제안했습니다."); }} />
+        <p className="sm">현재 게임 종합 <b>{c.ovr}</b>{c.card.year < Math.min(s.story!.year, 2026) && " · 과거 기록 기반 추정"}</p>
         <p className="sm">현재 소속: {teamName(c.owner)} · {c.stance}{c.owner !== "FA" && ` · 희망 이적료 ${fmtMoney(c.fee)}`}</p>
       </div>)}</div>
       {list.length > 60 && <p className="muted sm">60명까지 표시합니다. 검색·포지션으로 범위를 좁혀 주세요.</p>}
       <h3>완료된 이적</h3>
       <div data-testid="season-transfer-history">{m?.history.filter((d) => d.from === s.team || d.to === s.team).slice(-12).reverse().map((d) => <p key={d.id} className="sm">{d.date} · {d.name} · {teamName(d.from)} → {teamName(d.to)} · 이적료 {fmtMoney(d.fee)} · 연봉 {fmtMoney(d.salary)} / 이번 지급 연봉 {fmtMoney(d.paidSalary)}</p>)}</div>
     </Card>
-    <Card title="보유 선수" right={<span className="muted sm">선발 5 + 벤치 최대 3</span>}><div className="card-grid">{s.story!.contracts.map((ct) => CARDS[ct.cardId] ? <CardTile key={ct.person} c={CARDS[ct.cardId]} price={ct.salary} personView on /> : <div key={ct.person}>{ct.person} · 기록 없음</div>)}</div></Card>
+    <Card title="보유 선수" right={<span className="muted sm">선발 5 + 벤치 최대 3</span>}><div className="card-grid">{s.story!.contracts.map((ct) => CARDS[ct.cardId] ? <div key={ct.person}><CardTile c={CARDS[ct.cardId]} price={ct.salary} personView on /><p className="sm">현재 게임 종합 <b>{PL[ct.key]?.pct.ovr ?? "기록 없음"}</b>{PL[ct.key]?.label?.includes("추정") && " · 과거 기록 기반 추정"}</p></div> : <div key={ct.person}>{ct.person} · 기록 없음</div>)}</div></Card>
   </>;
 }
