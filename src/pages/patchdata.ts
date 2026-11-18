@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.4.1";
+export const PATCH_VERSION = "2.4.2";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.4.2", date: "2026-11-18",
+    items: [
+      "보통 난이도의 월즈·MSI 해외 고스트는 2.3.3처럼 한 번만 만들고 대회마다 전력을 다시 씌우지 않습니다. 쉬움·어려움만 별도 키로 난이도 밴드를 씁니다.",
+    ],
+  },
   {
     v: "2.4.1", date: "2026-11-18",
     items: [

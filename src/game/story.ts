@@ -911,7 +911,7 @@ export function startMSI(s: Save, lckSeeds: string[]): void {
     if (!TM[t]) {
       TM[t] = { id: 810, short: t, name: t, ko: t.includes("-") ? t.replace("-", " ") + "시드" : t, color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
     }
-    if (t.includes("-")) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
+    if (t.includes("-") && (s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
   }
   const date = `${st.year}-05-10`;
   const d0 = s.days.length;
@@ -990,7 +990,7 @@ export function startWorlds(s: Save): void {
     if (!TM[t]) {
       TM[t] = { id: 800, short: t, name: t, ko: intlName(t), color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
     }
-    if (t.includes("-")) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
+    if ((s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
   }
   const groups: string[][] = [[], [], [], []];
   teams.forEach((t, i) => groups[i % 4].push(t));
@@ -1013,11 +1013,12 @@ function intlName(t: string): string {
   return `${lg} ${n}시드`;
 }
 export function ghostLineup(tag: string, _year: number, diff: StoryDiff = "normal"): string[] {
-  // 난이도별 밴드를 매번 반영합니다. 이전 커리어·다른 난이도의 캐시를 그대로 쓰지 않습니다.
+  // 보통은 v2.3.3과 같이 키 intl-{tag}-{pos}를 한 번만 만들고, 대회마다 밴드를 덮어쓰지 않습니다.
+  // 쉬움·어려움은 키를 나눠 첫 생성 때 난이도 밴드를 넣습니다. 이미 있는 항목은 그대로 둡니다.
   const band = intlGhostBand(tag, diff);
   const keys: string[] = [];
   for (let pos = 0; pos < 5; pos++) {
-    const key = `intl-${tag}-${pos}`;
+    const key = diff === "normal" ? `intl-${tag}-${pos}` : `intl-${tag}-${pos}-${diff}`;
     const zFight = (band - 50) / 20;
     if (!PL[key]) {
       PL[key] = {
@@ -1027,9 +1028,6 @@ export function ghostLineup(tag: string, _year: number, diff: StoryDiff = "norma
         pct: { lane: band, fight: band, farm: band, vision: 50, pool: 50, ovr: band },
         small: true, label: `${intlName(tag)} · 기록 없음(추정)`, limited: true,
       };
-    } else {
-      PL[key].z = { ...PL[key].z, fight: zFight, ovr: zFight };
-      PL[key].pct = { ...PL[key].pct, lane: band, fight: band, farm: band, ovr: band };
     }
     keys.push(key);
   }
