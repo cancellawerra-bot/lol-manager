@@ -74,6 +74,15 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
   console.log("OK next-year salary reserve and eight-player roster cap");
 }
 {
+  const s = fixture(), target = free(s);
+  s.training!.players[target.person] = { person: target.person, mechanicsXp: 123, strategyXp: 78, fatigue: 21, lastDate: "2020-09-01" };
+  startSeasonNegotiation(s, target.card.id, 0);
+  assert(seasonPlayerReply(s, Math.min(20, Math.max(target.salary * 2, 5)), 1, true).ok);
+  advanceTeamTraining(s, s.team, trainingDate(s));
+  assert.deepEqual(s.training!.players[target.person], { person: target.person, mechanicsXp: 123, strategyXp: 78, fatigue: 21, lastDate: trainingDate(s) });
+  console.log("OK previously released FA retains growth without XP during unregistered gap");
+}
+{
   const base = fixture();
   const star = seasonCandidates(base).find((c) => c.owner !== "FA" && c.ovr >= 80)!;
   assert.equal(startSeasonNegotiation(base, star.card.id, star.fee), undefined); assert(seasonClubReply(base)?.includes("간판"));

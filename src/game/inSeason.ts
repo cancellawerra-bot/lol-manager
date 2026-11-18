@@ -134,7 +134,10 @@ function refreshTeam(s: Save, team: string): void {
 function sign(s: Save, team: string, card: SeasonCard, salary: number, years: number, starter: boolean): string {
   const key = ensurePlayer(card, s.story!.year, !!cardForYear(card.pkey, s.story!.year, card.posIdx)?.estimated);
   const training = initializeTraining(s);
-  if (training && !training.players[card.pkey]) training.players[card.pkey] = { person: card.pkey, mechanicsXp: 0, strategyXp: 0, fatigue: 0, lastDate: trainingDate(s) };
+  if (training) {
+    const old = training.players[card.pkey], date = trainingDate(s);
+    training.players[card.pkey] = { ...(old ?? { person: card.pkey, mechanicsXp: 0, strategyXp: 0, fatigue: 0 }), lastDate: old?.lastDate && old.lastDate > date ? old.lastDate : date };
+  }
   contractList(s, team).push({ key, person: card.pkey, cardId: card.id, salary, years, prepaid: false });
   const cost = seasonSalaryDue(s, salary);
   if (team === s.team) s.eco.cash = moneyRound(s.eco.cash - cost); else s.inSeason!.cash[team] = moneyRound(s.inSeason!.cash[team] - cost);
