@@ -6,7 +6,8 @@ import { newStoryCareer, marketCards, storySalary, applyStoryWorld, beginSplit, 
 import { hydrateSave } from "../../src/game/cards";
 import { initializeInSeason, prepareInSeason, seasonCandidates, seasonMarketWeek, seasonSalaryDue, seasonReserve, startSeasonNegotiation, seasonClubReply, seasonPlayerReply, seasonMarketClosed, answerSeasonIncoming, setSeasonAutomatic } from "../../src/game/inSeason";
 import { advanceTeamTraining, trainingDate } from "../../src/game/trainingRuntime";
-import { beginOffseason } from "../../src/game/stove";
+import { beginOffseason, finishOffseason } from "../../src/game/stove";
+import { Rng } from "../../src/game/rng";
 import type { Save } from "../../src/game/season";
 await loadCore(); await loadRanked();
 const original = JSON.stringify(CARDS), copy = <T>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -160,6 +161,19 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
   const due = nextPayroll.story!.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
   settlePayrollAndSolvency(nextPayroll); assert.equal(nextPayroll.eco.cash, +(200 - due).toFixed(2));
   console.log("OK remaining contract and AI bench survive offseason transition");
+}
+{
+  const s = fixture(), missing = s.story!.contracts.find((c) => PL[c.key].pos === 4)!;
+  s.story!.contracts = s.story!.contracts.filter((c) => c.person !== missing.person);
+  s.starters[s.team][4] = ""; s.story!.tier = "CK";
+  s.story!.contracts.forEach((c) => { c.salary = PL[c.key].pos === 3 ? 61.38 : .21; c.years = 2; c.prepaid = false; });
+  beginOffseason(s); s.story!.phase = "stove"; s.story!.stove!.closed = true; s.eco.cash = 46.5;
+  finishOffseason(s, new Rng(37));
+  assert.notEqual(s.story!.ended, "bankrupt"); assert(s.eco.cash >= 0 && s.eco.cash < 16);
+  assert.equal(s.starters[s.team].filter(Boolean).length, 5);
+  assert(s.story!.contracts.every((c) => CARDS[c.cardId] && PL[c.key]), "실제 남은 FA와 기존 계약만 사용");
+  assert(s.story!.contracts.every((c) => c.cardId === CARDS[c.cardId].id && CARDS[c.cardId].year <= s.story!.year));
+  console.log("OK existing payroll settles before emergency hole spending; all new starters aged and no money added");
 }
 {
   const s = fixture(); s.day = 4; delete s.inSeason; const rng = s.rng; initializeInSeason(s); prepareInSeason(s);

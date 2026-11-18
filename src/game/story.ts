@@ -37,7 +37,7 @@ export const REPLACE_OVR_EASY = 60;
 export const CASH_BANKRUPT = -5; // 이 이하 적자면 해임·파산
 /** 월즈·MSI 해외 시드 추정 종합. 기본 밴드에 난이도별 추정 전력 보정을 적용합니다. */
 export const INTL_BAND = { s1: 80, s2: 74, s3: 69, rest: 58 } as const;
-export const INTL_BAND_DELTA = { easy: -16, normal: -4, hard: 5 } as const;
+export const INTL_BAND_DELTA = { easy: -16, normal: -8, hard: 5 } as const;
 /** AI 구단의 주간 FA 예산 배수. 보통은 기존과 같고, 쉬움은 덜 쓰고 어려움은 더 씁니다. */
 export const AI_FA_BUDGET_MULT = { easy: 0.55, normal: 1, hard: 1.5 } as const;
 
@@ -1207,6 +1207,9 @@ export function finishStove(s: Save, _rng: Rng): void {
   s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => keep.has(k) ? k : "");
   // age cards to next year
   const next = st.year + 1;
+  // 기존 계약 연봉을 먼저 정산합니다. 공백 보충으로 미지급 연봉을 써 버리지 않습니다.
+  const pay = st.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
+  settlePayrollAndSolvency(s);
   const nextKeys = new Map<string, string>();
   for (const ct of st.contracts) {
     const pos = PL[ct.key]?.pos ?? CARDS[ct.cardId]?.posIdx;
@@ -1217,9 +1220,6 @@ export function finishStove(s: Save, _rng: Rng): void {
   }
   s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => nextKeys.get(k) ?? k);
   s.cards = st.contracts.map((c) => c.key);
-  // salaries for next year + 적자 한도
-  const pay = st.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
-  settlePayrollAndSolvency(s);
   applyStoryWorld(s, next); // AI는 다음 시즌 카드로 다시 짭니다. 이전에는 year===st.year 조건이 항상 참이라 2018 로스터가 남았습니다.
   if (st.ended) return;
   if (next > STORY_END) { endStory(s, st.trophies.worlds > 0 && st.year >= STORY_END ? "clear" : "fail"); return; }

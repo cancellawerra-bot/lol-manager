@@ -10,7 +10,7 @@ import {
   resolveFranchise, pumpStory, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR,
   payrollSoftCap, upcomingSalaryDue, DECAY_PCT,
   storyDiff, replaceOvrOf, aiWeeklyFaBudget,
-  fmtMoney, lckPrizeOf, scaleLckIncome, ensureStartingFive,
+  fmtMoney, lckPrizeOf, scaleLckIncome,
   type Contract, type Tier,
 } from "./story";
 import { moneyRound } from "./money";
@@ -581,7 +581,6 @@ export function finishOffseason(s: Save, rng: Rng): void {
   const stove = st.stove;
   if (stove && !stove.closed && stove.week < stove.maxWeek) return;
   aiFillHoles(s, rng);
-  ensureStartingFive(s);
   rollYear(s, rng);
   st.stove = undefined;
 }
