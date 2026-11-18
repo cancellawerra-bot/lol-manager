@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, PL, TM } from "../../src/data";
-import { newStoryCareer, marketCards, storySalary, applyStoryWorld, beginSplit, payrollSoftCap, settlePayrollAndSolvency } from "../../src/game/story";
+import { newStoryCareer, marketCards, storySalary, applyStoryWorld, beginSplit, payrollSoftCap, settlePayrollAndSolvency, cardForYear } from "../../src/game/story";
 import { hydrateSave } from "../../src/game/cards";
 import { initializeInSeason, prepareInSeason, seasonCandidates, seasonMarketWeek, seasonSalaryDue, seasonReserve, startSeasonNegotiation, seasonClubReply, seasonPlayerReply, seasonMarketClosed, answerSeasonIncoming, setSeasonAutomatic } from "../../src/game/inSeason";
 import { advanceTeamTraining, trainingDate } from "../../src/game/trainingRuntime";
@@ -173,6 +173,7 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
   assert.equal(s.starters[s.team].filter(Boolean).length, 5);
   assert(s.story!.contracts.every((c) => CARDS[c.cardId] && PL[c.key]), "실제 남은 FA와 기존 계약만 사용");
   assert(s.story!.contracts.every((c) => c.cardId === CARDS[c.cardId].id && CARDS[c.cardId].year <= s.story!.year));
+  for (const ct of s.story!.contracts) assert.equal(ct.cardId, cardForYear(ct.person, s.story!.year, PL[ct.key].pos)!.card.id, "정산 뒤 보충한 선수도 개막 연도 최신 실기록 사용");
   console.log("OK existing payroll settles before emergency hole spending; all new starters aged and no money added");
 }
 {
