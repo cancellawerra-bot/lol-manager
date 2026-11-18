@@ -1,0 +1,226 @@
+LCK Manager 26 (Alpha v8.28) play-through notes - see final report from subagent (same content).
+Key flows: Title -> 새 게임 (실제 로스터 / 판타지 드래프트) -> team select -> 감독 계약서 -> 이적료 영입 설정 -> 시즌 목표 및 예산 -> 스폰서 협상 -> HEAD COACH splash -> tutorial offer -> goods/fanmeeting popups -> Home.
+Match flow: 기자회견 -> KEY PLAYER -> 선발 라인업 -> 밴픽(피어리스) -> LINEUP LOCKED -> 경기 전 미팅(공격/균형/안전) -> 경기(문자/탑뷰, 코치 보이스 1회) -> POG -> 세트 결과 -> 진영 선택권 -> 라커룸(팀/개인, 침착/단호/강하게) -> ... -> 매체 인터뷰.
+History: 2016 LCK 10 teams, 승강전 to 2020 (강등 = game over), franchise from 2021, players appear in real debut year.
+
+## Phase 2 (screens 122-146)
+- 122 is the 이어하기 slot chooser (일반/히스토리). Game mode follows the last loaded slot.
+- Fantasy draft (123-127):
+  - Team select is titled "FANTASY DRAFT · 2026 LCK" and shows 선발 예산 (16억 cap).
+  - 드래프트 순서 screen: snake order, "↻ 순서 다시 섞기 3번 남음", 5 or 6 players per team, plus the 6th pick in an extra round ("추가 한 바퀴").
+  - Draft board shows "N라운드 · M번째 픽", with 이번 픽 맡기기 and 남은 드래프트 모두 맡기기. Position filters, OVR, age and salary. Per-pick limit "이번 픽 최대 12.5억". 다른 팀 로스터 tabs.
+  - After the draft: budget screen and a rival goal.
+- 128: 설정 > 저장·데이터. 137: 인게임 환경, with 이적 시장 빈도 (적음/보통/활발함).
+- 129-133: after a series, the 기자회견 and its result overlay "회견 종료" (사기/팬심/구단주 신뢰도/상대 사기/감독 신뢰 deltas). Final set result says "다음 시리즈가 끝납니다. 기자회견으로 넘어갑니다." POG card (142).
+- 134/138: goods decision popups. Schedule: 시즌 유니폼/자켓 made in the last stove week; 월즈 유니폼 on qualification; 우승 기념 after a title, sells for 3 weeks.
+- 135/136: KeSPA final preview ("결승 시뮬 F") and the champion splash (DK).
+- 139: HEAD COACH splash.
+- 140: LCK CUP 플레이-인 1R ban/pick with fearless rule: "피어리스 드래프트: 이번 시리즈에서 한 번 사용한 챔피언은 픽할 수 없습니다". 수석코치 조언 / 코치 추천 badges.
+- 141: LINEUP LOCKED + 수석코치 총평 (조합 tags like "이니시+누킹 확보", "탱커 0 · 앞이 얇음"), button 경기 전 미팅 F.
+- Season flow seen in the 2026 calendar:
+  - KeSPA Cup → LCK컵 group (groups, rounds 1R-5R) → 플레이-인 → playoffs → final around 2/27.
+  - Splash 143: "LCK CUP 2026 · CHAMPION … 두 팀이 퍼스트 스탠드(첫 국제전)에 진출". Then 휴식기.
+  - 퍼스트 스탠드 3/16-3/22. Splash 144 shows the 대회 MVP (player, POG count, KDA) and the button "정규 시즌 시작 F".
+  - 휴식기 → 145 "2026 · OPENING LCK SEASON" (3/30) → 146 regular-season home, week 1, with a 10-team standings table (playoff line at 5th) and a season goal ("8위 이내").
+- Once our team is eliminated, days auto-sim fast. Each of our own series takes about 30-60 seconds even with 즉시 결과 (POG and press screens included).
+
+## Phase 3 (screens 147+)
+- 147: set-end stats screen: K/D/A per role with TC/GSR/DPM/VC, a 골드 흐름 graph, an object timeline (드래곤/유충·전령/바론·장로/포탑·억제기), and "다음 2세트 진영 선택으로 갑니다. 고른 뒤 라커룸으로 이어집니다." with a 계속 F button.
+- 148: goods restock popup "추가 생산 · 2026 시즌": "모두 팔렸습니다. 추가로 만들까요? — 2주 뒤에 들어오고, 제작비가 20% 더 듭니다." Options 제작 X / 소량 / 보통.
+- 149: EWC 선발전 live match. It runs mid regular season (around weeks 6-8) as a double-elimination bracket (승자조 1라운드, then 패자조 1라운드). BRO lost to NS 1-2 in the 패자조.
+- 150: Road to MSI 선발 라인업 (교체 per position, 컨디션 shown, opponent condition hidden).
+- 151: Road to MSI ban/pick (BO5, fearless).
+- 2026 calendar seen so far:
+  - Regular season 1주차 3/30 to 9주차 5/31, then 휴식기.
+  - Road to MSI 6/6-6/14: the 1위 and 2위 teams play a "1시드 결정전" BO5, then the loser plays the 3위 team in a "최종전". BRO lost both.
+  - 휴식기 → MSI 6/28-7/12 (sims fast when not qualified) → 휴식기 → EWC 7/15-7/19 → 휴식기 → regular season resumes at 10주차 on 7/27 (2nd half of the season).
+- No MSI or EWC champion splash appeared while we were not participating (or the loop skipped it).
+- 152: patch-notes modal "LCK 매니저 신규 버전이 업데이트됐습니다 (11/15) Alpha 8.28v". It covers the new history-mode 로스터팩 (설정→인게임 환경→선수 로 수정→저장, then 저장·데이터→히스토리 로스터팩으로 내보내기/불러오기, up to 3 files), with a checkbox "다음부터 보지 않기".
+- The autosave is coarse. After the tab was lost, the save restarted at 7/17 EWC; the in-progress 8/8 state was lost.
+- 153: EWC 2026 · 녹아웃 (PARIS) bracket, a sidebar menu "EWC 대진" that appears during the event.
+  - 8강 BO3 → 4강 BO3 → 결승 BO5, plus a 3·4위전 BO3.
+  - Groups use a GSL format: first match BO1, then 승자전 BO1, 패자전 BO3, 최종전 BO3.
+  - Includes LCK/LPL/LEC/LCS/LCP teams.
+  - Banner: "우리 팀은 이 대회에 나가지 않습니다 — 결과는 계속 볼 수 있고, 8강부터는 관전할 수 있습니다." Buttons: "다음 경기 진행 F" and "관전".
+- The regular season runs 1주차 to 14주차 (8/24). Then 휴식기 → 플레이오프 from 8/26: double elimination (승자조 4강 etc.). BRO lost to KRX 0-3 in the playoffs.
+- 154: "2026 LCK · SEASON FINALE". It shows the champion ("BNK 피어엑스 우승! 2026 LCK를 제패했습니다. 이제 국가의 부름, 아시안게임이 기다립니다."), ★ SEASON MVP (player, team, POG count, KDA), and awards for 킬 1위 / 어시스트 1위 / KDA 1위. The button is "아시안게임으로 → F", so the Asian Games are an event after the LCK finals in 2026.
+- 155: post-finals 휴식기 home with "D-15 아시안게임 개막까지" and 경기 준비 1/3. The standings are split into a LEGEND 그룹 (top 5, "상위 5팀 · 전적 이월") and a RISE 그룹 (bottom 5, "하위 5팀 · 전적 이월"); this is the 2026 split format for the second half. BRO finished 18-8, 2위.
+- 156: goods sale-end settlement popup "굿즈 판매 끝 · 2026 시즌" with lines 제작비 / 판매 수익 (% sold) / 남은 재고 정리 (sold at 20% of production cost) / 순이익. Shown for each item (시즌 유니폼, 시즌 자켓).
+- 157: 아시안게임 screen "2026 아이치·나고야" (8개국 · 48명, 나라마다 6명 (주전 5 + 1)). Steps: STEP1 선발 6인 확정 → STEP2 조별리그 (두 조 · 각 조 2팀 진출) → 4강 → STEP4 결승 → STEP5 시상 (금메달은 병역 면제). Group A: 중국/일본/홍콩/태국. Group B: 대한민국/대만/베트남/싱가포르.
+  - Popup "대한민국 e스포츠 협회 — 2026 아시안게임 대표팀 감독 제안": 9/29-10/2, 협회의 목표 금메달, "보수 없습니다. 명예뿐입니다. 맡아도 소속 구단 일은 그대로 하십니다." Buttons 맡는다 / 고사한다.
+- 158: accepted splash "OFFICIAL · 대한민국 대표팀 … 가슴에 태극기를 달았습니다. 감독 테스트감독".
+- 159: "2026 ASIAN GAMES · 대표 선발".
+  - Pick 6 from 한국 선수 178명, including Koreans playing abroad (TheShy, Viper, Tarzan, Canna…). Filter by position.
+  - Also pick a 수석코치 from FA coaches (김정균 감독 90 …).
+  - Right panel "대한민국 AG 대표팀" (TOP/JGL/MID/ADC/SUP/여섯 번째) with a 명단 확정 button.
+- Asian Games played 9/29 (KOR group matches vs VIE/SGP/TPE, auto-simmed by the loop). The tournament ended the same day with no medal splash captured. Confirmation screen "대한민국 국가대표 최종 명단" (대표팀 감독 나 · 수석코치 김정균): "금메달을 따면 여섯 명 전원이 병역을 면제받습니다", button 대회 시작.
+- 160: The 2026 Worlds equivalent is the **DEMACIA CUP 2026** (10/3~). Screen "진출팀 · 시드 확정 — 12개 팀이 확정됐습니다":
+  - LCK 3 seeds (BRO 1시드 by season points, T1, NS), LPL 3, LEC 2, LCS 2, LCP 1, CBLOL 1.
+  - Button "스위스 스테이지 시작 → F" (Swiss stage). Sidebar menu "데마시아컵 대진".
+- The game uses fictional names for some events: 퍼스트 스탠드, MSI, EWC, 아시안게임, 데마시아컵 (in place of 월즈). The sidebar trophy counters read "LCK n회 / 월즈 n회".
+- 161: DEMACIA CUP 2026 bracket page ("10/3 ~ 10/15 · 여섯 리그 12팀 · GLOBAL INVITATIONAL"). Phases: 스위스 스테이지 (R1/4, 진출 0/8) → 8강 10/10-11 → 4강 10/12-13 → 결승 10/15.
+  - Swiss rules as shown: R1 (10/3) is a single-game round of 6 matches, with no same-league matchups. R2 (10/4-10/5) pairs teams with equal records in BO3. "2승 0패 세 팀 → 8강"; from R2 on, same-league teams can meet, but not repeat opponents. R3 (10/6-10/7) is the 1-1 group, where the winner goes to 8강. R4 (10/8) is "마지막 두 자리" (1승 2패 세 팀 + 리그 1위 …).
+  - Columns: 진출 / 0승 0패 / 1승 2패 / 탈락.
+  - Buttons: 관전 / 시뮬 F (other teams' games), "▶ 직접 플레이 (BO1/BO3) F" (our own games).
+- Correction: the DEMACIA CUP is NOT the Worlds stand-in. It is a separate invitational (10/3-10/15) for top regular-season teams; BRO, the LCK 1번 시드, lost in the 8강 to NAVI.
+- 162: "WORLD CHAMPIONSHIP 2026 진출팀 · 시드 확정 — 19개 팀이 확정됐습니다. 마지막 4팀은 플레이-인부터 시작합니다."
+  - LCK has 4 seeds taken from the LCK playoff results (BFX, GEN, KT, KRX); BRO did not qualify.
+  - LPL 2+AL (play-in), LEC 4, LCS 2+FlyQuest (PI), LCP 2+DFM (PI), CBLOL 1+LØS (PI).
+  - Worlds uses a cream/red visual theme. Sidebar menu "월즈 대진".
+- 163: WORLDS 2026 시카고 · UNITED STATES "THE WORLD IS WATCHING".
+  - Phases: 플레이-인 (4 teams, 1 spot, double elimination, BO5) → 스위스 스테이지 (16팀 · 8팀 진출, R1/5) → 녹아웃 8강 → 우승 "THE THRONE".
+  - Banner when not qualified: "이번 월즈는 관전으로 지켜봅니다". "플레이-인 종료 — AL이(가) 마지막 한 자리를 뚫고 스위스 스테이지에 올랐습니다. 스위스 스테이지로 → F".
+- Worlds runs 10/16 to about 11/2+.
+- 164: "월즈 결승 전 · 재계약 결정 — 재계약 결정 N명", shown before the Worlds final.
+  - Popup text: "계약은 스토브리그 전날 끝납니다. 결승 전에 연장 협상 또는 내보내기 예약을 모두 정해야 결승으로 넘어갑니다. 내보내기는 스토브가 열릴 때 실행됩니다(그때 FA로 풀림)."
+  - Section "CL 선수 2명 — 팀이 채워 넣은 신인은 내보내면 은퇴합니다" with a button "2군 감독에게 일임". Each player row shows OVR, age and current salary, with buttons 연장 협상 / 내보내기 예약. Bottom: "결승으로 ▶ (재계약을 정하지 않은 선수 N명이 남았습니다)".
+- 165: 재계약 협상 modal.
+  - Shows 현재 예산 / 계약 총액 / 잔여 예산 / 계약 상한선, and a "선수가 부른 조건" quote ("더 큰 무대에 서고 싶습니다. 그만한 대우를 해주세요.").
+  - "남은 협상 기회 5회". Controls: 연봉 −/+, 계약 연장 ‹1년›, 계약 기간 ~2026→~2027, note "계약 연장시, 연봉 역시 현시점부터 곧바로 변경/적용됩니다.", 보너스 조항 +. Buttons 제안하기 / 협상 중단.
+- 166: "계약 체결 — '알겠습니다. 그 조건으로 하겠습니다.' 연봉 0.7억 · 1년 연장" plus a toast "Tempester 선수와 CL 재계약을 맺었습니다".
+- 167: "WORLDS 2026 · GRAND FINAL" preview: kt vs BLG, 5전 3선승, position-by-position comparison. Text: "이기면 2026 월드 챔피언입니다 — 한 해의 끝입니다. 4강에서 진 두 팀이 공동 3위입니다."
+- Worlds final 11/15; the Worlds-champion splash was not captured (the loop skipped it).
+- 168: "LCK AWARDS · 2026 시즌 결산 시상식" with confetti. ALL-Pro First team and Second team (5 positions each, with key stat + LCK rank); the "다음 F" button leads to more award pages.
+- 169: 트라이아웃 in use, "TRYOUT · WEEK 1 — 스카우터를 어느 경기로 보낼지 정합니다" (11/16-11/22+).
+  - Text: "지금은 이름·나이·포지션·솔로랭크만 보입니다. 스카우터를 보낸 경기의 선수만 능력치가 열립니다."
+  - LCK TRYOUT scrim matchups (A팀 vs B팀, C팀 vs D팀; 15-17세 prospects with grade C). "스카우터 2명 · 한 경기에 몰 수도 있습니다", with buttons 스카우터 ① 파견 / 스카우터 ② 파견 / 직접 관전.
+  - Lower table: 참가자 with 포지션/티어 filters (챌린저/그랜드마스터/마스터/다이아), 솔로 최고 기록, 주요 챔피언. The selected player card shows an OVR 추정 range (e.g. 55-71) and a "집중 관찰하기" button.
+  - The 영입 tabs at this point are: FA, 스카우팅, 솔로랭크, 트라이아웃!, 선수 검색, 루머.
+- 170: 오피스 > 구직센터 (manager career).
+  - Text: "제안은 스토브리그에만 들어옵니다. 남아도 되고, 옮겨도 됩니다."
+  - The current-club card shows 지난 시즌 2위, 구단주 신뢰 72, 내 연봉 1.8억/년, 계약 ~2028시즌.
+  - "다른 구단의 제안 7건 · 명성순": LPL/LEC/LCK clubs, each with 구단 명성, 구단 기조 (상위권 복귀 / 국제대회 진출), lineup OVRs, 제시 연봉 (▲ increase) and 계약 3년.
+  - Moving to a foreign league makes that league your league. "지금 팀과 계약이 2년 남았습니다. 떠나면 팬심 −16, 감독 평판 −6".
+  - Buttons "X(으)로 간다" / "이번엔 거절한다".
+- Off-season timeline: Worlds final 11/15 → 트라이아웃 11/16-~11/29 → 스토브리그 11/30-12/28+.
+- 171: Stove-league 영입 > FA (선수 39 / 코칭 스태프 22).
+  - Filters: 포지션, 국적 (국내/해외), OVR 70+/80+/90+. Top bar: 구단 예산, 계약 만료 N명.
+  - Banner "6주차 영입 제안을 넣을 수 있습니다. 제안은 주가 끝날 때 다른 구단 제안과 함께 선수가 보고 한 팀을 고릅니다. 먼저 누른다고 먼저 데려오는 게 아닙니다 — 조건(연봉·기간·주전 보장·보너스)과 구단 매력으로 겨룹니다. 이번 주 제안 0명". So FA signing is a weekly sealed-bid competition.
+  - Table columns: OVR/라인전/한타/피지컬/운영/요구 연봉/기간. The side card has an LCK PRESS blurb and "외국 국적 선수 → 용병 슬롯 1칸 (2칸 중)".
+  - Footer note: "계약 중인 선수는 스토브리그에만 「이적 제안」(이적료)으로 데려올 수 있습니다… 우리 선수에게도 다른 구단의 이적 제안이 올 수 있습니다. 불만을 방치하면 재계약을 거절당할 수 있습니다."
+- 172: 영입 협상 (FA) modal. Shows budget block and quote "우승할 수 있는 팀이면 좋겠습니다". Controls: 연봉, 계약 기간 ‹1년 (~2027)›, 계약 시작 시점 즉시 / 시즌 종료 후, 합류 1군 / CL, 보너스 조항; 남은 협상 기회 5회.
+- 173: 루머 tab: "루머는 다른 구단이 실제로 그 선수를 원하는지에서 나옵니다 — 맞을 수도, 빗나갈 수도 있습니다." This week it showed "이번 주에는 들리는 이적 루머가 없습니다."
+- 174: 선수 검색, covering every league's players (379명).
+  - Filters: 리그 (LCK/LPL/LEC/LCS/LCP/CBLOL/FA/은퇴), 포지션, OVR 80+/85+/90+, sort OVR/이름/나이.
+  - The side panel shows 예상 이적료 (e.g. Chovy 약 61.5억, "GEN 우승을 노리는 팀"; others "팔지 않음"), with buttons 이적 제안 / 임대 요청 / 선수 카드 / 팀 페이지.
+- 175: "이적료 협상 · 1단계 (구단)". Shows 현재 예산 / 제안 이적료 / 잔여 예산, with "선수 연봉은 2단계에서".
+  - Club stance tag, e.g. "DN 수퍼스 사정 보통 — 돈이 맞으면 판다 · 간판스타는 안 팖". The 사무국 reply here: "Gumayusi 선수는 팀의 간판이라 팔 생각이 없습니다." So it is a two-stage transfer: club fee first, then player salary.
+- 176: Last stove week: make the season jacket (굿즈 만들기 · 2027).
+  - Quantity options: 제작 X / 소량 0.3억 / 보통 0.6억 / 많이 1.2억 / 대량 2.4억.
+  - You can pick 광고 모델 players (popularity ×1.15).
+  - Expected P&L table. If it sells out you get 1.2× the cost back; leftover stock refunds 20%.
+- 177: Season-2 start: SEASON GOAL & BUDGET · 2027.
+  - The owner (구단주) proposes a goal, e.g. 4강. 신뢰도 72 (달성 81 / 미달 62).
+  - Goal tiers: 결승 / 4강 / 플레이오프, each with an extra budget grant, a success bonus, and a trust penalty on failure.
+  - 추가 목표 options: LCK컵 or 케스파컵 4강, 국제대회 진출, 라이벌 상대 전적 우위.
+  - 코칭 스태프 can be kept (유지) or replaced (교체).
+  - Right side: a season budget receipt. Income: 지난 시즌 잔액, 스폰서, 구단주 지원금, 마케팅 순수익. Costs: 선수 연봉, CL 육성비, 스카우터, 코칭. Ends with the projected balance at season end.
+- 178: The 2027 season starts on 1/1 with KeSPA CUP 2027 (splash: "새 시즌의 첫 번째 대회").
+  - The home screen shows a RETIREMENT popup ("은퇴 선언 1명": a 30세 FA player) and news of other clubs' 감독 선임.
+  - The calendar loop repeats from 2026.
+- 179: 2027 팬미팅 popup ("올해 팬미팅을 열까요?").
+  - Timing: 여름 휴식기 (MSI 기간, only if we are not at MSI) or 12월 스토브리그.
+  - Venue: 소극장 0.25억 / 공연장 0.6억 / 체육관 1.2억, with an expected P&L table.
+  - Buttons: 나중에 / 올해는 열지 않음 / 열기.
+- 180: 설정 > 저장·데이터.
+  - Save: 파일로 저장/불러오기, 코드로 내보내기/불러오기.
+  - 데이터팩, 로스터팩, 히스토리 로스터팩 (modding hooks).
+  - "게임 시작 화면으로 — 나가기" (this autosaves). Other settings tabs: 화면 (언어 한/영, 창/전체, 배율, 월즈 테마), 소리, 경기 관전, 인게임 환경.
+- 181: The 이어하기 chooser lists one slot per mode: 일반 (한진 브리온 2027 KeSPA) and 히스토리 (스베누 2016 KeSPA).
+- 182: History slot (스베누 2016).
+  - Before playing, you must fill 주전 일정 빈 칸 35개.
+  - KeSPA CUP 2016 is simulated; kt 롤스터 won ("kt 롤스터가 케스파컵을 들어올립니다! 이제 스프링 시즌이 시작됩니다").
+  - Then 2016 시즌 유니폼 goods, then 휴식기, then LCK 스프링 1주차 from 1/11.
+  - The 2016 rosters are real-era (e.g. 스베누: Soul/Flawless/SaSin/Nuclear/Secret; 진에어: Flame/Winged/Kuzan/Pilot/Chei).
+  - Match flow is the same as in normal mode: lineup → live match → Player Of the Game card.
+  - History mode, unlike the fantasy start, shows an OVR gap (우리 전력 75.2 vs 85.4).
+- Stopped at 2016 Spring 1주차 (1/16). The history season's 승강전, Summer, Worlds 2016 and 2017 were NOT reached in this run because of time.
+  - Each of our matches takes a full ~25 s call even with 즉시 결과 / 수석코치 delegation.
+## Phase 4 (183+)
+- Speed trick: in a live match, force-clicking button.rc-insta (즉시 결과 F) ends the set at once. The regular button click often times out because the button is disabled during the opening seconds. One BO3 still takes about 25 s, because of lineup, ban/pick (수석코치에게 맡기기), the locker room and the POG card.
+- 183: Post-set summary (history). Header "BO3 · N세트 · 경기 종료 · X 승".
+  - Per-player KDA with TC/GSR/DPM/VC, a gold graph, and an objective timeline: 드래곤, 유충·전령, 바론·장로, 포탑·억제기.
+  - BAN LIST, then "다음 시리즈가 끝납니다. 기자회견으로 넘어갑니다" → ► 계속.
+- 184: 2016 Spring playoff = stepladder: 와일드카드전 (4 vs 5 seed, BO3), then 1R vs 3시드, 2R vs 2시드, 결승 vs 1시드 (all BO5). "정규 1~5위 계단식 … 한 번 지면 탈락".
+  - Before it, an 알림 modal shows "계약 마지막 해 선수와 협상할 기회가 이번 시즌 N번 남았습니다 — <player>" (limited contract-negotiation chances).
+  - In the 2016 history season, 스베누 went 1–? and was near the bottom (10위). The Spring regular season ran 1/11 to 3/12 (9 weeks), then 휴식기.
+- 185: 2016 스프링 승강전 (4/28). 스베누 finished Spring 6승 12패, 10위.
+  - Double-elimination bracket with 승자조 and 패자조.
+  - 승자조 1R (BO3): LCK 9위 vs challenger 2부 team (진에어 vs MVP; 스베누 vs ESC Ever). Win → 승자조 결승; loss → 패자조 1R.
+  - 승자조 결승 (BO5): win → 승격·잔류, loss → 패자조 결승.
+  - 패자조 1R (BO3): loss → 강등·탈락. 패자조 결승 (BO5): win → 승격·잔류, loss → 강등·탈락.
+  - Two of the four teams end up in LCK. Our 승강전 match uses the normal lineup/live screens, with the header "스프링 승강전".
+- 승강전 result, from 소식 (the news feed has filters 전체/경기/선수/패치/우리 팀):
+  - 승자조 1R: 스베누 beat ESC Ever 2:1.
+  - 승자조 결승: 진에어 beat 스베누 3:2.
+  - 패자조 결승: 스베누 beat MVP 3:2.
+  - "2016 스프링 승강전 종료 — LCK 두 팀 잔류". No game over; relegation is possible if you lose the 패자조 결승.
+  - Spring 2016 final: ROX beat SKT 3:1 (the real history replays). News also includes quarterly "[육성] N분기 성장 — 우리 팀 N명", patch notes, and flavour stories.
+- 186: MSI 2016 · 그룹 스테이지 (5/4). Six teams: ROX (LCK, the Spring champion), OMG, NRG, Fnatic, FW, SUP.
+  - Double round robin of single games; top 4 → 4강 (단계 1/2). ROX roster shows Smeb 96 / Peanut 95 / kurO 95 / PraY 94 / GorillA 91.
+  - So MSI format and participants follow the era (2016 = 6 teams vs 2026's format).
+- Summer 2016 ran 5/23 to 7/25 (10주), then playoffs from 8/5. ROX beat SKT 3:0 in the final.
+  - 스베누 finished 최종 8위, which met the season goal ("시즌 목표 달성"), so it skipped the summer 승강전. That 승강전 ran 9/1–3: "MVP 승격".
+  - Then 월즈 선발전 9/5–10 ("2016 월즈 LCK 대표 확정"), then 휴식기.
+  - News shows a "2군 감독 — 주간 리포트" and CL matches (스베누 CL vs 롱주 CL).
+  - The 2016 MSI group stage was simulated with no champion splash.
+- 187: WORLDS 2016 Los Angeles, "FORGED IN FIRE", "진출 16팀 · 2016년 방식".
+  - Group stage: 4 groups of 4, double round robin of single games, top 2 → 8강 knockout. "8강은 조 1위와 다른 조 2위가 붙고, 같은 조 두 팀은 결승 전에 만나지 않습니다."
+  - LCK teams: ROX, SKT, CJ.
+  - Has 관전 / 시뮬 toggle; dark-cream Worlds theme.
+  - The format is era-specific (2026 used 19 teams, play-in and Swiss).
+- Worlds 2016 was simulated 10/1–10/29.
+- 188: "LCK AWARDS 2016 · 시즌 결산 시상식" with confetti.
+  - ALL-Pro 1st team: Smeb, Score, kurO, PraY, GorillA. 2nd team: Duke, Peanut, Faker, Bang, Wolf.
+  - Each card shows its stat line (TC / GSR / DPM / VC with LCK rank). Same layout as in 2026.
+- Then 휴식기, then 트라이아웃 from 11/16 (same as 2026).
+- 189: TRYOUT · WEEK 3, "경기가 끝났습니다 — 계약을 제안하세요".
+  - Popup: "트라이아웃에서는 팀마다 3명까지만 영입 제안을 할 수 있습니다."
+  - Scrim results: A팀 vs B팀 and C팀 vs D팀, each with KDA, plus 관전한 팀 tags.
+  - 참가자 table: 20명, 4팀. Columns: 솔랭 최고 기록 (챌린저 xxxxP), OVR 추정 range (e.g. 72~77), 스크림 기록 (확인하기), 요구 (조건 없음 / 연내 1군 콜업 보장 / 정규시즌 MVP), 다른 팀 관심 N, 영입 제안. A "스카우터 추천" tag can appear.
+  - Rule: "연봉은 0.6~1.0억. 강팀(전력 상위 5팀) 제안은 최저연봉이어도 선수가 긍정적으로 보고, 약팀은 최저연봉보다 높게 + 옵션을 걸어야 고려".
+- 190: Tryout 영입 협상 modal (Emberis, JGL 18세, OVR 72~77 추정, 아마추어).
+  - Salary 0.6~1.0억; contract 2년 fixed; 합류 CL (트라이아웃 신인).
+  - Note: "우리 팀은 약팀 … 연봉을 최저보다 올리고 옵션을 하나 이상 넣어야 선수가 고려합니다. 다른 팀 제안이 없으면 받아들입니다."
+  - 보너스 조항 options: LCK 우승 0.2억, 국제대회 우승 0.2억, 정규시즌 MVP 0.2억, 연내 1군 콜업 보장, 국제대회 진출 실패 시 삭감 0.2억.
+- 191: "제안 완료" — "좋습니다. 다른 제안도 들어보고 이번 주 안에 답을 드리겠습니다." I offered 0.7억 · 2년 · CL with 연내 1군 콜업 보장; the result comes at the end of the week.
+- 192: FA signing during the tryout window (before the stove league) is INSTANT.
+  - Thornum (ADC 83, FA) accepted the default 0.8억 · 1년 at once: "계약 체결 — 알겠습니다. 그 조건으로 하겠습니다."
+  - Weekly sealed bidding applies only during the stove league proper (11/30+).
+  - History FA pool: 22 players (e.g. Sparkan JGL 87). Budget 8억, 계약 만료 3명.
+- 193: "TRYOUT · 제안 결과 — 선수들이 제안을 골랐습니다" (우리 팀이 제안한 선수 1명 · 다른 팀으로 간 선수 7명).
+  - Our offer was rejected: Emberis, "SSB 제안 거절". He was wanted by SKT, SSB, KT, KDM, SSG and CJ. Reason: "육성보다 안정 — 강팀의 제안이라 최저연봉이어도 좋다고 봤습니다."
+  - Other picks list each 수락 team and its reason, e.g. "우승할 수 있는 팀을 먼저 본 것 같습니다" or "LZ만 제안했습니다".
+  - Lesson: a weak team loses tryout bids to the top-5 teams.
+- 194: Stove league opens 11/23 (2016).
+  - First a "계약 만료 · 재계약을 결정해주세요" modal for each expiring player: 재계약 (shows offer 0.8억·1년) or 방출 (→ FA). Every one must be decided before the new season can start.
+  - Then "계약 정리 완료 — 시즌 시작 ▶" (this only closes the modal; the stove league continues).
+  - Behind it, the 구직센터 got 5 offers (LPL I MAY, Young Talents, UOL, Schalke 04 …). The help text explains the manager contract, AI clubs firing coaches, and the five goal tiers (우승 · 결승 · 4강 · PO · 8위 이내).
+- 195: The history stove FA pool jumps to 125 players. Real end-of-2016 free agents appear: PraY 94 (8.7억), Bang 94, ssumday 93, Score 92, GorillA 92, Hachani, Flame, MadLife … Budget 11억.
+- 196: Toast "1주차는 협상 기간입니다 — 계약은 2주차부터 가능합니다." Stove week 1 is negotiation only; offers open in week 2.
+- 197: "받은 이적 제안" (incoming bid), stove week 2. 아프리카 프릭스 bid 1.5억 for our Flawless (JGL 18세 OVR 79, 연봉 0.4억, 1년 남음).
+  - Block "Flawless 마음 — 받아들여도 선수가 거절할 수 있습니다": 지금 팀(SSB) 만족 보통, AFs 명성·전력 "SSB보다 높음 ▲", 떠날 마음 보통.
+  - Shows budget before/after. Buttons 받아들이기 / 거절. "이번 주 안에 답하지 않으면 사라집니다."
+- 198: Stove FA negotiation for Score (JGL 92, 직전 소속 kt).
+  - Ask: "제 값은 해주셔야죠." 2.9억 · 1년 · 즉시 · 1군; 계약 상한선 6.5억.
+  - Submitted at default terms → "제안 완료 … 이번 주가 끝날 때 선수가 들어온 제안 중 하나를 고릅니다."
+- 199: "STOVE LEAGUE · 2주차 제안 결과 — 선수들이 제안을 골랐습니다".
+  - Our bid failed: Score "SSB 제안 거절". Bidders: KT, SSB, AFs, CJ, JAG +2. KT got him — "구단 명성을 우선시한 선택입니다."
+  - Section "타팀 주요 이적 현황 (OVR 80 이상)": PraY → KT, Bang → ROX, each "주전 자리가 비어 있던 팀으로 갔습니다".
+  - So the bid is decided by club reputation, whether a starting spot is open, and salary.
+  - A patch-notes modal also pops up every 2 weeks ("국제 대회·플레이오프·케스파컵 기간에는 진행하지 않습니다"), with ban/win rates and "우리 팀 영향".
+- Stove 2016 weeks 3–6: more patch modals. You can tick "다음부턴 이 창을 띄우지 않기"; its 확인 button needs a coordinate click.
+- 200: History "SEASON GOAL & BUDGET · 2017" (12/28).
+  - Owner 김지훈: "8위 이내" (최하위 탈출), 신뢰도 69. Tiers: 플레이오프 진출 / 8위 이내. Extra goals: 케스파컵 4강, 국제대회 진출.
+  - Coaching staff 유지/교체; the empty 코치 seat says "시즌 시작 후 FA에서 데려오세요".
+  - New section "CL(2군) 육성 투자": 절약 −0.1억 / 표준 −0.3억 / … Button "확정하고 시즌 시작".
+  - The 2017 season starts 1/1 with KeSPA CUP 2017.
+- 201: "팀 이름 변경 — ESC Ever가 bbq Olivers로 새 출발합니다." Real-history team rename events fire at the new year. News also covers 감독 선임 (SKT etc.).
+- 202: 2017 debut check (선수 검색, 524 players):
+  - Present: Bdd (MID 18세 OVR 85, FA, asks 1억 2년, "LCK PRESS 2017 시즌"), Teddy (ADC 19세 OVR 85, 진에어 CL, ~2018), Deft (FA 86), Faker 97 (SKT, 예상 이적료 40.5억).
+  - Not yet in the DB in 2017: Chovy, Canyon, Kiin, Cuzz, Haru, Tarzan, Khan, ShowMaker. So later stars are added in their real debut years; 2017 rookies appear as FA or CL players.
+- 203: 2017 roster after the stove league.
+  - 1군 has only 4: Soul, Flawless, Thornum (tagged "입대 예정" = military enlistment pending), bench SoaR. MID and SUP are empty ("MID 포지션이 비었습니다. 콜업 또는 영입이 필요합니다").
+  - SaSin, Secret and Nuclear left at contract end (I never re-signed them). Team avg OVR shows 48.
+  - Sponsor panel: 니이케 1.9억/년, LCK 우승 달성 시 +2.1억, "철수 경고 2년차/3년", 2016 니이케 · LCK 우승 실패.
+  - CL 5 players; 스카우터 2명 with star ratings.
