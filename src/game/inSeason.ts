@@ -235,6 +235,7 @@ export function seasonClubReply(s: Save): string | undefined {
   tr.step = "player"; return;
 }
 export function seasonPlayerReply(s: Save, salary: number, years: number, starter: boolean): { ok: boolean; message: string } {
+  salary = moneyRound(salary);
   const closed = seasonMarketClosed(s); if (closed) return { ok: false, message: closed };
   const m = s.inSeason, tr = m?.negotiation;
   if (!m || !tr || tr.week !== seasonMarketWeek(s) || tr.step !== "player") return { ok: false, message: "현재 주간의 선수 협상이 없습니다." };
