@@ -292,7 +292,6 @@ export default function Setup() {
                 <b>2026 한 시즌 창단</b>
                 <p>2026 LCK 한 자리를 대신하는 단기 창단입니다. 멀티시즌 스토리는 위 기본 모드를 이용해 주세요.</p>
               </button>
-              <div className="mode-card disabled"><b>히스토리 모드</b><p>2016부터 다시 쓰는 LCK(원작식). 이 버전에서는 준비 중입니다.</p><em>준비 중</em></div>
             </div>
             <div className="row gap" style={{ marginTop: 16 }}><span className="muted sm">난이도(기본 자금)</span>
               {(mode === "story"

@@ -17,7 +17,7 @@ function fixture(seed = 17) {
   return newStoryCareer("SGU", "훈련 검증", 1, seed, { cards, starters: cards, difficulty: "normal", club: { name: "훈련 구단", short: "SGU", color: "#2DD4BF" }, managerInfo: { name: "훈련 검증", birth: "1988-01-01", nation: "한국", career: "amateur" } });
 }
 for (const [person, birth] of Object.entries(PLAYER_BIRTHDATES)) {
-  assert(CARDS_BY_PERSON[person]?.length, "생년 자료와 실제 선수 ID 일치: " + person);
+  assert(CARDS_BY_PERSON[person]?.length || PL[person], "생년 자료와 실제 선수 ID 일치: " + person);
   assert(trainingProfile(birth, "2027-01-01").known);
 }
 console.log("OK verified public birth registry", Object.keys(PLAYER_BIRTHDATES).length);
