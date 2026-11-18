@@ -166,11 +166,11 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
   assert.equal(s.inSeason!.week, seasonMarketWeek(s)); assert(s.inSeason!.history.every((d) => d.date === trainingDate(s))); assert.equal(s.rng, rng);
   const low = s.story!.contracts[0];
   const stronger = seasonCandidates(s).find((c) => c.owner === "FA" && c.card.posIdx === PL[low.key].pos && c.ovr > PL[low.key].pct.ovr);
-  if (stronger) {
-    // Public negotiation purchases that bench, followed by the actual zero-cash delegation.
-    startSeasonNegotiation(s, stronger.card.id, 0); const result = seasonPlayerReply(s, Math.max(stronger.salary * 2, 6), 1, false);
-    if (result.ok) { s.eco.cash = 0; setSeasonAutomatic(s, true); assert.equal(PL[s.starters[s.team][PL[low.key].pos]].personKey, stronger.person); assert.equal(s.eco.cash, 0); }
-  }
+  assert(stronger);
+  // Public negotiation purchases that bench, followed by the actual zero-cash delegation.
+  startSeasonNegotiation(s, stronger.card.id, 0); const result = seasonPlayerReply(s, Math.max(stronger.salary * 2, 20), 1, false);
+  assert(result.ok, result.message); s.eco.cash = 0; setSeasonAutomatic(s, true);
+  assert.equal(PL[s.starters[s.team][PL[low.key].pos]].personKey, stronger.person); assert.equal(s.eco.cash, 0);
   console.log("OK old save starts at current week and zero-cash automatic bench promotion");
 }
 assert.equal(JSON.stringify(CARDS), original);
