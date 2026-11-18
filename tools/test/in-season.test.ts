@@ -36,6 +36,12 @@ function healthy(s: Save) {
   const restored = copy(s); hydrateSave(restored); applyStoryWorld(restored); prepareInSeason(restored); assert.deepEqual(restored.inSeason, copy(s.inSeason)); healthy(restored);
   assert.equal(seasonCandidates(s).length, new Set(seasonCandidates(s).map((c) => c.person)).size);
   assert(seasonCandidates(s).every((c) => c.card.year <= 2021)); healthy(s);
+  const legacy = copy(s), oldKey = (k: string) => k.replace(/(-est-\d{4})-p[0-4]$/, "$1");
+  for (const team of Object.keys(legacy.starters)) legacy.starters[team] = legacy.starters[team].map(oldKey);
+  for (const c of legacy.story!.contracts) c.key = oldKey(c.key);
+  legacy.cards = legacy.cards.map(oldKey);
+  for (const list of Object.values(legacy.inSeason!.rosters)) for (const c of list) c.key = oldKey(c.key);
+  hydrateSave(legacy); applyStoryWorld(legacy); healthy(legacy);
   console.log("OK weekly idempotence, separate market RNG, reload, one person and no future records");
 }
 {

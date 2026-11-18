@@ -241,7 +241,7 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
     const tm = s.story!.lck.find((x) => x !== s.team && (s.starters[x] ?? []).length === 5);
     if (!tm) throw new Error("no AI LCK roster");
     const years = (s.starters[tm] ?? []).map((k) => {
-      const m = /-(\d{4})$/.exec(k);
+      const m = /-(\d{4})(?:-p[0-4])?$/.exec(k);
       if (m) return Number(m[1]);
       return CARDS[k]?.year ?? 0;
     });

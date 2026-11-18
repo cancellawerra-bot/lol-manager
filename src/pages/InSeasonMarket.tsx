@@ -20,7 +20,7 @@ export default function InSeasonMarket({ s }: { s: Save }) {
   const action = (fn: (x: Save) => string | undefined, success: string) => mutate((x) => setMessage(fn(x) ?? success));
   return <>
     <Card title="시즌 중 이적" right={<span className="muted sm">정규 시즌 · 주간 영입 1명 / 매각 1명</span>}>
-      <p className="muted sm">선수당 한 명을 표시하고 현재 연도에 맞는 실제 기록을 적용합니다. 계약 선수는 구단 합의 후 선수의 동의를 받습니다. 모든 금액과 이적 기간은 게임 설정입니다.</p>
+      <p className="muted sm">선수당 한 명을 표시하고 현재 연도에 맞는 실제 기록을 적용합니다. 계약 선수는 구단 합의 후 선수의 동의를 받습니다. 연봉·이적료는 모두 게임용 가상 금액입니다. 이적 기간은 게임 설정입니다.</p>
       <p data-testid="season-market-status">{closed ?? `${s.days[s.day]?.date} · ${week.split("-").slice(-1)[0]}주차 시장 열림`} · 잔고 <b>{fmtMoney(s.eco.cash)}</b> · 다음 해 계약·가입 유보금 {fmtMoney(seasonReserve(s))}</p>
       <label className="row gap"><input type="checkbox" data-testid="season-automatic" checked={m?.automatic ?? false} disabled={!!closed} onChange={(e) => mutate((x) => setSeasonAutomatic(x, e.target.checked))} />자동 감독에게 주간 보강 맡기기</label>
       <p className="muted sm">보유 벤치를 먼저 기용하고 예산 안에서 보강합니다. 필요한 자금은 실제로 도착한 벤치 이적 제안으로 마련합니다. 선수는 거절할 수 있습니다.</p>
