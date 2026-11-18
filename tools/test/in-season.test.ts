@@ -49,7 +49,7 @@ function healthy(s: Save) {
   assert.equal(s.eco.cash, baseCash); assert.deepEqual(s.story!.contracts, baseContracts);
   console.log("OK invalid money, no cash, contract duration, competition/session locks are atomic");
 }
-let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefined;
+let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefined, transferBefore: Save | undefined, saleBefore: Save | undefined;
 {
   const s = fixture(), target = free(s), oldStarter = s.starters[s.team][target.card.posIdx];
   const salary = Math.min(20, Math.max(target.salary * 2, 5)), cash = s.eco.cash, rng = s.rng;
@@ -83,10 +83,10 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
     if (startSeasonNegotiation(s, target.card.id, target.fee) || seasonClubReply(s)) continue;
     const from = target.owner, cash = s.eco.cash, sellerCash = s.inSeason!.cash[from];
     advanceTeamTraining(s, from, trainingDate(s)); const growth = copy(s.training!.players[target.person]);
-    const salary = Math.max(target.salary * 2, 6), result = seasonPlayerReply(s, salary, 2, true); if (!result.ok) continue;
+    const before = copy(s), salary = Math.max(target.salary * 2, 6), result = seasonPlayerReply(s, salary, 2, true); if (!result.ok) continue;
     assert.equal(s.eco.cash, +(cash - target.fee - seasonSalaryDue(s, salary)).toFixed(2));
     assert(s.inSeason!.cash[from] <= sellerCash + target.fee); assert.deepEqual(s.training!.players[target.person], growth);
-    healthy(s); transfer = copy(s); break;
+    healthy(s); transfer = copy(s); transferBefore = before; break;
   }
   assert(transfer, "실제 구단 합의·선수 동의 이적 성공 분기");
   console.log("OK club star refusal, funded replacement, two-step transfer and personal XP/fatigue carryover");
@@ -105,11 +105,11 @@ let purchase: Save | undefined, transfer: Save | undefined, sale: Save | undefin
         if (s.starters[s.team].includes(sold.key)) {
           assert(answerSeasonIncoming(s, offer.id, true)); assert.equal(s.eco.cash, blockedCash); continue;
         }
-        const pre = s.eco.cash, buyer = s.inSeason!.cash[offer.from];
+        const before = copy(s), pre = s.eco.cash, buyer = s.inSeason!.cash[offer.from];
         if (!answerSeasonIncoming(s, offer.id, true)) {
           assert.equal(s.eco.cash, +(pre + offer.fee).toFixed(2));
           assert.equal(s.inSeason!.cash[offer.from], +(buyer - offer.fee - seasonSalaryDue(s, offer.salary)).toFixed(2));
-          assert(answerSeasonIncoming(s, offer.id, true)); healthy(s); sale = copy(s); break;
+          assert(answerSeasonIncoming(s, offer.id, true)); healthy(s); sale = copy(s); saleBefore = before; break;
         }
       }
     }
@@ -143,5 +143,6 @@ if (process.argv.includes("--fixtures")) {
   const start = fixture(); writeFileSync("../in-season-qa/start.json", JSON.stringify(start));
   writeFileSync("../in-season-qa/purchase.json", JSON.stringify(purchase)); writeFileSync("../in-season-qa/transfer.json", JSON.stringify(transfer));
   writeFileSync("../in-season-qa/sale.json", JSON.stringify(sale));
+  writeFileSync("../in-season-qa/transfer-before.json", JSON.stringify(transferBefore)); writeFileSync("../in-season-qa/sale-before.json", JSON.stringify(saleBefore));
 }
 console.log("OK in-season transfers complete; real source cards unchanged", payrollSoftCap(fixture(), "LCK"), TM.SGU.short);

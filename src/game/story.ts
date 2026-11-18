@@ -1,5 +1,5 @@
 // 프랜차이즈 스토리 모드: 2018 2부 창단 → 승강전 → 2021 프랜차이즈 → 2027 월즈 클리어
-import { CARDS, PL, TM, cardLabel } from "../data";
+import { CARDS, CARDS_BY_PERSON, PL, TM, cardLabel } from "../data";
 import type { SeasonCard, Team } from "../types";
 import { playerFromCard } from "./cards";
 import { Rng } from "./rng";
@@ -285,7 +285,7 @@ function ckSalaryFromRaw(raw: number): number {
 /** Y시즌에 쓸 카드: 같은 해 우선, 없으면 가장 가까운 과거. 미래 연도는 쓰지 않음. */
 export function cardForYear(pkey: string, year: number, posIdx?: number): { card: SeasonCard; estimated: boolean } | undefined {
   const y = Math.min(year, 2026); // 2027 → 2026 카드
-  const all = Object.values(CARDS).filter((c) => c.pkey === pkey && c.year <= y && (posIdx == null || c.posIdx === posIdx));
+  const all = (CARDS_BY_PERSON[pkey] ?? []).filter((c) => c.year <= y && (posIdx == null || c.posIdx === posIdx));
   if (!all.length) return;
   const same = all.filter((c) => c.year === y).sort((a, b) => b.games - a.games || cmpCard(a, b))[0];
   // 데이터 마지막 해(2026) 공식 카드는 2027에도 추정 감쇠 없이 그대로 씁니다.
@@ -295,7 +295,7 @@ export function cardForYear(pkey: string, year: number, posIdx?: number): { card
 }
 
 export function debutYear(pkey: string): number | undefined {
-  const ys = Object.values(CARDS).filter((c) => c.pkey === pkey).map((c) => c.year);
+  const ys = (CARDS_BY_PERSON[pkey] ?? []).map((c) => c.year);
   return ys.length ? Math.min(...ys) : undefined;
 }
 
@@ -1399,7 +1399,7 @@ export function pumpStory(s: Save, rng: Rng, stop: StoryPhase[] = ["awards", "tr
   while (g++ < 200) {
     const ph = s.story!.phase;
     if (s.story!.ended || stop.includes(ph)) return ph;
-    const open = s.series.filter((x) => !x.winner && (s.starters[x.a]?.length || x.a.includes("-")) && (s.starters[x.b]?.length || x.b.includes("-")));
+    const open = s.series.filter((x) => !x.winner && (ph !== "regular" || x.day === s.day) && (s.starters[x.a]?.length || x.a.includes("-")) && (s.starters[x.b]?.length || x.b.includes("-")));
     for (const sr of open) {
       try { simSeries(s, sr, rng); } catch { /* */ }
     }
