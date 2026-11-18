@@ -2,7 +2,7 @@
 export const AGE_TRAINING_ENABLED = true;
 export type TrainingKind = "mechanics" | "strategy" | "recovery";
 export interface VerifiedBirth { date: string; sourceUrl: string; checkedAt: string }
-export interface TrainingProfile { age?: number; known: boolean; mechanics: number; strategy: number; recovery: number }
+export interface TrainingProfile { age?: number; known: boolean; mechanics: number; strategy: number; recovery: number; fatigueLoad: number }
 export interface TrainingProgress { person: string; mechanicsXp: number; strategyXp: number; fatigue: number; lastDate?: string }
 export interface TrainingImpact { mechanics: number; strategy: number; fatigue: number }
 export type MatchTraining = Record<string, TrainingImpact>;
@@ -10,12 +10,12 @@ export type TrainingSummary = { B: TrainingImpact; R: TrainingImpact };
 
 /** 게임용 학습 효율입니다. 실제 선수의 전성기·능력치를 측정한 수치가 아닙니다. */
 export const AGE_TRAINING_ANCHORS = [
-  { age: 16, mechanics: 1.15, strategy: 0.95, recovery: 1.10 },
-  { age: 19, mechanics: 1.20, strategy: 1.00, recovery: 1.10 },
-  { age: 22, mechanics: 1.05, strategy: 1.15, recovery: 1.05 },
-  { age: 24, mechanics: 1.00, strategy: 1.20, recovery: 1.00 },
-  { age: 28, mechanics: 0.97, strategy: 1.15, recovery: 0.98 },
-  { age: 34, mechanics: 0.95, strategy: 1.10, recovery: 0.95 },
+  { age: 16, mechanics: 1.15, strategy: 0.95, recovery: 1.10, fatigueLoad: 0.95 },
+  { age: 19, mechanics: 1.20, strategy: 1.00, recovery: 1.10, fatigueLoad: 0.95 },
+  { age: 22, mechanics: 1.05, strategy: 1.15, recovery: 1.05, fatigueLoad: 1.00 },
+  { age: 24, mechanics: 1.00, strategy: 1.20, recovery: 1.00, fatigueLoad: 1.04 },
+  { age: 28, mechanics: 0.97, strategy: 1.15, recovery: 0.98, fatigueLoad: 1.10 },
+  { age: 34, mechanics: 0.95, strategy: 1.10, recovery: 0.95, fatigueLoad: 1.16 },
 ] as const;
 const clamp = (n: number, lo: number, hi: number): number => Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : lo;
 function isoDate(text: string): number | undefined {
@@ -27,7 +27,7 @@ function isoDate(text: string): number | undefined {
 
 /** 커리어의 현재 날짜로 계산합니다. 카드 기록 연도나 PC의 현재 날짜를 쓰지 않습니다. */
 export function trainingProfile(birth: VerifiedBirth | undefined, date: string): TrainingProfile {
-  const neutral: TrainingProfile = { known: false, mechanics: 1, strategy: 1, recovery: 1 };
+  const neutral: TrainingProfile = { known: false, mechanics: 1, strategy: 1, recovery: 1, fatigueLoad: 1 };
   const now = isoDate(date), born = birth ? isoDate(birth.date) : undefined;
   if (now == null || born == null || born > now || !/^https:\/\//.test(birth!.sourceUrl) || isoDate(birth!.checkedAt) == null) return neutral;
   const b = new Date(born), d = new Date(now);
@@ -41,7 +41,7 @@ export function trainingProfile(birth: VerifiedBirth | undefined, date: string):
   const upper = AGE_TRAINING_ANCHORS.find((a) => a.age >= point)!;
   const f = upper.age === lower.age ? 0 : (point - lower.age) / (upper.age - lower.age);
   const lerp = (a: number, b_: number): number => a + (b_ - a) * f;
-  return { known: true, age: years, mechanics: lerp(lower.mechanics, upper.mechanics), strategy: lerp(lower.strategy, upper.strategy), recovery: lerp(lower.recovery, upper.recovery) };
+  return { known: true, age: years, mechanics: lerp(lower.mechanics, upper.mechanics), strategy: lerp(lower.strategy, upper.strategy), recovery: lerp(lower.recovery, upper.recovery), fatigueLoad: lerp(lower.fatigueLoad, upper.fatigueLoad) };
 }
 
 /** 한 사람의 하루 한 세션. 60분당 XP만 달라져 시간 단축 보너스를 중복 지급하지 않습니다. */
@@ -55,7 +55,7 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
     const fatigueFactor = Math.max(0.5, 1 - p.fatigue / 150);
     const progressFactor = 1 - p[attr] / 200;
     p[attr] = clamp(p[attr] + 10 * profile[kind] * fatigueFactor * progressFactor, 0, 100);
-    p.fatigue = clamp(p.fatigue + 12, 0, 100);
+    p.fatigue = clamp(p.fatigue + 12 * profile.fatigueLoad, 0, 100);
   }
   return { progress: p, profile, applied: true };
 }

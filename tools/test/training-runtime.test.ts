@@ -22,6 +22,19 @@ for (const [person, birth] of Object.entries(PLAYER_BIRTHDATES)) {
 }
 console.log("OK verified public birth registry", Object.keys(PLAYER_BIRTHDATES).length);
 {
+  const auto = fixture();
+  auto.training!.players.faker.fatigue = 80;
+  advanceTeamTraining(auto, auto.team, "2018-01-20");
+  assert(auto.training!.players.faker.fatigue < 80, "자동 감독은 피로가 높으면 휴식 배정");
+  assert.equal(auto.training!.players.faker.mechanicsXp + auto.training!.players.faker.strategyXp, 0);
+  const manual = fixture(); const key = manual.starters[manual.team][2];
+  setTrainingPlan(manual, key, ["train", "train", "scrim", "rest", "train", "train", "rest"]);
+  manual.training!.players.faker.fatigue = 80;
+  advanceTeamTraining(manual, manual.team, "2018-01-20");
+  assert(manual.training!.players.faker.fatigue > 80, "직접 정한 유효 계획의 훈련·피로 유지");
+  console.log("OK automatic fatigue rest and manual plan control");
+}
+{
   const s = fixture(); const untouchedPlayers = JSON.stringify(PL);
   const date = "2018-02-01";
   advanceTeamTraining(s, s.team, date);

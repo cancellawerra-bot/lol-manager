@@ -93,7 +93,8 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
 (async () => {
   await loadCore(); await loadRanked();
 
-  // 실패 경로: 약한 로스터로 2부 잔류, 매수 거절 → 2027 미클리어
+  // 실패 분기: 2020까지 2부에 남은 상황에서 매수 거절 → 2027 미클리어.
+  // 특정 시드의 승강전 패배에 기대지 않고 제도 분기 자체를 검증합니다.
   const weak = weakRoster(2018);
   const sf = newStoryCareer("SGU", "김감독", 1, 42, {
     club: { name: "신구 이글스", short: "SGU", color: "#2DD4BF" },
@@ -101,6 +102,9 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
     cards: weak, starters: weak, difficulty: "easy",
   });
   const rf = new Rng(sf.rng);
+  sf.story!.year = 2020; sf.story!.phase = "franchise"; sf.story!.tier = "CK"; sf.story!.buyInOffered = true;
+  const refused = resolveFranchise(sf, false);
+  if (refused) throw new Error(refused);
   while (!sf.story!.ended && sf.story!.year <= 2027) {
     const y = sf.story!.year;
     stepYear(sf, rf, { acceptBuyIn: false, signStars: false, reserveCash: FRANCHISE_BUYIN.easy });

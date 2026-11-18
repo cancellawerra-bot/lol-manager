@@ -49,7 +49,7 @@ export default function Squad() {
         </div>
         <p className={s.schedOk ? "ok sm" : "err sm"}>{s.schedOk ? "일정이 준비되었습니다." : story ? "권장 계획을 변경하거나 수석코치에게 맡겨 확정해 주세요. 선수마다 휴식일이 하나 이상 필요합니다." : "빈 칸을 채우고, 선수마다 휴식일을 하나 이상 넣어 주세요."}</p>
       </Card>
-      {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">{date}</span>}>
+      {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">다음 일정 {date}</span>}>
         <p className="muted sm">훈련 숙련도는 선수 개인에게 쌓이고 시즌이 바뀌어도 유지됩니다. 원본 시즌 성적·종합·연봉과 구분되는 게임 효과입니다. 피지컬은 라인 실행력, 전략은 경기 준비에 반영하며 피로는 준비 효과를 낮춥니다.</p>
         <div className="card-grid" data-testid="training-roster">{[...new Map([...keys, ...(s.story?.contracts.map((c) => c.key) ?? [])].map((k) => [trainingPerson(s, k), k])).values()].map((k) => {
           const person = trainingPerson(s, k), p = playerTraining(s, k); if (!person || !p) return null;
@@ -57,12 +57,13 @@ export default function Squad() {
           return <div className="card-tile" key={person} data-testid={`training-${person}`}>
             <b>{PL[k]?.name ?? person}</b><div className="muted sm">{profile.known ? `만 ${profile.age}세` : "생년 정보 없음 · 나이 보정 없음"}</div>
             <p className="sm">피지컬 숙련 {p.mechanicsXp.toFixed(1)} / 100<br />전략 숙련 {p.strategyXp.toFixed(1)} / 100<br />피로 {p.fatigue.toFixed(1)} / 100</p>
-            <div className="xs muted">학습 효율: 피지컬 {profile.mechanics.toFixed(2)}배 · 전략 {profile.strategy.toFixed(2)}배 · 회복 {profile.recovery.toFixed(2)}배</div>
+            <div className="xs muted">학습 효율: 피지컬 {profile.mechanics.toFixed(2)}배 · 전략 {profile.strategy.toFixed(2)}배 · 회복 {profile.recovery.toFixed(2)}배<br />피로 누적 {profile.fatigueLoad.toFixed(2)}배</div>
+            <div className="xs muted">반영 기준: {p.lastDate ?? "훈련 시작 전"}</div>
             <p className="sm">경기 보정: 피지컬 +{(bonus.mechanics * 100).toFixed(2)}% · 전략 +{(bonus.strategy * 100).toFixed(2)}% · 피로 −{(p.fatigue * 0.02).toFixed(2)}%</p>
             {birth && <a className="xs" href={birth.sourceUrl} target="_blank" rel="noreferrer">생년 자료 출처</a>}
           </div>;
         })}</div>
-        <p className="muted xs">보정값은 승률이 아닙니다. 같은 날짜는 한 번만 처리하며 화면을 다시 열거나 불러와도 훈련을 중복 획득하지 않습니다. 생년이 확인된 선수만 나이 보정합니다.</p>
+        <p className="muted xs">진행하기를 누르면 해당 경기 날짜까지 훈련을 처리합니다. 자동 관리는 피로 60 이상이면 훈련을 휴식으로 조정합니다. 보정값은 승률이 아닙니다. 같은 날짜는 한 번만 처리하며 화면을 다시 열거나 불러와도 훈련을 중복 획득하지 않습니다. 생년이 확인된 선수만 나이 보정합니다.</p>
       </Card>}
       <Card title="선발 라인업">
         <table className="tbl">

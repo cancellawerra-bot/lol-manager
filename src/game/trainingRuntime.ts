@@ -78,7 +78,9 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
     for (let day = nextDate(p.lastDate ?? previousDate(state.periodStart > date ? date : state.periodStart)); day <= date; day = nextDate(day)) {
       const weekday = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7;
       const chosen = trainingPlan(s, key, day, team);
-      const act = (validPlan(chosen) ? chosen : recommendedTraining(person, day))[weekday];
+      let act = (validPlan(chosen) ? chosen : recommendedTraining(person, day))[weekday];
+      const automatic = team !== s.team || state.automatic[person] || (!state.plans[person] && !validPlan(s.sched[key])) || !validPlan(chosen);
+      if (automatic && p.fatigue >= 60) act = "rest";
       p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : "recovery", day, PLAYER_BIRTHDATES[person]).progress;
     }
     state.players[person] = p;
