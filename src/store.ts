@@ -7,7 +7,7 @@ import { formMap } from "./game/season";
 import { Rng } from "./game/rng";
 import type { PosIdx } from "./types";
 import { hydrateSave } from "./game/cards";
-import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, applyStoryWorld } from "./game/story";
+import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, applyStoryWorld, FRANCHISE_BUYIN } from "./game/story";
 import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
 
@@ -86,7 +86,11 @@ export function autoToOffseason(): void {
   mutate((s, rng) => { if (isStory(s)) pumpStory(s, rng); });
 }
 export function autoStove(signStars = false): void {
-  mutate((s, rng) => { if (isStory(s)) autoAdvanceOffseason(s, rng, { signStars }); });
+  mutate((s, rng) => {
+    if (!isStory(s)) return;
+    const reserveCash = !s.story!.franchised && s.story!.year <= 2020 ? FRANCHISE_BUYIN[s.eco.difficulty] : 0;
+    autoAdvanceOffseason(s, rng, { signStars, reserveCash });
+  });
 }
 
 export const sessionSeries = (s: Save) => s.series.find((x) => x.id === s.session?.seriesId)!;

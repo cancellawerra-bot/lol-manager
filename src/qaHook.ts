@@ -2,7 +2,7 @@
 // 경기 승패를 조작하지 않으며, 스토브 입찰·자동 시뮬만 빠르게 밟습니다.
 import { CARDS, RANKED } from "./data";
 import { getSave, mutate, persist, setSave, loadSlot, lastSlot } from "./store";
-import { pumpStory, newStoryCareer, marketCards, storySalary, STORY_BUDGETS, type StoryDiff } from "./game/story";
+import { pumpStory, newStoryCareer, marketCards, storySalary, STORY_BUDGETS, FRANCHISE_BUYIN, type StoryDiff } from "./game/story";
 import { autoAdvanceOffseason, stepYear } from "./game/stove";
 import { Rng } from "./game/rng";
 import { resolveFranchise } from "./game/story";
@@ -89,7 +89,7 @@ export function installQaHook(): void {
           pay: Math.round(s.story.contracts.reduce((n, c) => n + c.salary, 0) * 100) / 100,
           trophies: { ...s.story.trophies },
         });
-        const reserved = (!s.story.franchised && s.story.year <= 2020) ? 3.5 : 0;
+        const reserved = (!s.story.franchised && s.story.year <= 2020) ? FRANCHISE_BUYIN[s.eco.difficulty] : 0;
         stepYear(s, rng, { acceptBuyIn: !!opts.acceptBuyIn, signStars: opts.signStars !== false, reserveCash: reserved });
         if (s.story.year === y && !s.story.ended) break;
       }

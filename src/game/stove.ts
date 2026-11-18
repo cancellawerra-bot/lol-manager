@@ -510,9 +510,11 @@ export function answerIncoming(s: Save, id: string, accept: boolean, rng: Rng): 
   }
   bid.status = "accepted";
   s.eco.cash = moneyRound(s.eco.cash + bid.fee);
+  const ct = s.story!.contracts.find((c) => c.key === bid.key);
   s.story!.contracts = s.story!.contracts.filter((c) => c.key !== bid.key);
   s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => k === bid.key ? "" : k);
-  const card = CARDS[Object.keys(CARDS).find((id) => CARDS[id].pkey === bid.person) ?? ""];
+  s.cards = s.cards.filter((k) => k !== bid.key && k !== ct?.cardId);
+  const card = cardForYear(bid.person, Math.min(s.story!.year + 1, 2026), PL[bid.key]?.pos)?.card;
   const fake: Bid = { team: bid.from, person: bid.person, cardId: card?.id ?? bid.key, salary: bid.salary, years: bid.years, starter: true, bonuses: {}, kind: "transfer" };
   signToTeam(s, bid.from, fake, rng);
   addNews(s, "season", `${PL[bid.key]?.name} 이적`, `${TM[bid.from]?.ko ?? bid.from}로 이적했습니다. 이적료 ${fmtMoney(bid.fee)}(게임용 가상 금액).`, s.team);
@@ -634,7 +636,8 @@ function aiFillHoles(s: Save, rng: Rng): void {
         const existingPay = (stove.aiContracts[t] ?? []).reduce((n, c) => n + c.salary, 0);
         if (existingPay + ask > cap) continue;
       }
-      const bid: Bid = { team: t, person: id.pkey, cardId: id.id, salary: ask, years: 2, starter: true, bonuses: {}, kind: "fa" };
+      const bid: Bid = { team: t, person: id.pkey, cardId: id.id, salary: ask,
+        years: t === s.team && tier === "CK" ? 1 : 2, starter: true, bonuses: {}, kind: "fa" };
       signToTeam(s, t, bid, rng);
     }
   }
@@ -661,10 +664,16 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
     tryoutDone(s);
   }
   if (st.phase === "expiry") {
+    const undecided = new Set(st.stove.expiryKeys.filter((k) => !st.stove!.expiryDecided[k]));
+    let due = upcomingSalaryDue(st.contracts.filter((c) => !undecided.has(c.key) && st.stove!.expiryDecided[c.key] !== "release"));
     for (const k of st.stove.expiryKeys) {
       if (!st.stove.expiryDecided[k]) {
         const weak = (PL[k]?.pct.ovr ?? 50) < replaceOvrOf(s);
-        const err = decideExpiry(s, k, weak ? "release" : "resign");
+        const ct = st.contracts.find((c) => c.key === k);
+        const cost = ct && !ct.prepaid ? ct.salary : 0;
+        const renew = !weak && (cost === 0 || s.eco.cash - (opts.reserveCash ?? 0) >= due + cost);
+        const err = decideExpiry(s, k, renew ? "resign" : "release", undefined, st.tier === "CK" ? 1 : 2);
+        if (renew && !err) due += cost;
         if (err) decideExpiry(s, k, "release");
       }
     }
@@ -673,7 +682,7 @@ export function autoAdvanceOffseason(s: Save, rng: Rng, opts: { signStars?: bool
   if (st.phase !== "stove" || !st.stove) return;
   let g = 0;
   while (g++ < 12 && st.phase === "stove" && !st.stove.closed) {
-    if (opts.signStars && canBidNow(s)) legalStarBids(s, opts.reserveCash ?? 0);
+    if (opts.signStars) autoManageRoster(s, rng, opts.reserveCash ?? 0);
     closeStoveWeek(s, rng);
   }
   if (st.stove?.closed) finishOffseason(s, rng);
@@ -691,38 +700,105 @@ function holeReserve(s: Save, exceptPos?: number): number {
   return holes.reduce((n, pos) => n + minFaCost(s, pos), 0);
 }
 
+/** 보유 선수부터 활용하고, 실제로 온 제안만 검토합니다. 자금·승패를 보정하지 않습니다. */
+export function autoManageRoster(s: Save, rng: Rng, reserve = 0): void {
+  const st = s.story; const stove = st?.stove;
+  if (!st || !stove || st.phase !== "stove" || stove.closed) return;
+  let keys = s.starters[s.team];
+  const promoted: string[] = [];
+  for (let pos = 0; pos < 5; pos++) {
+    const current = PL[keys[pos]];
+    const best = st.contracts.filter((c) => c.years > 0 && PL[c.key]?.pos === pos
+      && Number.isFinite(PL[c.key]?.pct.ovr)
+      && !keys.some((k, i) => i !== pos && PL[k]?.personKey === c.person))
+      .sort((a, b) => PL[b.key].pct.ovr - PL[a.key].pct.ovr || cmpStr(a.key, b.key))[0];
+    if (!best || (current && best.key === current.key)
+      || (current && PL[best.key].pct.ovr <= current.pct.ovr)) continue;
+    keys[pos] = best.key;
+    promoted.push(PL[best.key].label ?? PL[best.key].name);
+  }
+  if (promoted.length) addNews(s, "season", "자동 감독 · 보유 선수 주전 교체",
+    `${promoted.join(", ")} 선수를 주전으로 올렸습니다. 보유 선수 교체에는 추가 연봉이나 이적료가 들지 않습니다.`, s.team);
+
+  if (stove.transfersOn) {
+    const offers = stove.incoming.filter((b) => b.status === "open" && b.expireWeek >= stove.week)
+      .sort((a, b) => b.fee - a.fee || cmpStr(a.id, b.id));
+    for (const offer of offers) {
+      const ct = st.contracts.find((c) => c.key === offer.key && c.person === offer.person && c.years > 0);
+      const player = PL[offer.key];
+      if (!ct || !player || !Number.isFinite(player.pct.ovr)) continue;
+      const pos = player.pos;
+      const isStarter = keys[pos] === offer.key;
+      if (stove.pendingBids.some((b) => b.team === s.team && CARDS[b.cardId]?.posIdx === pos)) continue;
+      if (isStarter) {
+        if (player.pct.ovr >= replaceOvrOf(s) || !canBidNow(s)) continue;
+        const upgrades = stove.faPool.map((id) => CARDS[id])
+          .filter((c) => c && c.posIdx === pos && c.percentile >= player.pct.ovr + 5);
+        // 이미 교체할 돈이 있으면 주전을 먼저 팔지 않고 입찰 결과를 기다립니다.
+        if (upgrades.some((c) => autoBidSalary(s, c, reserve, false) != null)) continue;
+        // 매각 뒤에도 연봉·유보금을 남기고, 같은 자리의 더 나은 FA에 입찰할 수 있어야 합니다.
+        const after: Save = { ...s, eco: { ...s.eco, cash: moneyRound(s.eco.cash + offer.fee) },
+          starters: { ...s.starters, [s.team]: keys.map((k) => k === offer.key ? "" : k) },
+          story: { ...st, contracts: st.contracts.filter((c) => c !== ct) } };
+        const canReplace = upgrades.some((c) => autoBidSalary(after, c, reserve, true) != null);
+        if (!canReplace) continue;
+      } else {
+        const starter = PL[keys[pos]];
+        if (!starter || starter.pct.ovr <= player.pct.ovr) continue;
+      }
+      answerIncoming(s, offer.id, true, rng);
+      keys = s.starters[s.team];
+    }
+  }
+  if (canBidNow(s)) legalStarBids(s, reserve);
+}
+
+function autoBidSalary(s: Save, c: SeasonCard, reserve: number, asHole: boolean): number | undefined {
+  const st = s.story!; const stove = st.stove!;
+  const cur = s.starters[s.team]?.[c.posIdx];
+  const ask = contractAsk(c, st.tier);
+  const pending = stove.pendingBids.filter((b) => b.team === s.team && b.person !== c.pkey);
+  const oldContract = (pos: number) => st.contracts.find((ct) => ct.key === s.starters[s.team]?.[pos]);
+  // 다른 입찰이 불발돼도 남아 있는 선수 연봉을 낼 수 있게 유보합니다.
+  const pendingDue = pending.reduce((n, b) => {
+    const old = b.starter ? oldContract(CARDS[b.cardId]?.posIdx) : undefined;
+    return n + Math.max(0, b.salary - (old && !old.prepaid ? old.salary : 0));
+  }, 0);
+  const due = upcomingSalaryDue(st.contracts, cur || undefined);
+  const keep = reserve + holeReserve(s, asHole ? c.posIdx : undefined) + due + pendingDue;
+  const pendingCash = pending.reduce((n, b) => n + b.salary, 0);
+  const room = Math.min(s.eco.cash - keep, s.eco.cash - pendingCash);
+  if (room < ask * 0.85) return;
+  const offer = moneyRound(Math.min(room, ask * (prestige(s, s.team) < 60 ? 1.45 : 1.12)));
+  // 연봉 한도는 기존처럼 미확정 입찰 전액을 잡아 보수적으로 지킵니다.
+  const pendingPay = pending.reduce((n, b) => n + b.salary, 0);
+  const payroll = st.contracts.reduce((n, x) => n + x.salary, 0) + pendingPay;
+  const oldPay = oldContract(c.posIdx)?.salary ?? 0;
+  if (payroll - oldPay + offer > payrollSoftCap(s, st.tier)) {
+    if (!asHole || offer > (st.tier === "LCK" ? payrollYearCapStar(s) : 0.6)) return;
+  }
+  return offer;
+}
+
 function legalStarBids(s: Save, reserve = 0): void {
   const st = s.story!; const stove = st.stove!;
   const cards = stove.faPool.map((id) => CARDS[id]).filter(Boolean);
   const bidFor = (c: typeof cards[0], asHole: boolean): boolean => {
-    const cur = s.starters[s.team]?.[c.posIdx];
-    const ask = contractAsk(c, st.tier);
-    // 교체 입찰이면 나가는 주전의 연봉은 이번 정산에서 빼도 됩니다(계약이 교체로 해제됩니다).
-    const due = upcomingSalaryDue(st.contracts, cur || undefined);
-    const keep = reserve + holeReserve(s, asHole ? c.posIdx : undefined) + due;
-    const room = s.eco.cash - keep;
-    if (room < ask * 0.85) return false;
-    const offer = moneyRound(Math.min(room, ask * (prestige(s, s.team) < 60 ? 1.45 : 1.12)));
-    const pendingOurs = stove.pendingBids.filter((b) => b.team === s.team).reduce((n, b) => n + b.salary, 0);
-    const payroll = st.contracts.reduce((n, x) => n + x.salary, 0) + pendingOurs;
-    const oldPay = (cur && st.contracts.find((x) => x.key === cur)?.salary) || 0;
-    const cap = payrollSoftCap(s, st.tier);
-    if (payroll - oldPay + offer > cap) {
-      if (!asHole) return false;
-      // 구멍이라도 스타 연봉으로 총액을 넘기면 다음 해 강제 매각으로 로스터가 무너집니다.
-      if (offer > (st.tier === "LCK" ? (payrollYearCapStar(s)) : 0.6)) return false;
-    }
-    return !placeFaBid(s, { team: s.team, person: c.pkey, cardId: c.id, salary: offer, years: 2, starter: true, bonuses: {}, kind: "fa" });
+    const offer = autoBidSalary(s, c, reserve, asHole);
+    if (offer == null) return false;
+    return !placeFaBid(s, { team: s.team, person: c.pkey, cardId: c.id, salary: offer,
+      years: st.tier === "CK" ? 1 : 2, starter: true, bonuses: {}, kind: "fa" });
   };
   // 1) 주전 구멍부터, 가능한 한 종합 55 이상
-  const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i]);
+  const pendingPos = new Set<number>(stove.pendingBids.filter((b) => b.team === s.team).map((b) => CARDS[b.cardId]?.posIdx));
+  const holes = [0, 1, 2, 3, 4].filter((i) => !s.starters[s.team]?.[i] && !pendingPos.has(i));
   for (const pos of holes) {
     const opts = cards.filter((c) => c.posIdx === pos).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
     const mid = opts.filter((c) => c.percentile >= replaceOvrOf(s));
     const pool = (mid.length ? mid : opts).sort((a, b) => storySalary(a, st.tier) - storySalary(b, st.tier) || b.percentile - a.percentile || cmpCard(a, b));
     for (const c of pool) { if (bidFor(c, true)) break; }
   }
-  const taken = new Set<number>(holes);
+  const taken = new Set<number>([...holes, ...pendingPos]);
   // 2) 가장 약한 주전(쉬움 60 미만, 그 외 55 미만)부터 교체. 잔고·정산 유보는 bidFor가 지킵니다.
   const weakPos = [0, 1, 2, 3, 4]
     .filter((i) => !taken.has(i))
