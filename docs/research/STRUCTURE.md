@@ -1,5 +1,7 @@
 # LCK Manager 26 전체 화면 구조 지도 — LOL Manager v2 청사진
 
+> 2026-11-18 오너 결정: 별도 히스토리 모드는 만들지 않고 프랜차이즈에 집중합니다. 아래 히스토리 관련 내용은 원작 조사 당시의 기록이며 현재 개발 계획이 아닙니다. 최신 결정은 `docs/HANDOFF.md`를 따릅니다.
+
 작성: 2026-11-17 (Asia/Seoul)
 대상 원작: [LCK Manager 26](https://pepper2.itch.io/lck-manager-26) (Pepper2, Alpha v8.28, 빌드 3091, Pepper Engine v0984)
 우리 게임: 비상업 LOL Manager (소스 `/workspace/lol-manager`, 라이브 https://cancellawerra-bot.github.io/lol-manager/)
