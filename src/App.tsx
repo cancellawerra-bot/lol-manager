@@ -6,6 +6,7 @@ import { standings, nextMySeries, dateKo, STAGE_KO } from "./game/season";
 import { FanNotice, TeamChip, form5 } from "./ui";
 import { PATCH_VERSION } from "./pages/patchdata";
 import { go } from "./nav";
+import { swissRows } from "./game/swiss";
 
 const Title = lazy(() => import("./pages/Title"));
 const Setup = lazy(() => import("./pages/Setup"));
@@ -70,6 +71,8 @@ export default function App() {
   const me = rows.find((r) => r.t === save.team) ?? { t: save.team, w: 0, l: 0, gw: 0, gl: 0, streak: "–", last: [] as string[] };
   const nx = nextMySeries(save);
   const storyEnded = save.story?.ended;
+  const activeSwiss = save.story?.phase === "worlds" ? save.story.swiss : undefined;
+  const swissMe = activeSwiss ? swissRows(activeSwiss, save.series).find((r) => r.t === save.team) : undefined;
   const endLabel = storyEnded === "clear" ? "클리어" : storyEnded === "bankrupt" ? "파산" : storyEnded === "fail" ? "여정의 끝" : "";
   const day = save.days[Math.min(save.day, save.days.length - 1)];
   const unread = save.news.filter((n) => !n.read).length;
@@ -100,9 +103,9 @@ export default function App() {
           <button className="hamb" onClick={() => setMenu(!menu)} aria-label="메뉴">☰</button>
           <div className="top-date"><b>{storyEnded ? `${save.story!.year} 시즌` : dateKo(day.date)}</b><small>{storyEnded ? endLabel : (save.phase === "done" ? "시즌 종료" : `${day.label} · ${STAGE_KO[day.stage]}`)}</small></div>
           <div className="chips">
-            <div className="chip"><small>순위</small><b>{storyEnded && save.story?.lastRank ? `${save.story.lastRank}위` : (me.w + me.l > 0 ? `${rank}위` : "–")}</b></div>
+            <div className="chip"><small>{activeSwiss ? "월즈" : "순위"}</small><b>{activeSwiss ? !swissMe ? "미출전" : swissMe.w === 3 ? "8강 진출" : swissMe.l === 3 ? "탈락" : `${activeSwiss.round}라운드` : storyEnded && save.story?.lastRank ? `${save.story.lastRank}위` : (me.w + me.l > 0 ? `${rank}위` : "–")}</b></div>
             {save.story && <div className="chip"><small>{save.story.year}</small><b>{save.story.tier === "LCK" ? "LCK" : "2부"}</b></div>}
-            <div className="chip"><small>{storyEnded && save.story?.lastRank ? "최종 순위" : "전적"}</small><b>{storyEnded && save.story?.lastRank ? `${save.story.lastRank}위` : `${me.w}승 ${me.l}패`}</b></div>
+            <div className="chip"><small>{activeSwiss ? "스위스 전적" : storyEnded && save.story?.lastRank ? "최종 순위" : "전적"}</small><b>{activeSwiss ? swissMe ? `${swissMe.w}승 ${swissMe.l}패` : "경기 없음" : storyEnded && save.story?.lastRank ? `${save.story.lastRank}위` : `${me.w}승 ${me.l}패`}</b></div>
             <div className="chip hide-s"><small>목표</small><b>{goalKo}</b></div>
             <div className="chip hide-s"><small>자금</small><b>{fmtMoney(save.eco.cash)}</b></div>
             <div className="chip hide-m"><small>구단주 신뢰</small><b>{save.eco.trust}</b></div>

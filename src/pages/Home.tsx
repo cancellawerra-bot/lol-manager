@@ -49,6 +49,7 @@ export default function Home() {
           </div>}
           {s.story.phase === "msi" && <p data-testid="msi-banner">MSI가 진행 중입니다. 그룹은 단판 라운드 로빈, 상위 4팀이 준결승(Bo5)에 갑니다. 해외 팀은 리그 시드 이름이며 개별 선수 기록은 없습니다.</p>}
           {s.story.phase === "rtm" && <p data-testid="rtm-banner">Road to MSI: 스프링 상위 팀이 LCK 시드를 가립니다. 2018–2020은 1시드만, 2021년부터는 최종전으로 2시드까지 정합니다.</p>}
+          {s.story.phase === "worlds" && s.story.swiss && <p data-testid="swiss-banner">월즈 스위스: 3승이면 8강 진출, 3패면 탈락합니다. 진출·탈락 결정전은 Bo3, 나머지는 Bo1입니다. <a href="#/standings">스위스 전적·대진 보기 →</a></p>}
           {["awards", "tryout", "expiry", "stove"].includes(s.story.phase) && <p><a className="btn primary" href="#/stove" data-testid="goto-stove">스토브리그 본편으로</a></p>}
         </Card>
       )}

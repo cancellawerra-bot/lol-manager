@@ -22,7 +22,7 @@ export default function Schedule() {
                 const list = s.series.filter((x) => x.day === i && (!mine || x.a === s.team || x.b === s.team));
                 return (
                   <div key={i} className={"cal-day" + (i === s.day ? " today" : i < s.day ? " past" : "")}>
-                    <div className="cal-dh"><b>{dateKo(d.date)}</b><small className="muted">{STAGE_KO[d.stage]}{i === s.day ? " · 오늘" : ""}</small></div>
+                    <div className="cal-dh"><b>{dateKo(d.date)}</b><small className="muted">{d.stage === "SW" ? `${d.label} · Bo${s.series.find((sr) => sr.day === i)?.bo ?? 1}` : STAGE_KO[d.stage]}{i === s.day ? " · 오늘" : ""}</small></div>
                     {list.length ? list.map((x) => (
                       <button key={x.id} className={"cal-m" + (x.a === s.team || x.b === s.team ? " mine" : "")} onClick={() => x.games.length && setOpen(x)} disabled={!x.games.length}>
                         <TeamChip t={x.a} size="sm" /><span className={x.winner === x.a ? "w" : ""}>{x.games.length ? x.sa : ""}</span><span className="muted">:</span><span className={x.winner === x.b ? "w" : ""}>{x.games.length ? x.sb : ""}</span><TeamChip t={x.b} size="sm" />

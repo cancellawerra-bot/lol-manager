@@ -7,6 +7,7 @@ import type { Day, Economy, Save, SeriesRec } from "./season";
 import type { StoveState } from "./stove";
 import { addNews, dateKo, simSeries, standings } from "./season";
 import { moneyRound, fmtMoney } from "./money";
+import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
 export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -97,6 +98,7 @@ export interface StoryState {
   contracts: Contract[];
   stove?: StoveState;
   worldsChamp?: string;
+  swiss?: SwissState;
   ended?: "clear" | "fail" | "bankrupt";
   note?: string;
   /** 최근 스플릿 정규 순위(1부터). 일정 교체 후에도 상금·시드에 씁니다. */
@@ -420,6 +422,8 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
     injectEraTeam(t, roster);
   }
   st.worldBuiltYear = year;
+  // 로드로 PL/TM이 초기화되어도 국제대의 저장된 대진과 가상 시드 명단을 복구합니다.
+  for (const tag of Object.keys(s.starters).filter((t) => /^[A-Z]+-\d+$/.test(t))) ensureIntlRoster(s, tag);
 }
 
 
@@ -987,12 +991,21 @@ export function startWorlds(s: Save): void {
   const lckSeeds = lckWorldsSeeds(s);
   const intl = ["LPL-1", "LPL-2", "LPL-3", "LEC-1", "LEC-2", "LCS-1", "LCS-2", "PCS-1", "VCS-1", "LCL-1", "CBLOL-1", "LJL-1", "LMS-1"];
   const teams = [...lckSeeds, ...intl].slice(0, 16);
-  // inject intl placeholders
-  for (const t of intl) {
-    if (!TM[t]) {
-      TM[t] = { id: 800, short: t, name: t, ko: intlName(t), color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
-    }
-    if ((s.starters[t] ?? []).filter(Boolean).length < 5) s.starters[t] = ghostLineup(t, st.year, storyDiff(s));
+  for (const t of intl) ensureIntlRoster(s, t);
+  st.swiss = undefined;
+  if (st.year >= 2023) {
+    // 기존 게임의 LCK 3장·해외 13팀에 맞춘 4개 추첨 풀. 전력·승패로 풀을 바꾸지 않습니다.
+    const pools = [[lckSeeds[0], "LPL-1", "LEC-1", "LCS-1"],
+      [lckSeeds[1], "LPL-2", "LEC-2", "LCS-2"],
+      [lckSeeds[2], "LPL-3", "PCS-1", "VCS-1"], ["LCL-1", "CBLOL-1", "LJL-1", "LMS-1"]];
+    st.swiss = { round: 1, avoidRematches: st.year >= 2024,
+      drawRng: (s.seed ^ Math.imul(st.year, 0x45d9f3b)) >>> 0,
+      teams: pools.flatMap((pool, i) => pool.map((t) => ({ t, pool: i + 1, region: lckSeeds.includes(t) ? "LCK" : t.split("-")[0] }))) };
+    s.days = []; s.series = []; s.day = 0;
+    st.note = JSON.stringify({ step: "swiss", lckSeeds });
+    appendSwissRound(s);
+    addNews(s, "season", `${st.year} 월즈 개막 · 16팀 스위스`, `3승 진출·3패 탈락. 진출·탈락 결정전은 Bo3, 나머지는 Bo1. ${st.swiss.avoidRematches ? "스위스 재대결 금지." : "2023 방식: 2라운드부터 재대결 허용."} LCK 시드: ${lckSeeds.join(", ")}. 해외는 리그 시드 추정 전력이며 개별 선수 기록은 없습니다.`, s.team);
+    return;
   }
   const groups: string[][] = [[], [], [], []];
   teams.forEach((t, i) => groups[i % 4].push(t));
@@ -1008,6 +1021,45 @@ export function startWorlds(s: Save): void {
   });
   s.story!.note = JSON.stringify({ groups, lckSeeds, step: "groups" });
   addNews(s, "season", `${st.year} 월즈 개막 · 16팀 4개조`, `LCK 시드: ${lckSeeds.join(", ")}. 조별은 Bo3, 토너먼트는 Bo5입니다. 해외 팀은 리그 시드 이름으로만 등장하며 개별 선수 기록은 없습니다(추정 전력).`, s.team);
+}
+
+function ensureIntlRoster(s: Save, t: string): void {
+  if (!TM[t]) TM[t] = { id: 800, short: t, name: t, ko: intlName(t), color: "#64748B", starters: [], players: [], real: [0, 0, 0, 0], gw: 0, gl: 0 };
+  const keys = s.starters[t] ?? [];
+  if (keys.filter(Boolean).length < 5 || keys.some((k) => !PL[k])) s.starters[t] = ghostLineup(t, s.story!.year, storyDiff(s));
+}
+
+function appendSwissRound(s: Save): void {
+  const st = s.story!.swiss!;
+  const rng = new Rng(st.drawRng);
+  const pairs = drawSwissRound(st, s.series, rng);
+  st.drawRng = rng.s;
+  const date = s.days.length ? addDays(s.days[s.days.length - 1].date, 1) : `${s.story!.year}-10-01`;
+  const d0 = s.days.length;
+  pairs.forEach((p, i) => {
+    const day = d0 + i;
+    s.days.push({ date: addDays(date, i), week: 40 + st.round, stage: "SW", label: `월즈 스위스 ${st.round}라운드 · ${p.w}승 ${p.l}패` });
+    s.series.push({ id: `W-SW${st.round}-${i}`, day, stage: "SW", a: p.a, b: p.b, bo: p.bo, holder1: p.holder1,
+      games: [], sa: 0, sb: 0, swiss: { round: st.round, w: p.w, l: p.l } });
+  });
+  s.day = d0;
+  addNews(s, "season", `월즈 스위스 ${st.round}라운드 추첨`, pairs.map((p) => `${p.w}-${p.l}: ${p.a} vs ${p.b} (Bo${p.bo})`).join(", "), s.team);
+}
+
+function advanceWorldsSwiss(s: Save): void {
+  const st = s.story!.swiss!;
+  const open = s.series.filter((sr) => sr.swiss?.round === st.round && !sr.winner).sort((a, b) => a.day - b.day);
+  if (open.length) { s.day = open[0].day; return; }
+  const rows = swissRows(st, s.series);
+  if (rows.some((r) => r.w < 3 && r.l < 3)) {
+    st.round++;
+    appendSwissRound(s);
+    return;
+  }
+  const draw = new Rng(st.drawRng);
+  const pairs = drawSwissKnockout(st, s.series, draw);
+  st.drawRng = draw.s;
+  startWorldsKnockout(s, pairs, rows.filter((r) => r.w === 3).map((r) => r.t));
 }
 
 function intlName(t: string): string {
@@ -1051,10 +1103,15 @@ export function finishWorldsGroups(s: Save, rng: Rng): void {
   });
   // QF: A1-B2, B1-A2, C1-D2, D1-C2
   const pairs: [string, string][] = [[adv[0], adv[3]], [adv[2], adv[1]], [adv[4], adv[7]], [adv[6], adv[5]]];
+  startWorldsKnockout(s, pairs, adv);
+}
+
+function startWorldsKnockout(s: Save, pairs: [string, string][], adv: string[]): void {
+  const meta = JSON.parse(s.story!.note || "{}");
   const date = addDays(s.days[s.days.length - 1].date, 3);
   const d0 = s.days.length;
   pairs.forEach((pr, i) => {
-    s.days.push({ date: addDays(date, i), week: 31, stage: "PO1", label: `월즈 8강` });
+    s.days.push({ date: addDays(date, i), week: s.story!.swiss ? 50 : 31, stage: "PO1", label: `월즈 8강` });
     s.series.push({ id: `W-QF${i}`, day: d0 + i, stage: "PO1", a: pr[0], b: pr[1], bo: 5, games: [], sa: 0, sb: 0, holder1: pr[0] });
   });
   s.day = d0;
@@ -1071,8 +1128,8 @@ export function advanceWorldsKO(s: Save, rng: Rng): void {
   if (meta.step === "qf" && allDone("W-QF")) {
     const w = [0, 1, 2, 3].map((i) => s.series.find((x) => x.id === `W-QF${i}`)!.winner!);
     const d = s.days.length;
-    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: 32, stage: "SF", label: "월즈 4강" });
-    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: 32, stage: "SF", label: "월즈 4강" });
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: s.story!.swiss ? 51 : 32, stage: "SF", label: "월즈 4강" });
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 3), week: s.story!.swiss ? 51 : 32, stage: "SF", label: "월즈 4강" });
     s.series.push({ id: "W-SF0", day: d, stage: "SF", a: w[0], b: w[1], bo: 5, games: [], sa: 0, sb: 0 });
     s.series.push({ id: "W-SF1", day: d + 1, stage: "SF", a: w[2], b: w[3], bo: 5, games: [], sa: 0, sb: 0 });
     s.day = d; meta.step = "sf"; s.story!.note = JSON.stringify(meta); return;
@@ -1080,7 +1137,7 @@ export function advanceWorldsKO(s: Save, rng: Rng): void {
   if (meta.step === "sf" && allDone("W-SF")) {
     const w = [s.series.find((x) => x.id === "W-SF0")!.winner!, s.series.find((x) => x.id === "W-SF1")!.winner!];
     const d = s.days.length;
-    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 7), week: 33, stage: "F", label: "월즈 결승" });
+    s.days.push({ date: addDays(s.days[s.days.length - 1].date, 7), week: s.story!.swiss ? 52 : 33, stage: "F", label: "월즈 결승" });
     s.series.push({ id: "W-F", day: d, stage: "F", a: w[0], b: w[1], bo: 5, games: [], sa: 0, sb: 0 });
     s.day = d; meta.step = "f"; s.story!.note = JSON.stringify(meta); return;
   }
@@ -1266,6 +1323,7 @@ export function finishStoryDay(s: Save, rng: Rng): void {
   if (st.phase === "msi") { advanceMSI(s, rng); return; }
   if (st.phase === "worlds") {
     const meta = JSON.parse(st.note || "{}") as { step?: string };
+    if (meta.step === "swiss" && st.swiss) { advanceWorldsSwiss(s); return; }
     if (!meta.step || meta.step === "groups") {
       const open = s.series.filter((x) => x.id.startsWith("W-G") && !x.winner);
       if (open.length) {

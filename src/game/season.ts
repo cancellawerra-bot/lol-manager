@@ -6,14 +6,14 @@ import { Rng } from "./rng";
 import type { StoryState } from "./story";
 
 export const SAVE_V = 2;
-export type Stage = "R" | "PO1" | "SF" | "F";
-export const STAGE_KO: Record<Stage, string> = { R: "정규 시즌", PO1: "플레이오프 1라운드", SF: "플레이오프 준결승", F: "결승" };
+export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
+export const STAGE_KO: Record<Stage, string> = { R: "정규 시즌", SW: "월즈 스위스", PO1: "플레이오프 1라운드", SF: "플레이오프 준결승", F: "결승" };
 export interface GameRec {
   blue: string; red: string; winner: string; firstSide: Side; holder: string;
   bans: Record<Side, string[]>; picks: Record<Side, DPick[]>; lineup: Record<Side, string[]>;
   dur: number; kills: [number, number]; gold15: number; mvp: string; pPre: number; res?: GameResult;
 }
-export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string }
+export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number } }
 export interface Day { date: string; week: number; stage: Stage; label: string }
 export interface News { id: number; day: number; date: string; kind: "result" | "upset" | "streak" | "leader" | "season" | "welcome" | "mvp" | "playoff"; title: string; body: string; team?: string; read: boolean }
 export interface PStat { g: number; w: number; k: number; d: number; a: number; mvp: number; rsum: number }

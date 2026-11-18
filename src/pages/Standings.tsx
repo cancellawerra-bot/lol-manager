@@ -4,6 +4,7 @@ import { standings, STAGE_KO, SeriesRec } from "../game/season";
 import { Card, TeamChip, form5, Modal } from "../ui";
 import { SeriesDetail } from "./SeriesDetail";
 import { TM } from "../data";
+import WorldsSwiss from "./WorldsSwiss";
 
 export default function Standings() {
   const s = useSave()!;
@@ -11,6 +12,7 @@ export default function Standings() {
   const [open, setOpen] = useState<SeriesRec | null>(null);
   const po = s.series.filter((x) => x.stage !== "R");
   const box = (st: "PO1" | "SF" | "F") => po.filter((x) => x.stage === st);
+  if (s.story?.swiss && s.series.some((sr) => sr.swiss)) return <WorldsSwiss s={s} />;
   return (
     <div className="grid">
       <Card title="정규 시즌 순위" className="span2">

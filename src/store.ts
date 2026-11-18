@@ -160,7 +160,7 @@ export function nextGame(): void {
   });
 }
 export function endSeries(): void {
-  mutate((s, rng) => { s.session = undefined; finishDay(s, rng); });
+  mutate((s, rng) => { s.session = undefined; if (isStory(s)) finishStoryDay(s, rng); else finishDay(s, rng); });
 }
 export function setStarter(team: string, pos: number, key: string): void { mutate((s) => { s.starters[team][pos] = key; }); }
 
