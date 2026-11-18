@@ -37,8 +37,8 @@ export default function Squad() {
                   <td><small className="muted">{POS_KO[i]}</small> <PName k={k} /></td>
                   {plans(k).map((a, d) => (
                     <td key={d}>
-                      <select value={a} onChange={(e) => setAct(k, d, e.target.value as DayAct)}>
-                        {ACT.map((x) => <option key={x.id || "e"} value={x.id}>{story && x.id === "train" ? "피지컬 훈련" : story && x.id === "scrim" ? "전략·스크림" : x.t}</option>)}
+                      <select value={a} aria-label={`${PL[k]?.name ?? k} ${DAYS[d]}요일 훈련`} style={story ? { minWidth: 82 } : undefined} onChange={(e) => setAct(k, d, e.target.value as DayAct)}>
+                        {ACT.map((x) => <option key={x.id || "e"} value={x.id}>{story && x.id === "train" ? "피지컬" : story && x.id === "scrim" ? "전략" : x.t}</option>)}
                       </select>
                     </td>
                   ))}
@@ -47,6 +47,7 @@ export default function Squad() {
             </tbody>
           </table>
         </div>
+        {story && <p className="muted xs">요일표를 좌우로 넘겨 모든 요일의 계획을 확인할 수 있습니다.</p>}
         <p className={s.schedOk ? "ok sm" : "err sm"}>{s.schedOk ? "일정이 준비되었습니다." : story ? "권장 계획을 변경하거나 수석코치에게 맡겨 확정해 주세요. 선수마다 휴식일이 하나 이상 필요합니다." : "빈 칸을 채우고, 선수마다 휴식일을 하나 이상 넣어 주세요."}</p>
       </Card>
       {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">다음 일정 {date}</span>}>
