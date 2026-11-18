@@ -34,7 +34,7 @@ export const REPLACE_OVR_EASY = 60;
 export const CASH_BANKRUPT = -5; // 이 이하 적자면 해임·파산
 /** 월즈·MSI 해외 시드 추정 종합. 보통은 v2.3.3과 같고, 쉬움은 낮고 어려움은 높습니다. */
 export const INTL_BAND = { s1: 80, s2: 74, s3: 69, rest: 58 } as const;
-export const INTL_BAND_DELTA = { easy: -12, normal: 0, hard: 5 } as const;
+export const INTL_BAND_DELTA = { easy: -16, normal: 0, hard: 5 } as const;
 /** AI 구단의 주간 FA 예산 배수. 보통은 기존과 같고, 쉬움은 덜 쓰고 어려움은 더 씁니다. */
 export const AI_FA_BUDGET_MULT = { easy: 0.55, normal: 1, hard: 1.5 } as const;
 
