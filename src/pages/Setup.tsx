@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { CARDS, CORE, PL, TM, POS_KO, cardLabel, fmt } from "../data";
 import { BUDGETS, personUsed, rosterSalary, weakestTeam, type Diff } from "../game/cards";
-import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMoney } from "../game/story";
+import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMoney, franchisePlayers } from "../game/story";
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
 import { slots, setSave } from "../store";
 import { CardMarket } from "./Market";
@@ -98,6 +98,10 @@ export default function Setup() {
   const goStep = (s: Step): void => { setErr(""); setStep(s); window.scrollTo(0, 0); };
 
   const confirmMode = (): void => {
+    if (mode === "story") {
+      const available = new Map(franchisePlayers(2018).map((c) => [c.pkey, c.id]));
+      setPicks((ids) => [...new Set(ids.map((id) => available.get(CARDS[id]?.pkey)).filter((id): id is string => !!id))]);
+    }
     if (mode === "story" || mode === "club") goStep("club");
     else if (mode === "roster") goStep("roster");
     else { // fantasy: pick a 2026 brand to occupy, then draft
@@ -326,9 +330,9 @@ export default function Setup() {
 
         {step === "market" && (
           <div>
-            <h2>시즌 카드 시장</h2>
-            <p className="muted">선발 5명(포지션당 1)과 벤치(최대 3)를 고르세요. 같은 선수는 한 장만, 연봉 합이 {fmtMoney(cap)}을 넘으면 안 됩니다. {mode === "story" ? "2018년 이하 카드만 나옵니다. 미래 시즌 카드는 없습니다. 2부 연봉은 전형적으로 2천만~5천만 원이며, LCK에서 이름 있던 선수는 최대 약 1–2억입니다. 모두 능력치(퍼센타일·경력)에 따라 정해집니다." : "예: 2022 Faker, 2014 Faker."} 연봉은 게임용 가상 금액입니다.</p>
-            <CardMarket cap={cap} selected={picks} onChange={setPicks} yearMax={mode === "story" ? 2018 : undefined} priceOf={priceOf} />
+            <h2>{mode === "story" ? "선수 영입" : "시즌 카드 시장"}</h2>
+            <p className="muted">선발 5명(포지션당 1)과 벤치(최대 3)를 고르세요. 선수는 한 명씩, 연봉 합이 {fmtMoney(cap)}을 넘으면 안 됩니다. {mode === "story" ? "2018년 기준 선수당 한 명만 표시하고 시즌 기록은 자동으로 적용합니다. 미래 시즌의 선수는 나오지 않습니다. 2부 연봉은 전형적으로 2천만~5천만 원이며, LCK에서 이름 있던 선수는 최대 약 1–2억입니다." : "예: 2022 Faker, 2014 Faker."} 연봉은 게임용 가상 금액입니다.</p>
+            <CardMarket cap={cap} selected={picks} onChange={setPicks} yearMax={mode === "story" ? 2018 : undefined} priceOf={priceOf} seasonYear={mode === "story" ? 2018 : undefined} />
             <div className="picked-line">{picks.map((id) => <span key={id} className="tag">{cardLabel(CARDS[id])} {fmtMoney(priceOf ? priceOf(CARDS[id]) : CARDS[id].salary)}</span>)}</div>
             <div className="setup-foot"><button className="btn" onClick={() => goStep("club")}>뒤로</button>
               <button className="btn primary lg" data-testid="market-next" onClick={() => { const v = validRoster(picks); if (v) { setErr(v); return; } const spent = picks.reduce((n, id) => n + (priceOf ? priceOf(CARDS[id]) : CARDS[id].salary), 0); if (spent > cap) { setErr("예산을 초과했습니다."); return; } goStep("contract"); }}>다음 · 감독 계약서</button></div>

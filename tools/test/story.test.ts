@@ -250,9 +250,9 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
     const n1 = intlGhostBand("LPL-1", "normal");
     const e1 = intlGhostBand("LPL-1", "easy");
     const h1 = intlGhostBand("LPL-1", "hard");
-    if (n1 !== 80) throw new Error("normal LPL-1 should stay 80, got " + n1);
+    if (n1 !== 76) throw new Error("normal LPL-1 Swiss calibration should be 76, got " + n1);
     if (!(e1 < n1 && n1 < h1)) throw new Error("bands should be easy < normal < hard, got " + [e1, n1, h1]);
-    if (intlGhostBand("LPL-2", "normal") !== 74 || intlGhostBand("LEC-1", "normal") !== 74) throw new Error("normal s2 band");
+    if (intlGhostBand("LPL-2", "normal") !== 70 || intlGhostBand("LEC-1", "normal") !== 70) throw new Error("normal s2 band");
     const ke = ghostLineup("LPL-1", 2027, "easy")[0];
     const kn = ghostLineup("LPL-1", 2027, "normal")[0];
     const kh = ghostLineup("LPL-1", 2027, "hard")[0];

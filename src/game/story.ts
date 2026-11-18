@@ -33,9 +33,9 @@ export const REPLACE_OVR = 55; // 자동 감독이 이 미만 주전을 먼저 �
 /** 쉬움에서만 잔고가 있으면 종합 60 미만도 교체·만료 방출합니다. 보통·어려움은 55. */
 export const REPLACE_OVR_EASY = 60;
 export const CASH_BANKRUPT = -5; // 이 이하 적자면 해임·파산
-/** 월즈·MSI 해외 시드 추정 종합. 보통은 v2.3.3과 같고, 쉬움은 낮고 어려움은 높습니다. */
+/** 월즈·MSI 해외 시드 추정 종합. 기본 밴드에 난이도별 추정 전력 보정을 적용합니다. */
 export const INTL_BAND = { s1: 80, s2: 74, s3: 69, rest: 58 } as const;
-export const INTL_BAND_DELTA = { easy: -16, normal: 0, hard: 5 } as const;
+export const INTL_BAND_DELTA = { easy: -16, normal: -4, hard: 5 } as const;
 /** AI 구단의 주간 FA 예산 배수. 보통은 기존과 같고, 쉬움은 덜 쓰고 어려움은 더 씁니다. */
 export const AI_FA_BUDGET_MULT = { easy: 0.55, normal: 1, hard: 1.5 } as const;
 
@@ -309,6 +309,16 @@ export function marketCards(year: number): SeasonCard[] {
     if (!cur || c.year > cur.year || (c.year === cur.year && c.games > cur.games)) best.set(k, c);
   }
   return [...best.values()].sort(cmpCard);
+}
+
+/** 프랜차이즈 영입 화면: 한 사람당 현재 연도에 가장 가까운 기록 한 개만 제공합니다. */
+export function franchisePlayers(year: number): SeasonCard[] {
+  const people = new Map<string, SeasonCard>();
+  for (const c of marketCards(year)) {
+    const old = people.get(c.pkey);
+    if (!old || c.year > old.year || (c.year === old.year && (c.games > old.games || (c.games === old.games && cmpCard(c, old) < 0)))) people.set(c.pkey, c);
+  }
+  return [...people.values()].sort(cmpCard);
 }
 
 export function ensurePlayer(card: SeasonCard, year: number, estimated: boolean): string {
