@@ -683,7 +683,9 @@ export function settlePayrollAndSolvency(s: Save): void {
       st.financeWarn = undefined;
     }
   }
-  if (s.eco.cash <= CASH_BANKRUPT || ((st.deficitYears ?? 0) >= 2 && s.eco.cash < 0 && (s.eco.trust ?? 0) <= 20)) {
+  // 쉬움은 −5억 임계만 적용합니다. 연속 적자+신뢰 20 이하는 보통·어려움만 (시드 11처럼 얕은 적자로 끝나던 경로).
+  const trustBust = (st.deficitYears ?? 0) >= 2 && s.eco.cash < 0 && (s.eco.trust ?? 0) <= 20;
+  if (s.eco.cash <= CASH_BANKRUPT || (storyDiff(s) !== "easy" && trustBust)) {
     endStory(s, "bankrupt");
     return;
   }

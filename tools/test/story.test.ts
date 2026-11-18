@@ -277,6 +277,24 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
     if (replaceOvrOf(hard) !== REPLACE_OVR) throw new Error("hard replace " + replaceOvrOf(hard));
     console.log("OK difficulty bands and AI budget", { e1, n1, h1, be, bn, bh, easyReplace: replaceOvrOf(easy) });
   }
+  {
+    const mk = (diff: "easy" | "normal") => {
+      const s = careerBest(7, diff);
+      s.story!.contracts = [];
+      s.eco.cash = -0.44;
+      s.eco.trust = 35;
+      s.story!.deficitYears = 1;
+      s.story!.ended = undefined;
+      settlePayrollAndSolvency(s);
+      return s;
+    };
+    const easyB = mk("easy");
+    const normB = mk("normal");
+    if (easyB.story!.ended === "bankrupt") throw new Error("easy should not bankrupt on shallow deficit + low trust, cash=" + easyB.eco.cash + " trust=" + easyB.eco.trust + " deficit=" + easyB.story!.deficitYears);
+    if (normB.story!.ended !== "bankrupt") throw new Error("normal should still bankrupt on 2 deficit years + trust<=20, ended=" + normB.story!.ended);
+    if (easyB.eco.cash <= -5) throw new Error("test setup cash went to " + easyB.eco.cash);
+    console.log("OK easy solvency leniency", { easyCash: easyB.eco.cash, easyTrust: easyB.eco.trust, easyDef: easyB.story!.deficitYears, normalEnded: normB.story!.ended });
+  }
 
   let cleared: { seed: number; trophies: typeof sf.story.trophies; cash: number } | null = null;
   const tried: string[] = [];

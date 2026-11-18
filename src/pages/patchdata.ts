@@ -1,5 +1,11 @@
-export const PATCH_VERSION = "2.4.2";
+export const PATCH_VERSION = "2.4.3";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  {
+    v: "2.4.3", date: "2026-11-18",
+    items: [
+      "쉬움에서는 잔고가 −5억보다 얕은 적자일 때, 연속 적자와 구단주 신뢰만으로 파산하지 않습니다. 보통·어려움의 파산 규칙은 그대로입니다.",
+    ],
+  },
   {
     v: "2.4.2", date: "2026-11-18",
     items: [
