@@ -1,5 +1,5 @@
 import { useSave, setTacticPlan } from "../store";
-import { POS_KO } from "../data";
+import { PL, POS_KO } from "../data";
 import type { DraftState, Side } from "../game/draft";
 import { FOCUS_LABEL, TEMPO_LABEL, TEMPO_NOTE, normalizeTactic, recommendTactic, tacticAllocation, tacticLabel, TACTIC_STAGE_LABEL, type Tempo, type Focus, type TacticsRecord } from "../game/tactics";
 
@@ -18,7 +18,7 @@ export function TacticsControls({ draft }: { draft?: DraftState }) {
     <div className="row wrap gap">{(Object.keys(FOCUS_LABEL) as Focus[]).map((focus) => <button disabled={locked} aria-pressed={plan.focus === focus} className={"btn " + (plan.focus === focus ? "primary" : "")} key={focus} data-testid={`tactic-focus-${focus}`} onClick={() => setTacticPlan({ ...plan, focus })}>{FOCUS_LABEL[focus]}</button>)}</div>
     <p data-testid="tactic-allocation" className="sm">{tacticAllocation(plan)}</p>
     <p className="muted sm">지원에 집중한 만큼 다른 라인의 자원이 줄어듭니다. 탑은 유충 우세, 미드는 라인전 우세, 바텀은 첫 드래곤이 집중 목표입니다. 목표를 이루면 중후반 운영에 힘이 실리고 실패하면 부담이 남습니다. 수치는 게임 설정이며 승리를 보장하지 않습니다.</p>
-    {advice && <details><summary>수석코치 추천: {tacticLabel(advice.plan)}</summary><ul className="sm">{advice.reasons.map((r) => <li key={r}>{r}</li>)}</ul><button className="btn" data-testid="delegate-tactics" disabled={locked} onClick={() => setTacticPlan(advice.plan)}>추천 적용</button><p className="muted sm">현재 선수 지표와 30판 이상 랭크 상성으로 계산한 게임용 조언입니다.</p></details>}
+    {advice && <details><summary>수석코치 추천: {tacticLabel(advice.plan)}</summary>{draft && [...draft.lineup.B, ...draft.lineup.R].some((k) => PL[k]?.small) && <p className="sm" data-testid="coach-small-sample">표본 부족 또는 과거 기록 기반 추정 선수가 있습니다. 선수 기록의 연도·표본을 함께 확인해 주세요.</p>}<ul className="sm">{advice.reasons.map((r) => <li key={r}>{r}</li>)}</ul><button className="btn" data-testid="delegate-tactics" disabled={locked} onClick={() => setTacticPlan(advice.plan)}>추천 적용</button><p className="muted sm">현재 선수 지표와 30판 이상 랭크 상성으로 계산한 게임용 조언입니다.</p></details>}
     {locked && <p className="muted sm">진행 중인 세트의 작전은 확정됐습니다. 다음 세트 준비 때 바꿀 수 있습니다.</p>}
   </div>;
 }
