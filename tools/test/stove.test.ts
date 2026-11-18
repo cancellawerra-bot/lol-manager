@@ -2,8 +2,8 @@ import { readFileSync } from "fs";
 import assert from "node:assert/strict";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, CARDS, PL } from "../../src/data";
-import { newStoryCareer, marketCards, storySalary, ensurePlayer, cmpCard, upcomingSalaryDue, payrollSoftCap } from "../../src/game/story";
-import { autoManageRoster, autoAdvanceOffseason, type IncomingBid } from "../../src/game/stove";
+import { newStoryCareer, marketCards, storySalary, ensurePlayer, cmpCard, upcomingSalaryDue, payrollSoftCap, cardForYear } from "../../src/game/story";
+import { autoManageRoster, autoAdvanceOffseason, placeFaBid, type IncomingBid } from "../../src/game/stove";
 import { Rng } from "../../src/game/rng";
 
 await loadCore();
@@ -40,6 +40,67 @@ function saleFixture() {
   s.story!.stove!.incoming = [offer];
   s.story!.stove!.faPool = [c.id];
   return { s, ct, c, offer };
+}
+
+// 보통 시드 232의 2026 스토브: 정확히 맞는 112억 예산에서 캐니언을 잃던 회귀 사례.
+for (const budget of [{ cash: 112, reserve: 0, renew: true }, { cash: 118, reserve: 6, renew: true }, { cash: 111.99, reserve: 0, renew: false }]) {
+  const s = fixture();
+  const people = ["looper", "canyon", "delight", "bdd", "yellowpete"];
+  const salaries = [1.54, 1.15, 58, 24.85, 26.46];
+  s.story!.year = 2026; s.story!.phase = "expiry";
+  s.story!.contracts = people.map((person, i) => {
+    const r = cardForYear(person, 2027)!;
+    assert(r, person + " 실제 카드 필요");
+    return { key: ensurePlayer(r.card, 2027, r.estimated), cardId: r.card.id, person,
+      salary: salaries[i], years: i < 2 ? 0 : 1, prepaid: false };
+  });
+  s.starters[s.team] = ["", "", "", "", ""];
+  for (const ct of s.story!.contracts) s.starters[s.team][PL[ct.key].pos] = ct.key;
+  s.cards = s.story!.contracts.map((ct) => ct.key);
+  s.story!.stove!.expiryKeys = s.story!.contracts.slice(0, 2).map((ct) => ct.key);
+  s.story!.stove!.transfersOn = false;
+  s.eco.cash = budget.cash;
+  autoAdvanceOffseason(s, new Rng(1), { signStars: false, reserveCash: budget.reserve });
+  const canyonRenewed = s.story!.contracts.some((ct) => ct.person === "canyon" && ct.salary === 1.15);
+  assert.equal(canyonRenewed, budget.renew, `재계약 판단: 잔고 ${budget.cash}, 유보 ${budget.reserve}`);
+  if (budget.renew) assert.equal(s.eco.cash, budget.reserve, "계산 오차 없이 연봉과 유보금이 정확히 맞아야 함");
+  console.log("OK exact payroll renewal", budget);
+}
+
+{
+  const { s, c } = saleFixture();
+  s.eco.cash = 0.6;
+  const other = marketCards(2026).find((x) => x.posIdx === 0 && x.pkey !== c.pkey)!;
+  s.story!.stove!.pendingBids = [{ team: s.team, person: other.pkey, cardId: other.id,
+    salary: 0.2, years: 1, starter: true, bonuses: {}, kind: "fa" }];
+  const bid = { team: s.team, person: c.pkey, cardId: c.id, salary: 0.4,
+    years: 1, starter: true, bonuses: {}, kind: "fa" as const };
+  assert.equal(placeFaBid(s, bid), null, "0.2억 + 0.4억은 0.6억 잔고에 정확히 맞음");
+  s.eco.cash = 0.59;
+  assert(placeFaBid(s, bid), "100만원 부족하면 반올림으로 입찰을 허용하지 않음");
+  console.log("OK exact simultaneous bids and one-unit shortfall");
+}
+
+{
+  const s = fixture();
+  s.story!.year = 2026; s.eco.cash = 46;
+  s.story!.stove!.faPool = ["easyhoon-2015", "bdd-2026"];
+  autoManageRoster(s, new Rng(1));
+  const bid = s.story!.stove!.pendingBids.find((b) => CARDS[b.cardId].posIdx === 2);
+  assert.equal(bid?.person, "bdd", "예전 카드의 감쇠 전 89보다 실제 다음 시즌 종합 79를 우선해야 함 (추정 Easyhoon은 74)");
+  console.log("OK upgrades compare effective season ratings");
+}
+
+{
+  const s = fixture(); s.story!.year = 2023;
+  const canyon = CARDS["canyon-2023"], clid = CARDS["clid-2020"];
+  const canyonKey = ensurePlayer(canyon, 2023, false), clidKey = ensurePlayer(clid, 2023, true);
+  s.story!.contracts[1] = { key: canyonKey, cardId: canyon.id, person: canyon.pkey, salary: 1.15, years: 2, prepaid: true };
+  s.story!.contracts.push({ key: clidKey, cardId: clid.id, person: clid.pkey, salary: 1, years: 2, prepaid: true });
+  s.starters[s.team][1] = canyonKey; s.cards = s.story!.contracts.map((ct) => ct.key);
+  autoManageRoster(s, new Rng(1));
+  assert.equal(s.starters[s.team][1], canyonKey, "현재 종합 71이라도 다음 시즌 공식 카드가 96인 주전을 오래된 벤치로 바꾸면 안 됨");
+  console.log("OK bench promotion evaluates the upcoming season");
 }
 
 {

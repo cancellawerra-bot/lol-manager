@@ -52,7 +52,7 @@ export function payrollSoftCap(s: Save, tier?: Tier): number {
 }
 /** 이번 정산에서 나갈, 아직 선납하지 않은 기존 연봉. exceptKey는 이번 입찰로 교체할 주전입니다. */
 export function upcomingSalaryDue(contracts: Contract[], exceptKey?: string): number {
-  return contracts.filter((c) => !c.prepaid && c.key !== exceptKey).reduce((n, c) => n + c.salary, 0);
+  return moneyRound(contracts.filter((c) => !c.prepaid && c.key !== exceptKey).reduce((n, c) => n + c.salary, 0));
 }
 export function storyDiff(s: Save): StoryDiff {
   return s.eco?.difficulty ?? "normal";

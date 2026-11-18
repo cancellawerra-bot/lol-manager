@@ -22,7 +22,7 @@ export default function StovePage() {
     <div className="grid home">
       <Card title={`${st.year} 스토브리그 · ${{ awards: "시상식", tryout: "트라이아웃", expiry: "계약 만료", stove: `${stove.week}주차` }[st.phase as "awards" | "tryout" | "expiry" | "stove"]}`} className="span2" right={<span className="muted sm">잔고 {fmtMoney(s.eco.cash)} (게임용 가상 금액)</span>}>
         {st.phase === "stove" && !stove.closed && <div className="banner-note" style={{ marginBottom: 16 }}>
-          <p>자동 감독은 보유 벤치를 먼저 주전으로 올리고, 대체 선수 연봉을 감당할 수 있으면 들어온 이적 제안을 검토합니다. 선수의 이적 거절과 다른 구단의 입찰 경쟁은 그대로 적용됩니다.</p>
+          <p>자동 감독은 다음 시즌에 쓸 카드의 종합으로 비교합니다. 보유 벤치를 먼저 주전으로 올리고, 대체 선수 연봉을 감당할 수 있으면 들어온 이적 제안을 검토합니다. 선수의 이적 거절과 다른 구단의 입찰 경쟁은 그대로 적용됩니다.</p>
           <button className="btn" data-testid="auto-stove" onClick={() => autoStove(true)}>자동 감독에게 남은 스토브 맡기기</button>
         </div>}
         {st.phase === "awards" && <Awards />}
