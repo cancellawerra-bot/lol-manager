@@ -20,10 +20,10 @@ export function RotationControls() {
       const target = roles[person] ?? ((s.starters[s.team] ?? []).includes(c.key) ? 3 : 1);
       return <div className="card-tile" key={person} data-testid={`rotation-${person}`}>
         <b>{PL[c.key]?.name ?? person}</b><span className="tag">{PL[c.key] ? POS_KO[PL[c.key].pos] : "포지션 기록 없음"} · {(s.starters[s.team] ?? []).includes(c.key) ? "현재 선발" : "벤치"}</span>
-        <p className="sm">현재 피로 {fatigue.toFixed(1)}/100<br />도입 후 출전: {stats ? `${stats.sets}세트 · 첫 선발 ${stats.starts}회` : "기록 없음"}</p>
+        <p className="sm">현재 피로 {PL[c.key] ? `${fatigue.toFixed(1)}/100` : "기록 없음"}<br />도입 후 출전: {stats ? `${stats.sets}세트 · 첫 선발 ${stats.starts}회` : "기록 없음"}</p>
         {p ? <><p data-testid={`promise-progress-${person}`}><b>{ROLE_LABEL[p.target]} 약속</b><br />첫 선발 {p.starts}/{p.target}회 · 기회 {p.opportunities}/4회</p><button className="btn sm" disabled={locked} data-testid={`promise-cancel-${person}`} onClick={() => withdrawPlayingTime(person)}>약속 철회 (신뢰 −2)</button></> : <>
-          <select aria-label={`${PL[c.key]?.name ?? person} 출전 역할`} data-testid={`promise-role-${person}`} value={target} disabled={locked || s.story!.phase !== "regular"} onChange={e => setRoles({ ...roles, [person]: Number(e.target.value) })}><option value={3}>주전 · 3/4회 선발</option><option value={2}>로테이션 · 2/4회 선발</option><option value={1}>육성 · 1/4회 선발</option></select>
-          <button className="btn sm" data-testid={`promise-set-${person}`} disabled={locked || s.story!.phase !== "regular"} onClick={() => setMessage(promisePlayingTime(c.key, target) ?? "출전 약속을 저장했습니다.")}>출전 약속하기</button>
+          <select aria-label={`${PL[c.key]?.name ?? person} 출전 역할`} data-testid={`promise-role-${person}`} value={target} disabled={locked || s.story!.phase !== "regular" || !PL[c.key]} onChange={e => setRoles({ ...roles, [person]: Number(e.target.value) })}><option value={3}>주전 · 3/4회 선발</option><option value={2}>로테이션 · 2/4회 선발</option><option value={1}>육성 · 1/4회 선발</option></select>
+          <button className="btn sm" data-testid={`promise-set-${person}`} disabled={locked || s.story!.phase !== "regular" || !PL[c.key]} onClick={() => setMessage(promisePlayingTime(c.key, target) ?? "출전 약속을 저장했습니다.")}>출전 약속하기</button>
         </>}
       </div>;
     })}</div>
@@ -34,6 +34,6 @@ export function RotationControls() {
 export function AppearanceReview({ record, side }: { record?: AppearanceRecord; side: "B" | "R" }) {
   const s = useSave()!;
   const entries = record?.[side] ?? [];
-  if (!record) return s.mode === "story" ? <p className="muted sm" data-testid="appearance-no-record">출전·경기 피로 기록 없음 · 이전 경기를 소급 계산하지 않습니다.</p> : null;
+  if (!record || !entries.length) return s.mode === "story" ? <p className="muted sm" data-testid="appearance-no-record">개인 출전·경기 피로 기록 없음 · 기록이 없는 선수나 이전 경기를 소급 계산하지 않습니다.</p> : null;
   return <section className="card sm" data-testid="appearance-review"><b>경기 당시 출전·피로</b>{entries.map(p => <p key={p.person}>{p.name} · {p.first ? "첫 세트 선발" : "세트 출전"} · 경기 피로 +{p.load.toFixed(2)} ({p.before.toFixed(1)} → {p.after.toFixed(1)})</p>)}</section>;
 }
