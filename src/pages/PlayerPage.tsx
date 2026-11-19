@@ -1,4 +1,4 @@
-import { CH, CORE, PL, POS_KO, TM, fmt, pctTxt } from "../data";
+import { CARDS, CH, CORE, PL, POS_KO, TM, fmt, pctTxt, recTxt } from "../data";
 import { useSave } from "../store";
 import { formVal } from "../game/season";
 import { Bar, Card, ChampIcon, Pct, Sample, TeamChip } from "../ui";
@@ -10,7 +10,21 @@ export default function PlayerPage({ k }: { k: string }) {
   const s = useSave()!;
   const p = PL[k];
   if (!p) return <Card title="선수"><p>선수를 찾지 못했습니다.</p></Card>;
+  const contract = s.story?.contracts.find(c => c.key === k), card = CARDS[k] ?? (contract ? CARDS[contract.cardId] : undefined);
+  if (card) {
+    const stats = [["KDA", recTxt(card.kda, n => n.toFixed(2))], ["승률", recTxt(card.wr, n => `${(n * 100).toFixed(1)}%`)], ["킬 관여율", recTxt(card.kp, n => `${(n * 100).toFixed(1)}%`)], ["GD@15", recTxt(card.gd15, n => `${n >= 0 ? "+" : ""}${n.toFixed(0)}`)], ["DPM", recTxt(card.dpm, n => n.toFixed(0))], ["분당 CS", recTxt(card.cspm, n => n.toFixed(2))]];
+    const career = s.pstats[k];
+    return <div className="grid" data-testid="season-player-profile">
+      <Card className="span2" title={`${card.name} · ${card.year} 시즌 기록`}><div className="row wrap gap"><span className="tag">{POS_KO[card.posIdx]}</span><span className="tag">당시 {card.team}</span>{s.story?.contracts.some(c => c.person === card.pkey) && <span className="tag good">우리 구단 보유</span>}{card.small && <span className="tag warn">표본 부족</span>}{card.limited && <span className="tag">지표 제한</span>}{p.label?.includes("추정") && <span className="tag warn">과거 기록 기반 추정</span>}</div>
+        <p>근거 {card.year}년 · {card.games > 0 ? `${card.games}경기` : "경기 기록 없음"}. 현재 게임 종합 <Pct v={p.pct.ovr} />.</p><p className="muted sm">아래는 확인된 시즌 기록입니다. 없는 지표는 기록 없음으로 표시합니다. 게임 종합에는 현재 커리어의 기존 추정 규칙이 적용될 수 있습니다.</p>
+        <div className="facts">{stats.map(([label, value]) => <li key={label}><b>{value}</b><span>{label}</span></li>)}</div><p className="muted sm">챔피언별 사용 기록은 이 시즌 카드에 포함되어 있지 않습니다.</p>
+      </Card>
+      <Card title="이번 커리어 경기 기록">{career?.g ? <p>{career.g}경기 {career.w}승 · 평균 평점 {(career.rsum / career.g).toFixed(2)} · MVP {career.mvp}회</p> : <p className="muted">이번 커리어 출전 기록 없음</p>}<p className="muted xs">실제 시즌 통계와 게임 안 경기 기록을 구분합니다.</p></Card>
+      <Card title="선수단 관리"><p>선발·로테이션·훈련·출전 약속은 선수단에서 관리합니다.</p><div className="row wrap gap"><a className="btn" href="#/squad">선수단으로</a><a className="btn" href="#/home">감독 홈으로</a></div></Card>
+    </div>;
+  }
   const t = CORE.teams.find((x) => x.id === p.team)!;
+  if (!t) return <Card title={p.name}><p>공식 개인 시즌 기록 없음 · 현재 게임 종합 <Pct v={p.pct.ovr} />.</p><a className="btn" href="#/squad">선수단으로</a></Card>;
   const st = s.pstats[k];
   const w = CORE.meta.weights[String(p.pos)];
   const raw: Record<string, string[]> = {
@@ -52,7 +66,7 @@ export default function PlayerPage({ k }: { k: string }) {
         </div>
       </Card>
       <Card title="팀 내 같은 포지션">
-        <ul className="plist">{TM[t.short].players.map((x) => PL[x]).filter((x) => x.pos === p.pos).map((x) => <li key={x.key}><a href={`#/player/${x.key}`}>{x.name}</a> <Pct v={x.pct.ovr} /> <span className="muted sm">{x.games}경기</span></li>)}</ul>
+        <ul className="plist">{(TM[t.short]?.players ?? []).map((x) => PL[x]).filter((x) => x?.pos === p.pos).map((x) => <li key={x.key}><a href={`#/player/${x.key}`}>{x.name}</a> <Pct v={x.pct.ovr} /> <span className="muted sm">{x.games}경기</span></li>)}</ul>
       </Card>
     </div>
   );

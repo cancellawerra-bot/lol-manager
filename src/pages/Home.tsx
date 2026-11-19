@@ -1,11 +1,13 @@
 import { CORE, PL, POS_KO, TM, fmt } from "../data";
 import { useSave, fillSchedule, mutate, autoSimSplit, autoToOffseason, acceptFranchise } from "../store";
-import { standings, nextMySeries, dateKo, formVal, STAGE_KO, opp } from "../game/season";
+import { standings, nextMySeries, dateKo, STAGE_KO, opp } from "../game/season";
 import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO, fmtMoney } from "../game/story";
 import { Card, Pct, TeamChip, form5, PName } from "../ui";
 import { TacticsControls } from "./Tactics";
+import ManagerDashboard from "./ManagerDashboard";
+import "./home.css";
 
-export default function Home() {
+export default function Home({ onAdvance }: { onAdvance?: () => void }) {
   const s = useSave()!;
   const rows = standings(s);
   const nx = nextMySeries(s);
@@ -20,7 +22,8 @@ export default function Home() {
   const myRow = rowOf(s.team);
   const goalKo = { win: "우승", final: "결승 진출", sf: "4강", po: "플레이오프 진출", top8: "8위 이내" }[s.eco?.goal ?? "top8"];
   return (
-    <div className="grid home">
+    <div className="manager-home">
+      <ManagerDashboard s={s} onAdvance={onAdvance} />
       {s.seen === "tut1" && (
         <Card title="수석코치 안내 1/2" className="span2">
           <p>상단의 <b>진행하기</b>로 일주일을 넘깁니다. 우리 경기가 있는 날에는 기자회견부터 밴픽, 경기, 결과 설명까지 이어집니다.</p>
@@ -34,7 +37,7 @@ export default function Home() {
           <button className="btn primary" onClick={() => mutate((x) => { x.seen = "done"; })}>알겠습니다</button>
         </Card>
       )}
-      {!s.schedOk && (
+      {!s.schedOk && !s.story?.ended && s.phase !== "done" && (
         <Card title="주전 일정을 정해 주세요" className="span2">
           <p>한 주 일정의 빈 칸을 채워야 경기를 진행할 수 있습니다. 수석코치에게 맡기면 훈련·스크림과 휴식일이 채워집니다.</p>
           <div className="row gap wrap"><a className="btn" href="#/squad">선수단 일정</a><button className="btn primary" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button></div>
@@ -87,12 +90,12 @@ export default function Home() {
             {s.story.ended === "bankrupt" && <p className="big">파산 — 누적 적자로 구단 운영이 중단되었습니다.</p>}
             <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}의 기록입니다. 2018–{s.story.year}. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회. 잔고 {fmtMoney(s.eco.cash)}.{s.story.lastRank ? ` 마지막 정규 순위 ${s.story.lastRank}위.` : ""}{s.story.ended === "fail" && s.story.tier === "CK" && !s.story.franchised ? " 2부에서 프랜차이즈 슬롯을 받지 못해 월즈에 나가지 못했습니다." : ""}</p>
             <p><a href="#/club" className="btn" data-testid="ending-club-history">구단 연표 보기</a></p>
-            <table className="tbl compact" data-testid="ending-roster">
+            <div className="tbl-wrap"><table className="tbl compact" data-testid="ending-roster">
               <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th></tr></thead>
               <tbody>{(s.starters[s.team] ?? []).map((k, i) => (
                 <tr key={k || i}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r">{PL[k] ? <Pct v={PL[k].pct.ovr} /> : "–"}</td></tr>
               ))}</tbody>
-            </table>
+            </table></div>
             <div className="row gap wrap end-actions">
               <a className="btn primary" href="#/" data-testid="ending-new-game">새 게임</a>
               <a className="btn" href="#/news" data-testid="ending-keep-viewing">계속 살펴보기</a>
@@ -109,7 +112,7 @@ export default function Home() {
         </Card>
       )}
       {nx && op && !s.story?.ended && (
-        <Card title={<>다음 경기 <span className="muted">· {STAGE_KO[nx.stage]} · Bo{nx.bo}</span></>} className="span2 next-match">
+        <details className="home-match-details"><summary>다음 상대의 선발·전적 살펴보기</summary><Card title={<>다음 경기 <span className="muted">· {STAGE_KO[nx.stage]} · Bo{nx.bo}</span></>} className="span2 next-match">
           <div className="vs">
             <div className="vs-team"><TeamChip t={s.team} size="lg" /><b>{TM[s.team]?.ko ?? s.team}</b><span className="muted">{started ? `${rankOf(s.team)}위 · ${myRow.w}승 ${myRow.l}패` : "개막전"}</span>{form5(myRow.last)}</div>
             <div className="vs-mid"><span className="vs-x">VS</span><b>{dateKo(s.days[nx.day].date)}</b><span className="muted">{s.days[nx.day].label}</span>{h2h.length > 0 && <span className="muted sm">이번 시즌 상대 전적 {h2h.filter((x) => x.winner === s.team).length}승 {h2h.filter((x) => x.winner !== s.team).length}패</span>}</div>
@@ -122,33 +125,24 @@ export default function Home() {
               return <tr key={i}><td>{a ? <><PName k={a.key} /> <Pct v={a.pct.ovr} />{a.small && <span className="tag warn">표본 부족</span>}</> : "–"}</td><td className="c muted">{POS_KO[i]}</td><td className="r">{b ? <>{b.small && <span className="tag warn">표본 부족</span>}<Pct v={b.pct.ovr} /> <PName k={b.key} /></> : "–"}</td></tr>;
             })}</tbody>
           </table></div>
-          <div className="row gap wrap"><a className="btn" href={`#/scout/${op}`}>{op} 밴픽 성향 보기</a><span className="muted sm">숫자는 포지션 내 종합 지표 백분위(2026 LCK). 상단 "{nx.day === s.day ? "경기 시작" : "진행하기"}"로 진행합니다.</span></div>
-        </Card>
+          <div className="row gap wrap"><a className="btn" href={`#/scout/${op}`}>{op} 밴픽 성향 보기</a><span className="muted sm">숫자는 적용된 시즌 기록 기반 게임 종합 지표입니다. 상단 "{nx.day === s.day ? "경기 시작" : "진행하기"}"로 진행합니다.</span></div>
+        </Card></details>
       )}
-      {!s.story?.ended && (
+      <div className="home-secondary">
+      {!s.story?.ended && (!s.story || ["regular", "playoffs"].includes(s.story.phase)) && (
       <Card title="순위" right={<a href="#/standings" className="sm">전체 ›</a>}>
-        <table className="tbl compact">
+        <div className="tbl-wrap"><table className="tbl compact">
           <thead><tr><th>#</th><th>팀</th><th className="r">승-패</th><th className="r">득실</th></tr></thead>
           <tbody>{rows.map((r, i) => (
             <tr key={r.t} className={r.t === s.team ? "me" : ""}><td>{i + 1}</td><td><TeamChip t={r.t} size="sm" full /></td><td className="r">{r.w}-{r.l}</td><td className="r">{r.gw - r.gl >= 0 ? "+" : ""}{r.gw - r.gl}</td></tr>
           ))}</tbody>
-        </table>
+        </table></div>
       </Card>
       )}
       <Card title="소식" right={<a href="#/news" className="sm">전체 ›</a>}>
         <ul className="news-mini">{s.news.slice(0, 6).map((n) => (
           <li key={n.id} className={n.read ? "" : "unread"}><small>{dateKo(n.date)}</small><b>{n.title}</b><span className="muted">{n.body}</span></li>
         ))}</ul>
-      </Card>
-      <Card title="선수단 컨디션" right={<a href="#/squad" className="sm">선수단 ›</a>}>
-        <table className="tbl compact">
-          <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th><th className="r">폼</th></tr></thead>
-          <tbody>{s.starters[s.team].map((k, i) => {
-            const f = formVal(s, k);
-            return <tr key={k}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r">{PL[k] ? <Pct v={PL[k].pct.ovr} /> : "–"}</td><td className="r">{s.form[k]?.length ? <span className={f > 0.15 ? "up" : f < -0.15 ? "down" : ""}>{f > 0.15 ? "▲" : f < -0.15 ? "▼" : "–"} {(s.form[k].reduce((a, b) => a + b, 0) / s.form[k].length).toFixed(1)}</span> : <span className="muted">–</span>}</td></tr>;
-          })}</tbody>
-        </table>
-        <p className="muted sm">폼은 이번 커리어 최근 3경기 평점 평균입니다(게임 안 기록).</p>
       </Card>
       <Card title="일정">
         <ul className="sched-mini">
@@ -165,6 +159,7 @@ export default function Home() {
         </ul>
         <a className="sm" href="#/method">계산 방법 보기 ›</a>
       </Card>
+      </div>
     </div>
   );
 }

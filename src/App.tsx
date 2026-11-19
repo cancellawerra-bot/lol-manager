@@ -119,9 +119,9 @@ export default function App() {
         {note && <div className="banner-note">{note}</div>}
         <main className="content">
           <Suspense fallback={<Loading />}>
-            {page === "home" || page === "" ? <Home /> : page === "news" ? <NewsPage /> : page === "schedule" ? <Schedule /> : page === "standings" ? <Standings />
+            {page === "home" || page === "" ? <Home onAdvance={onAdvance} /> : page === "news" ? <NewsPage /> : page === "schedule" ? <Schedule /> : page === "standings" ? <Standings />
               : page === "squad" ? <Squad /> : page === "club" ? <Club /> : page === "market" ? <Market /> : page === "player" ? <PlayerPage k={route[1]} /> : page === "scout" ? <Scout team={route[1]} /> : page === "meta" ? <Meta />
-              : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : page === "stove" ? <Stove /> : <Home />}
+              : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : page === "stove" ? <Stove /> : <Home onAdvance={onAdvance} />}
           </Suspense>
           {!inMatch && <FanNotice />}
         </main>
