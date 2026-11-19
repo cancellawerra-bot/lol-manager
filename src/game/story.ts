@@ -11,6 +11,7 @@ import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from ".
 import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 import { prepareInSeason } from "./inSeason";
 import { syncPromises } from "./rotation";
+import { initializeClubTimeline, archiveClubSplit } from "./clubTimeline";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
 export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -557,6 +558,7 @@ export function recordSplitResult(s: Save): void {
   const runner = f ? (f.winner === f.a ? f.b : f.a) : undefined;
   const rest = rows.map((r) => r.t).filter((t) => t !== champ && t !== runner);
   st.splitSeeds = [champ, runner, ...rest].filter((t): t is string => !!t && teams.includes(t));
+  archiveClubSplit(s, rows, champ);
 }
 
 export function lckWorldsSeeds(s: Save): string[] {
@@ -1294,6 +1296,7 @@ export function simRestOfPhase(s: Save, rng: Rng, onlyOthers = false): void {
 
 export function afterRegularSplit(s: Save): void {
   const st = s.story!;
+  if (st.tier === "CK") archiveClubSplit(s, standings(s));
   if (st.tier === "LCK") seedTop4PO(s);
   else {
     // CK: no PO, go promo if 2018-2020
@@ -1392,6 +1395,7 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
     pstats: {}, sched: {}, schedOk: false, phase: "regular", seen: "", story,
   };
   applyStoryWorld(s);
+  initializeClubTimeline(s, false);
   beginSplit(s, year, "spring");
   addNews(s, "welcome", `${info.name} 감독, ${club.name} 창단`, `${club.name}이(가) 2018 챌린저스에서 출발합니다. 목표는 2027 월즈 우승입니다. ${STORY_BUDGET_NOTE}`, teamShort);
   return s;

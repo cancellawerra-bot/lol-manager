@@ -10,6 +10,7 @@ import { prepareInSeason, type InSeasonState } from "./inSeason";
 import { matchTactics, type TacticPlan, type Focus, type TacticsRecord } from "./tactics";
 import { prepareSeriesLineups, recordAppearances, type AppearanceRecord, type LineupDecision, type RotationState } from "./rotation";
 import type { ScoutingState } from "./scouting";
+import { captureClubNews, type ClubTimelineState } from "./clubTimeline";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -61,6 +62,7 @@ export interface Save {
   tactics?: Record<string, TacticPlan>;
   rotation?: RotationState;
   scouting?: ScoutingState;
+  clubTimeline?: ClubTimelineState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -131,6 +133,7 @@ export const opp = (s: Save, sr: SeriesRec): string => (sr.a === s.team ? sr.b :
 export function addNews(s: Save, kind: News["kind"], title: string, body: string, team?: string): void {
   s.newsSeq += 1;
   s.news.unshift({ id: s.newsSeq, day: s.day, date: s.days[Math.min(s.day, s.days.length - 1)].date, kind, title, body, team, read: false });
+  captureClubNews(s, s.news[0]);
   if (s.news.length > 200) s.news.length = 200;
 }
 export const formVal = (s: Save, key: string): number => { const f = s.form[key]; if (!f || !f.length) return 0; const a = f.reduce((x, y) => x + y, 0) / f.length; return Math.max(-1, Math.min(1, (a - 6.3) / 1.5)); };

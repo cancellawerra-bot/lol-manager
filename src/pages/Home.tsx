@@ -86,6 +86,7 @@ export default function Home() {
             {s.story.ended === "fail" && <p className="big">2027 시즌을 마쳤지만 월즈 우승에는 이르지 못했습니다.</p>}
             {s.story.ended === "bankrupt" && <p className="big">파산 — 누적 적자로 구단 운영이 중단되었습니다.</p>}
             <p>2018년 2부에서 출발한 {s.club?.name ?? s.team}의 기록입니다. 2018–{s.story.year}. LCK {s.story.trophies.lck}회, 월즈 {s.story.trophies.worlds}회, MSI {s.story.trophies.msi}회. 잔고 {fmtMoney(s.eco.cash)}.{s.story.lastRank ? ` 마지막 정규 순위 ${s.story.lastRank}위.` : ""}{s.story.ended === "fail" && s.story.tier === "CK" && !s.story.franchised ? " 2부에서 프랜차이즈 슬롯을 받지 못해 월즈에 나가지 못했습니다." : ""}</p>
+            <p><a href="#/club" className="btn" data-testid="ending-club-history">구단 연표 보기</a></p>
             <table className="tbl compact" data-testid="ending-roster">
               <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th></tr></thead>
               <tbody>{(s.starters[s.team] ?? []).map((k, i) => (

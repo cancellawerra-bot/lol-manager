@@ -4,6 +4,7 @@ import { rosterSalary } from "../game/cards";
 import { fmtMoney } from "../game/money";
 import { Card, PName, Pct, TeamChip } from "../ui";
 import { standings } from "../game/season";
+import ClubTimeline from "./ClubTimeline";
 
 export default function Club() {
   const s = useSave()!;
@@ -34,6 +35,7 @@ export default function Club() {
         {s.eco.sponsor && <p className="sm">스폰서 {s.eco.sponsor.name} 연 {fmtMoney(s.eco.sponsor.amount)} · 목표 {s.eco.sponsor.goal}</p>}
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
+      {s.story && <ClubTimeline />}
       <Card title="선수 기록">
         <div className="tbl-wrap">
           <table className="tbl">
