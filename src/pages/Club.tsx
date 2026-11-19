@@ -25,7 +25,7 @@ export default function Club() {
   return (
     <div className="col gap">
       <Card title="구단 개요" right={<TeamChip t={s.team} full />}>
-        <p>{t?.ko} · {s.manager} 감독{s.managerInfo?.career ? ` · ${{ amateur: "비선수 출신", academy: "전 프로 2군 출신", pro: "전 프로 1군 출신", worlds: "전 월드 우승자 출신" }[s.managerInfo.career]}` : ""}{s.club ? ` · ${s.club.replaced} 자리를 대신한 창단 구단` : ""}</p>
+        <p>{t?.ko} · {s.manager} 감독{s.managerInfo?.career ? ` · ${{ amateur: "비선수 출신", academy: "전 프로 2군 출신", pro: "전 프로 1군 출신", worlds: "전 월드 우승자 출신" }[s.managerInfo.career]}` : ""}{s.club?.replaced ? ` · ${s.club.replaced} 자리를 대신한 창단 구단` : s.club ? " · 신생 구단" : ""}</p>
         <div className="facts">
           <li><b>{me ? `${me.w}승 ${me.l}패` : "–"}</b><span>정규 전적</span></li>
           <li><b>{s.eco.trust}</b><span>구단주 신뢰</span></li>
