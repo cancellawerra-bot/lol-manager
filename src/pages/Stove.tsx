@@ -5,6 +5,8 @@ import { Card } from "../ui";
 import { fmtMoney } from "../game/money";
 import type { Bonus } from "../game/stove";
 import { storySalary } from "../game/story";
+import { ScoutingPanel } from "./Scouting";
+import { scoutPreferences } from "../game/scouting";
 import {
   TRYOUT_MAX, allExpiryDecided, answerIncoming, awardsDone, canBidNow, closeStoveWeek,
   decideExpiry, expiryDone, placeFaBid, placeTryoutOffer, prestige, resolveTransferStep1,
@@ -69,6 +71,7 @@ function Tryout() {
       <p>신인·비주전 후보에게 제안할 수 있습니다. 팀마다 최대 {TRYOUT_MAX}명, 계약 2년. 트라이아웃 창의 제안은 주가 끝날 때 한꺼번에 결과가 납니다. 선수는 구단 명성, 주전 자리, 연봉(보너스 포함)을 보고 팀을 고릅니다.</p>
       {!stove.tryoutResults && (
         <>
+          <ScoutingPanel context="tryout" onSelect={r => { if (r.offerCardId && r.salary != null) { setPick(r.offerCardId); setSalary(r.salary); setStarter(scoutPreferences(s).goal !== "development"); setMsg("추천 조건을 불러왔습니다. 제안 버튼에서 조건을 확인해 주세요."); } }} />
           <div className="row gap wrap" style={{ margin: "12px 0" }}>
             <select value={pick} onChange={(e) => { setPick(e.target.value); const x = CARDS[e.target.value]; if (x) setSalary(storySalary(x, s.story!.tier)); }} data-testid="tryout-pick">
               {stove.tryoutPool.map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))}</option>)}
@@ -148,6 +151,7 @@ function Weeks() {
   return (
     <div>
       <p>{stove.week === 1 ? "1주차는 협상 기간입니다. 계약 제안은 2주차부터 넣을 수 있습니다." : `${stove.week}주차 밀봉 입찰. 제안은 주가 끝날 때 다른 구단과 함께 선수가 보고 한 팀을 고릅니다. 먼저 누른다고 먼저 데려오는 게 아닙니다.`} 구단 명성 지수 {Math.round(prestige(s, s.team))}.</p>
+      <ScoutingPanel context="fa" onSelect={r => { if (r.offerCardId && r.salary != null) { setPick(r.offerCardId); setSalary(r.salary); setYears(1); setStarter(scoutPreferences(s).goal !== "development"); setTMsg("추천 조건을 불러왔습니다. 입찰 버튼에서 조건을 확인해 주세요."); } }} />
       {stove.rumors.length > 0 && (
         <div className="card" style={{ margin: "12px 0" }}>
           <b>루머</b>
@@ -169,7 +173,7 @@ function Weeks() {
           <h3>FA 밀봉 입찰</h3>
           <div className="row gap wrap">
             <select data-testid="fa-pick" value={pick} onChange={(e) => { setPick(e.target.value); const x = CARDS[e.target.value]; if (x) setSalary(storySalary(x, s.story!.tier)); }} style={{ maxWidth: "100%" }}>
-              {stove.faPool.slice(0, 80).map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))} · {CARDS[id].year} · 퍼센타일 {CARDS[id].percentile}</option>)}
+              {[...new Set([...(stove.faPool.includes(pick) ? [pick] : []), ...stove.faPool.slice(0, 80)])].map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))} · {CARDS[id].year} · 퍼센타일 {CARDS[id].percentile}</option>)}
             </select>
             <label>연봉 <input type="number" step={0.1} min={0.3} value={salary} onChange={(e) => setSalary(Number(e.target.value))} style={{ width: 80 }} />억</label>
             <label>기간 <input type="number" min={1} max={4} value={years} onChange={(e) => setYears(Number(e.target.value))} style={{ width: 56 }} />년</label>

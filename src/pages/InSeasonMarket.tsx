@@ -6,6 +6,8 @@ import { Card } from "../ui";
 import { CardTile } from "./Market";
 import { fmtMoney } from "../game/money";
 import { seasonCandidates, seasonMarketClosed, seasonMarketWeek, prepareInSeason, seasonSalaryDue, seasonReserve, startSeasonNegotiation, seasonClubReply, seasonPlayerReply, answerSeasonIncoming, setSeasonAutomatic } from "../game/inSeason";
+import { ScoutingPanel } from "./Scouting";
+import { scoutPreferences, scoutWatch, toggleScoutWatch } from "../game/scouting";
 
 export default function InSeasonMarket({ s }: { s: Save }) {
   const [query, setQuery] = useState(""), [pos, setPos] = useState("all"), [source, setSource] = useState("all");
@@ -19,6 +21,11 @@ export default function InSeasonMarket({ s }: { s: Save }) {
   const teamName = (t: string) => t === "FA" ? "자유계약" : TM[t]?.ko ?? t;
   const action = (fn: (x: Save) => string | undefined, success: string) => mutate((x) => setMessage(fn(x) ?? success));
   return <>
+    <ScoutingPanel context="season" onSelect={c => {
+      if (!c.offerCardId || c.salary == null) return;
+      setSalary(String(c.salary)); setFee(String(c.fee ?? 0)); setYears(1); setStarter(scoutPreferences(s).goal !== "development");
+      action(x => startSeasonNegotiation(x, c.offerCardId!, c.fee ?? 0), "추천 선수의 기존 협상 조건을 확인해 주세요.");
+    }} />
     <Card title="시즌 중 이적" right={<span className="muted sm">정규 시즌 · 주간 영입 1명 / 매각 1명</span>}>
       <p className="muted sm">선수당 한 명을 표시하고 현재 연도에 맞는 실제 기록을 적용합니다. 계약 선수는 구단 합의 후 선수의 동의를 받습니다. 연봉·이적료는 모두 게임용 가상 금액입니다. 이적 기간은 게임 설정입니다.</p>
       <p data-testid="season-market-status">{closed ?? `${s.days[s.day]?.date} · ${week.split("-").slice(-1)[0]}주차 시장 열림`} · 잔고 <b>{fmtMoney(s.eco.cash)}</b> · 다음 해 계약·가입 유보금 {fmtMoney(seasonReserve(s))}</p>
@@ -58,6 +65,7 @@ export default function InSeasonMarket({ s }: { s: Save }) {
         <CardTile c={c.card} price={c.salary} personView disabled={!!closed} onClick={() => { setSalary(String(c.salary)); setYears(1); setStarter(true); action((x) => startSeasonNegotiation(x, c.card.id, Number(fee) || 0), c.owner === "FA" ? "선수에게 계약을 제시해 주세요." : "구단에 이적료를 제안했습니다."); }} />
         <p className="sm">현재 게임 종합 <b>{c.ovr}</b>{c.card.year < Math.min(s.story!.year, 2026) && " · 과거 기록 기반 추정"}</p>
         <p className="sm">현재 소속: {teamName(c.owner)} · {c.stance}{c.owner !== "FA" && ` · 희망 이적료 ${fmtMoney(c.fee)}`}</p>
+        <button className="btn sm" data-testid={`market-watch-${c.person}`} onClick={() => mutate(x => setMessage(toggleScoutWatch(x, c.person) ?? "관심 목록을 갱신했습니다."))}>{scoutWatch(s).includes(c.person) ? "관심 해제" : "관심 저장"}</button>
       </div>)}</div>
       {list.length > 60 && <p className="muted sm">60명까지 표시합니다. 검색·포지션으로 범위를 좁혀 주세요.</p>}
       <h3>완료된 이적</h3>

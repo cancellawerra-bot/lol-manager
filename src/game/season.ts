@@ -9,6 +9,7 @@ import type { TrainingSummary } from "./training";
 import { prepareInSeason, type InSeasonState } from "./inSeason";
 import { matchTactics, type TacticPlan, type Focus, type TacticsRecord } from "./tactics";
 import { prepareSeriesLineups, recordAppearances, type AppearanceRecord, type LineupDecision, type RotationState } from "./rotation";
+import type { ScoutingState } from "./scouting";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -59,6 +60,7 @@ export interface Save {
   inSeason?: InSeasonState;
   tactics?: Record<string, TacticPlan>;
   rotation?: RotationState;
+  scouting?: ScoutingState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;

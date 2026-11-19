@@ -105,6 +105,15 @@ function canBuy(s: Save, team: string, card: SeasonCard, salary: number, fee: nu
   if (s.inSeason!.bought[team] === s.inSeason!.week) return "한 주에 한 명까지 영입할 수 있습니다.";
   return;
 }
+/** 스카우팅의 읽기 전용 예산 검사. 실제 계약의 같은 제약을 사용하며 시장을 갱신하지 않습니다. */
+export function seasonScoutError(s: Save, c: SeasonCandidate): string | undefined {
+  const closed = seasonMarketClosed(s); if (closed) return closed;
+  const m = s.inSeason;
+  if (!m || m.year !== s.story!.year || m.week !== seasonMarketWeek(s)) return "주간 시장 갱신을 확인해 주세요.";
+  if (m.attempted.includes(`${s.team}:${c.person}`)) return "이번 주 답변을 마친 선수입니다.";
+  if (c.owner !== "FA" && c.ovr >= 80) return "간판 선수로 원 소속 구단이 매각을 거절합니다.";
+  return canBuy(s, s.team, c.card, c.salary, c.fee, 1);
+}
 function freeCards(s: Save, pos?: number): SeasonCard[] {
   const owned = owners(s);
   return marketCards(s.story!.year).filter((c) => !owned.has(c.pkey) && (pos == null || c.posIdx === pos));

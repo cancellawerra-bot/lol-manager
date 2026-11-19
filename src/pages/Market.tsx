@@ -5,9 +5,10 @@ import { personUsed } from "../game/cards";
 import { getSave, useSave } from "../store";
 import { Card } from "../ui";
 import { go } from "../nav";
-import { fmtMoney } from "../game/money";
+import { fmtMoney, moneyRound } from "../game/money";
 import { franchisePlayers } from "../game/story";
 import InSeasonMarket from "./InSeasonMarket";
+import { OpeningScouting } from "./Scouting";
 
 export function CardTile({ c, on, disabled, reason, onClick, price, personView }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean }) {
   return (
@@ -50,18 +51,19 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
     }
     if (selected.length >= 8) return;
     if (personUsed(selected, c.pkey)) return;
-    if (used + price(c) > cap) return;
+    if (moneyRound(used + price(c)) > moneyRound(cap)) return;
     onChange([...selected, c.id]);
   };
   const reason = (c: SeasonCard): string | undefined => {
     if (selected.includes(c.id)) return;
     if (personUsed(selected, c.pkey)) return seasonYear ? "이미 영입한 선수입니다" : "같은 선수의 다른 시즌 카드가 이미 있습니다";
     if (selected.length >= 8) return "로스터는 최대 8명입니다";
-    if (used + price(c) > cap) return "예산을 초과합니다";
+    if (moneyRound(used + price(c)) > moneyRound(cap)) return "예산을 초과합니다";
   };
   const years = useMemo(() => [...new Set(Object.values(CARDS).filter((c) => !yearMax || c.year <= yearMax).map((c) => c.year))].sort((a, b) => b - a), [yearMax]);
   return (
     <div data-testid={seasonYear ? "franchise-market" : "card-market"}>
+      {seasonYear && <OpeningScouting year={seasonYear} cap={cap} selected={selected} priceOf={price} onPick={toggle} />}
       <div className="row between wrap gap market-bar">
         <div className="row wrap gap">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={seasonYear ? "선수 이름·팀 검색" : "이름·팀·연도 검색"} aria-label={seasonYear ? "선수 검색" : "카드 검색"} />

@@ -8,6 +8,7 @@ import { CardMarket } from "./Market";
 import { FanNotice, TeamChip } from "../ui";
 import { go } from "../nav";
 import type { SeasonCard } from "../types";
+import { moneyRound } from "../game/money";
 
 type Step = "mode" | "club" | "roster" | "market" | "fantasy" | "contract" | "goal" | "sponsor" | "tutor";
 const NATIONS = ["한국", "중국", "베트남", "미국", "유럽"];
@@ -202,7 +203,7 @@ export default function Setup() {
       if (reserved.includes(sh)) { setErr("그 약칭은 2018 시즌 구단과 겹칩니다."); goStep("club"); return; }
       const v = validRoster(picks); if (v) { setErr(v); goStep("market"); return; }
       const spent = picks.reduce((n, id) => n + storySalary(CARDS[id], "CK"), 0);
-      if (spent > cap) { setErr("예산을 초과했습니다."); goStep("market"); return; }
+      if (moneyRound(spent) > moneyRound(cap)) { setErr("예산을 초과했습니다."); goStep("market"); return; }
       const info0: Manager = { ...mgr, name, signature: sig || undefined };
       const g0 = goals.find((x) => x.id === goal)!;
       const eco0: Partial<Economy> = {
@@ -334,7 +335,7 @@ export default function Setup() {
             <CardMarket cap={cap} selected={picks} onChange={setPicks} yearMax={mode === "story" ? 2018 : undefined} priceOf={priceOf} seasonYear={mode === "story" ? 2018 : undefined} />
             <div className="picked-line">{picks.map((id) => <span key={id} className="tag">{mode === "story" ? CARDS[id].name : cardLabel(CARDS[id])} {fmtMoney(priceOf ? priceOf(CARDS[id]) : CARDS[id].salary)}</span>)}</div>
             <div className="setup-foot"><button className="btn" onClick={() => goStep("club")}>뒤로</button>
-              <button className="btn primary lg" data-testid="market-next" onClick={() => { const v = validRoster(picks); if (v) { setErr(v); return; } const spent = picks.reduce((n, id) => n + (priceOf ? priceOf(CARDS[id]) : CARDS[id].salary), 0); if (spent > cap) { setErr("예산을 초과했습니다."); return; } goStep("contract"); }}>다음 · 감독 계약서</button></div>
+              <button className="btn primary lg" data-testid="market-next" onClick={() => { const v = validRoster(picks); if (v) { setErr(v); return; } const spent = picks.reduce((n, id) => n + (priceOf ? priceOf(CARDS[id]) : CARDS[id].salary), 0); if (moneyRound(spent) > moneyRound(cap)) { setErr("예산을 초과했습니다."); return; } goStep("contract"); }}>다음 · 감독 계약서</button></div>
           </div>
         )}
 
