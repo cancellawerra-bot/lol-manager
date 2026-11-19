@@ -50,6 +50,7 @@ export function promiseCapacity(promises: PlayingPromise[]): boolean {
 }
 export function promiseError(s: Save, key: string, target: number): string | undefined {
   if (!active(s) || s.story!.phase !== "regular" || rotationLocked(s)) return "출전 약속은 경기 밖 정규 시즌에 정할 수 있습니다.";
+  if (s.story!.year >= 2027 && s.story!.split === "summer" && s.series.filter(sr => sr.stage === "R" && !sr.winner && [sr.a, sr.b].includes(s.team)).length < 4) return "커리어 마지막 정규 시즌에 4시리즈가 남지 않아 새 약속을 정할 수 없습니다.";
   if (!owned(s, key) || ![1, 2, 3].includes(target)) return "계약 중인 선수와 유효한 역할을 선택해 주세요.";
   const person = trainingPerson(s, key)!;
   if (s.rotation?.promises[person]) return "진행 중인 약속을 바꿀 수 없습니다. 철회하면 구단 신뢰가 2 감소합니다.";

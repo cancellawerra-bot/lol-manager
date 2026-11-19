@@ -27,7 +27,7 @@ export function RotationControls() {
         </>}
       </div>;
     })}</div>
-    <p className="muted xs">같은 포지션에서 기한 내 지킬 수 없는 약속은 받지 않습니다. 약속이 없으면 선발 의무도 없습니다. 출전 선수는 세트당 피로 2 × 나이별 누적 배수가 쌓이고, 벤치는 경기 피로가 쌓이지 않습니다. 휴식 계획으로 회복하며 생년 미확인은 중립 배수입니다.</p>
+    <p className="muted xs">같은 포지션에서 기한 내 지킬 수 없는 약속은 받지 않습니다. 커리어 마지막 정규 시즌에 4시리즈가 남지 않으면 새 약속을 정할 수 없습니다. 약속이 없으면 선발 의무도 없습니다. 출전 선수는 세트당 피로 2 × 나이별 누적 배수가 쌓이고, 벤치는 경기 피로가 쌓이지 않습니다. 휴식 계획으로 회복하며 생년 미확인은 중립 배수입니다.</p>
     {!!state?.history.length && <details data-testid="promise-history"><summary>최근 약속 평가 {state.history.length}건</summary>{state.history.slice(0, 12).map((h, i) => <p className="sm" key={i}>{h.date} · {h.name} · {h.outcome === "fulfilled" ? "이행" : h.outcome === "missed" ? "미이행" : h.outcome === "departed" ? "소속 종료" : "철회"} · 선발 {h.starts}/{h.target} · 신뢰 {h.trust >= 0 ? "+" : ""}{h.trust}</p>)}</details>}
   </Card>;
 }
@@ -35,5 +35,5 @@ export function AppearanceReview({ record, side }: { record?: AppearanceRecord; 
   const s = useSave()!;
   const entries = record?.[side] ?? [];
   if (!record) return s.mode === "story" ? <p className="muted sm" data-testid="appearance-no-record">출전·경기 피로 기록 없음 · 이전 경기를 소급 계산하지 않습니다.</p> : null;
-  return <div className="sm" data-testid="appearance-review"><b>경기 당시 출전·피로</b>{entries.map(p => <p key={p.person}>{p.name} · {p.first ? "첫 세트 선발" : "세트 출전"} · 경기 피로 +{p.load.toFixed(2)} ({p.before.toFixed(1)} → {p.after.toFixed(1)})</p>)}</div>;
+  return <section className="card sm" data-testid="appearance-review"><b>경기 당시 출전·피로</b>{entries.map(p => <p key={p.person}>{p.name} · {p.first ? "첫 세트 선발" : "세트 출전"} · 경기 피로 +{p.load.toFixed(2)} ({p.before.toFixed(1)} → {p.after.toFixed(1)})</p>)}</section>;
 }
