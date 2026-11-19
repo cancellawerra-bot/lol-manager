@@ -10,6 +10,7 @@ import { moneyRound, fmtMoney } from "./money";
 import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
 import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 import { prepareInSeason } from "./inSeason";
+import { syncPromises } from "./rotation";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
 export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -411,6 +412,8 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
   for (const c of s.story?.contracts ?? []) used.add(c.person);
   for (const id of s.cards ?? []) if (CARDS[id]) used.add(CARDS[id].pkey);
   for (const keys of Object.values(s.starters ?? {})) keys.forEach((k, pos) => reviveKey(k, year, pos));
+  // 추정 시즌 카드인 보유 벤치도 로드 후 같은 선수로 기용할 수 있어야 합니다.
+  for (const c of st.contracts) reviveKey(c.key, year, CARDS[c.cardId]?.posIdx);
   if (s.inSeason?.year === year) for (const list of Object.values(s.inSeason.rosters)) for (const c of list) {
     const card = CARDS[c.cardId]; if (card) { reviveKey(c.key, year, card.posIdx); used.add(c.person); }
   }
@@ -1221,6 +1224,7 @@ export function finishStove(s: Save, _rng: Rng): void {
   s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => nextKeys.get(k) ?? k);
   s.cards = st.contracts.map((c) => c.key);
   applyStoryWorld(s, next); // AI는 다음 시즌 카드로 다시 짭니다. 이전에는 year===st.year 조건이 항상 참이라 2018 로스터가 남았습니다.
+  syncPromises(s);
   if (st.ended) return;
   if (next > STORY_END) { endStory(s, st.trophies.worlds > 0 && st.year >= STORY_END ? "clear" : "fail"); return; }
   beginSplit(s, next, "spring");

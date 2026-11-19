@@ -5,6 +5,7 @@ import type { DayAct } from "../game/season";
 import { playerTraining, trainingPlan, trainingPerson, trainingDate, setTrainingPlan } from "../game/trainingRuntime";
 import { trainingProfile, trainingBonuses } from "../game/training";
 import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
+import { RotationControls } from "./Rotation";
 
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 const ACT: { id: DayAct; t: string }[] = [{ id: "train", t: "훈련" }, { id: "scrim", t: "스크림" }, { id: "rest", t: "휴식" }, { id: "", t: "미정" }];
@@ -26,6 +27,7 @@ export default function Squad() {
   };
   return (
     <div className="col gap">
+      <RotationControls />
       <Card title="선수단 일정" right={<button className="btn sm" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button>}>
         <p className="muted sm">한 주에 하루는 휴식으로 두세요. {story ? "피지컬 훈련·전략 스크림·휴식을 현재 날짜에 맞춰 처리합니다. 수석코치에게 맡기면 나이에 맞춘 계획을 자동 배정합니다." : "빈 칸이 있거나 휴식이 없으면 경기를 진행할 수 없습니다. 한 번 정하면 매주 같은 패턴이 이어집니다."}</p>
         <div className="tbl-wrap">
@@ -67,6 +69,7 @@ export default function Squad() {
         <p className="muted xs">진행하기를 누르면 해당 경기 날짜까지 훈련을 처리합니다. 자동 관리는 피로 60 이상이면 훈련을 휴식으로 조정합니다. 보정값은 승률이 아닙니다. 같은 날짜는 한 번만 처리하며 화면을 다시 열거나 불러와도 훈련을 중복 획득하지 않습니다. 생년이 확인된 선수만 나이 보정합니다.</p>
       </Card>}
       <Card title="선발 라인업">
+        <div className="tbl-wrap">
         <table className="tbl">
           <thead><tr><th>포지션</th><th>선수</th><th>종합</th><th>교체</th></tr></thead>
           <tbody>
@@ -78,12 +81,13 @@ export default function Squad() {
                   <td>{POS_KO[i]}</td>
                   <td><PName k={k} /> {p?.small && <span className="tag warn">표본 부족</span>}</td>
                   <td><Pct v={p?.pct.ovr ?? 0} /></td>
-                  <td>{opts.length > 1 && <select value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{opts.map((x) => <option key={x} value={x}>{PL[x]?.label ?? PL[x]?.name ?? x}</option>)}</select>}</td>
+                  <td>{opts.length > 1 && <select disabled={!!s.session && !["press", "lineup"].includes(s.session.stage)} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{opts.map((x) => <option key={x} value={x}>{PL[x]?.label ?? PL[x]?.name ?? x}</option>)}</select>}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

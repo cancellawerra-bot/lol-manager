@@ -13,6 +13,8 @@ import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
 import { initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
 import { prepareInSeason } from "./game/inSeason";
 import { matchTactics, normalizeTactic, type TacticPlan } from "./game/tactics";
+import { prepareSeriesLineups, makePromise, cancelPromise, setRotationAutomatic } from "./game/rotation";
+import { PL } from "./data";
 
 const KEY = (slot: number): string => `lolm.slot.${slot}`;
 const LAST = "lolm.last";
@@ -78,16 +80,16 @@ export function advance(): "match" | "day" | "done" | "sched" | "franchise" | "s
   const my = mySeriesToday(s);
   if (my) {
     if (!s.schedOk) return "sched";
-    mutate((x) => { prepareSeriesTraining(x, my); x.session = { seriesId: my.id, gameIdx: my.games.length, holder: "", stage: "press", simStep: 0 }; }); return "match";
+    mutate((x) => { prepareSeriesTraining(x, my); prepareSeriesLineups(x, my); x.session = { seriesId: my.id, gameIdx: my.games.length, holder: "", stage: "press", simStep: 0 }; }); return "match";
   }
   mutate((x, rng) => { if (isStory(x)) finishStoryDay(x, rng); else finishDay(x, rng); });
   return (s.phase as string) === "done" || s.story?.ended ? (s.story?.ended ? "endstory" : "done") : "day";
 }
 export function autoSimSplit(onlyOthers = false): void {
-  mutate((s, rng) => { if (isStory(s)) simRestOfPhase(s, rng, onlyOthers); });
+  mutate((s, rng) => { if (isStory(s) && (!s.session || onlyOthers)) simRestOfPhase(s, rng, onlyOthers); });
 }
 export function autoToOffseason(): void {
-  mutate((s, rng) => { if (isStory(s)) pumpStory(s, rng); });
+  mutate((s, rng) => { if (isStory(s) && !s.session) pumpStory(s, rng); });
 }
 export function autoStove(signStars = false): void {
   mutate((s, rng) => {
@@ -169,7 +171,20 @@ export function nextGame(): void {
 export function endSeries(): void {
   mutate((s, rng) => { s.session = undefined; if (isStory(s)) finishStoryDay(s, rng); else finishDay(s, rng); });
 }
-export function setStarter(team: string, pos: number, key: string): void { mutate((s) => { s.starters[team][pos] = key; }); }
+export function setStarter(team: string, pos: number, key: string): void {
+  mutate((s) => {
+    if (team !== s.team || !Number.isInteger(pos) || pos < 0 || pos > 4 || PL[key]?.pos !== pos) return;
+    if (s.story?.ended) return;
+    if (s.session && !["press", "lineup"].includes(s.session.stage)) return;
+    if (s.mode === "story" ? !s.story?.contracts.some(c => c.key === key && c.years > 0) : ![...s.cards, ...(s.starters[team] ?? [])].includes(key)) return;
+    s.starters[team][pos] = key;
+  });
+}
+export function promisePlayingTime(key: string, target: number): string | undefined {
+  let error: string | undefined; mutate(s => { error = makePromise(s, key, target); }); return error;
+}
+export function withdrawPlayingTime(person: string): void { mutate(s => cancelPromise(s, person)); }
+export function manageRotation(automatic: boolean): void { mutate(s => setRotationAutomatic(s, automatic)); }
 
 export function setPress(tone: string): void { mutate((s) => { if (s.session) s.session.pressTone = tone; }); }
 export function afterPress(): void { mutate((s) => { if (s.session) s.session.stage = "lineup"; }); }

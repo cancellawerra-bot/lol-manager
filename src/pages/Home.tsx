@@ -44,8 +44,8 @@ export default function Home() {
         <Card title={`${s.story.year} ${SPLIT_KO[s.story.split]} · ${TIER_KO[s.story.tier]} · ${PHASE_STORY_KO[s.story.phase]}`} className="span2">
           <p>2018 2부에서 시작해 2027 월즈 우승이 목표입니다. LCK {s.story.trophies.lck}회 · 월즈 {s.story.trophies.worlds}회. 정규 시리즈는 축약(싱글 라운드 로빈)이며, 우리 경기가 없는 날은 자동으로 넘어갑니다.</p>
           {["regular", "playoffs", "promo", "rtm", "msi", "worlds"].includes(s.story.phase) && <div className="row gap wrap">
-            <button className="btn" data-testid="auto-split" onClick={() => autoSimSplit(false)}>이 국면 나머지 자동 진행</button>
-            <button className="btn" data-testid="auto-year" onClick={() => autoToOffseason()}>오프시즌까지 자동 진행</button>
+            <button className="btn" data-testid="auto-split" disabled={!!s.session} onClick={() => autoSimSplit(false)}>이 국면 나머지 자동 진행</button>
+            <button className="btn" data-testid="auto-year" disabled={!!s.session} onClick={() => autoToOffseason()}>오프시즌까지 자동 진행</button>
             <span className="muted sm">우리 경기도 즉시 시뮬합니다. 승패를 조작하지 않으며, 한 해를 빠르게 넘기기 위한 축약입니다.</span>
           </div>}
           {s.story.phase === "msi" && <p data-testid="msi-banner">MSI가 진행 중입니다. 그룹은 단판 라운드 로빈, 상위 4팀이 준결승(Bo5)에 갑니다. 해외 팀은 리그 시드 이름이며 개별 선수 기록은 없습니다.</p>}

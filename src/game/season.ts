@@ -8,6 +8,7 @@ import { prepareSeriesTraining, matchTraining, type TrainingState } from "./trai
 import type { TrainingSummary } from "./training";
 import { prepareInSeason, type InSeasonState } from "./inSeason";
 import { matchTactics, type TacticPlan, type Focus, type TacticsRecord } from "./tactics";
+import { prepareSeriesLineups, recordAppearances, type AppearanceRecord, type LineupDecision, type RotationState } from "./rotation";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -18,8 +19,9 @@ export interface GameRec {
   dur: number; kills: [number, number]; gold15: number; mvp: string; pPre: number; res?: GameResult;
   training?: TrainingSummary;
   tactics?: TacticsRecord;
+  appearances?: AppearanceRecord;
 }
-export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number } }
+export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number }; rotation?: Record<string, LineupDecision> }
 export interface Day { date: string; week: number; stage: Stage; label: string }
 export interface News { id: number; day: number; date: string; kind: "result" | "upset" | "streak" | "leader" | "season" | "welcome" | "mvp" | "playoff"; title: string; body: string; team?: string; read: boolean }
 export interface PStat { g: number; w: number; k: number; d: number; a: number; mvp: number; rsum: number }
@@ -56,6 +58,7 @@ export interface Save {
   training?: TrainingState;
   inSeason?: InSeasonState;
   tactics?: Record<string, TacticPlan>;
+  rotation?: RotationState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -176,11 +179,13 @@ export function recordGame(s: Save, sr: SeriesRec, d: DraftState, res: GameResul
   }
   const need = Math.ceil(sr.bo / 2);
   if (sr.sa >= need || sr.sb >= need) sr.winner = sr.sa > sr.sb ? sr.a : sr.b;
+  recordAppearances(s, sr, sr.games.length - 1);
 }
 
 export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
   if (sr.day === s.day && !sr.winner) prepareInSeason(s);
   prepareSeriesTraining(s, sr);
+  prepareSeriesLineups(s, sr);
   while (!sr.winner) {
     const gi = sr.games.length;
     const holder = selectionFor(sr, gi, rng);

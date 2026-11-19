@@ -3,6 +3,7 @@ import type { SeriesRec } from "../game/season";
 import { ChampIcon, TeamChip } from "../ui";
 import { useSave } from "../store";
 import { TacticsReview } from "./Tactics";
+import { AppearanceReview } from "./Rotation";
 
 export function SeriesDetail({ sr }: { sr: SeriesRec }) {
   const s = useSave();
@@ -20,6 +21,7 @@ export function SeriesDetail({ sr }: { sr: SeriesRec }) {
           ))}
           <div className="muted sm">MVP(평점 1위): {PL[g.mvp]?.name}</div>
           <TacticsReview record={g.tactics} side={g.red === s?.team ? "R" : "B"} />
+          <AppearanceReview record={g.appearances} side={g.red === s?.team ? "R" : "B"} />
           {g.training && <div className="muted sm">훈련 성장·피로 (경기 당시 게임 효과): {(["B", "R"] as const).map((side) => {
             const t = g.training![side];return `${side === "B" ? g.blue : g.red} 피지컬 +${(t.mechanics * 100).toFixed(2)}% / 전략 +${(t.strategy * 100).toFixed(2)}% / 피로 −${(t.fatigue * 100).toFixed(2)}%`;
           }).join(" · ")}</div>}

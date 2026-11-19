@@ -7,6 +7,7 @@ import { chooseTeam, type Bid } from "./negotiation";
 import { moneyRound, fmtMoney } from "./money";
 import { advanceTeamTraining, trainingDate, initializeTraining } from "./trainingRuntime";
 import { Rng } from "./rng";
+import { syncPromises } from "./rotation";
 
 export interface SeasonDeal {
   id: number; date: string; person: string; name: string; from: string; to: string;
@@ -168,6 +169,7 @@ function complete(s: Save, from: string, to: string, card: SeasonCard, fee: numb
     }
     refreshTeam(s, from);
   }
+  syncPromises(s);
   sign(s, to, card, salary, years, starter); m.bought[to] = m.week;
   m.history.push({ id: ++m.seq, date: trainingDate(s), person: card.pkey, name: card.name, from, to, fee, salary, paidSalary: seasonSalaryDue(s, salary), years, reason });
   if (m.history.length > 180) m.history = m.history.filter((d, i) => d.from === s.team || d.to === s.team || i >= m.history.length - 80);

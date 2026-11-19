@@ -9,6 +9,8 @@ import { ChampIcon, TeamChip, Pct } from "../ui";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
 import { TacticsControls, TacticsReview } from "./Tactics";
+import { AppearanceReview } from "./Rotation";
+import { playerTraining } from "../game/trainingRuntime";
 
 export default function Match() {
   const s = useSave()!;
@@ -72,12 +74,13 @@ function Lineup() {
     <div className="panel">
       <h2>선발 라인업 · {sr.games.length + 1}세트</h2>
       <p className="muted">같은 포지션 벤치와만 교체할 수 있습니다. 상대 컨디션은 보이지 않습니다.</p>
+      {s.mode === "story" && <p className="sm" data-testid="rotation-lineup">{mine.map((k, i) => `${POS_KO[i]} ${PL[k]?.name} · 피로 ${(playerTraining(s, k)?.fatigue ?? 0).toFixed(1)} · ${sr.rotation?.[s.team]?.keys[i] === k ? sr.rotation[s.team].reasons[i] : "감독 수동 교체"}`).join(" / ")}</p>}
       <div className="brief-grid">
         <div className="brief-team"><TeamChip t={s.team} full />
           <ul>{mine.map((k, i) => {
             const opts = bench.filter((x) => PL[x]?.pos === i);
             return <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Pct v={PL[k]?.pct.ovr ?? 0} />
-              {opts.length > 0 && <select value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select>}
+              {opts.length > 0 && <select data-testid={`lineup-player-${i}`} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select>}
             </li>;
           })}</ul>
         </div>
@@ -353,6 +356,7 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
         <b>{won ? "승리" : "패배"}</b><span>{d.teams[r.winner]} 승 · {r.dur}분 · 킬 {r.kills.B}:{r.kills.R} · 시리즈 {sr.a === s.team ? sr.sa : sr.sb}:{sr.a === s.team ? sr.sb : sr.sa}</span>
       </div>
       <TacticsReview record={r.tactics} side={me} />
+      <AppearanceReview record={sessionSeries(s).games[s.session!.gameIdx]?.appearances} side={me} />
       <div className="grid">
         <section className="card span2">
           <div className="card-h"><h2>왜 {won ? "이겼나" : "졌나"}</h2><span className="muted sm">경기 전 우리 승리 확률 {(pMe * 100).toFixed(0)}%</span></div>
