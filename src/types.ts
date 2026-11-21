@@ -54,6 +54,8 @@ export interface SeasonCard {
   kda: number | null; wr: number | null; kp: number | null; gd15: number | null; dpm: number | null; cspm: number | null;
   percentile: number; rank: number | null; pool: number | null; salary: number; composite: number;
   honors?: string[]; honorBonus?: number; compositeBase?: number; percentileBase?: number; ownerRating?: number;
+  /** 판타지 드래프트 전용 시장 추정 연봉(억, 게임용 가상 금액, tools/market_salaries.json). 없으면 salary */
+  fantasySalary?: number; market?: boolean; marketNote?: string;
   small: boolean; limited: boolean; source: string; metrics: string[]; eligible: boolean;
 }
 export interface CardsFile { meta: { builtAt: string; years: [number, number]; cards: number; eligible: number; minGames: number; eligibleMinGames: number; formula: string; salaryNote: string; sources: string[]; rule: string }; cards: SeasonCard[] }

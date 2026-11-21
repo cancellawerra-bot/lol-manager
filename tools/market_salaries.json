@@ -1,0 +1,35 @@
+{
+  "note": "판타지 드래프트 전용 시장 추정 연봉(2026-11-22, Grok, 오너 지시 '실제 시장으로 가야지 판타지는'). LCK는 개인 연봉을 공개하지 않으므로 아래 값은 모두 언론·업계 추정이며 confirmed=false입니다. 게임용 가상 금액이며 실제 계약과 무관합니다. 스토리·창단 모드 연봉(salary)은 바꾸지 않습니다. tools/build_fantasy_salary.py가 cards.json에 fantasySalary를 씁니다.",
+  "unit": "억 원(연봉, 게임용 가상 금액)",
+  "sources": {
+    "womansense-2025": {"title": "프로게이머 연봉 실화냐… '돈 벌려면 게임을 시켜라' (우먼센스)", "url": "https://www.womansense.co.kr/news/articleView.html?idxno=60616", "date": "2025-08-05", "confirmed": false, "says": "업계 추정: 페이커 50억(주식 포함 70억+), 바이퍼 40억, 기인 KT 시절 15~20억, 캐니언 담원 기아 당시 20억, 케리아 10억 이상, 제우스·오너·구마유시 10억 이상. LCK 최저 연봉 6,000만, 대부분 1.3억 이상."},
+    "tpnpn-2026": {"title": "2026英雄联盟选手收入前10 (博讯网)", "url": "https://www.tpnpn.com/archives/50304", "date": "2026-11-18", "confirmed": false, "says": "Zeus(HLE) 약 25억 원(미확인), Gumayusi(HLE) 약 25억 원대(미확인), Faker 600–800만 달러설(보도마다 차이), Chovy·Ruler 2027년 11월까지 3년 계약."},
+    "kmib-2025": {"title": "젠지, 2025 LCK 우승으로 사치세 부담도 덜었다 (국민일보)", "url": "https://www.kmib.co.kr/article/view_amp.asp?arcid=0028769261", "date": "2025-09-30", "confirmed": true, "says": "지출 상한선 40억 원. 쵸비·룰러가 성적 우수 선수(연봉 50%만 반영)로 인정, 캐니언은 앞서 인정. 젠지는 상한선 초과로 업계 추정."},
+    "hotspawn-2025": {"title": "Gen.G's LCK Championship Win Saves Them Hundred Of Millions In Luxury Tax (Hotspawn)", "url": "https://www.hotspawn.com/league-of-legends/news/gen-g-lck-win-luxury-tax/", "date": "2025-10-02", "confirmed": false, "says": "젠지 2026 주전 5명 중 3명(쵸비·룰러·캐니언)이 50% 감면, 선수 시장가치가 높아 사치세 절감 수억 원 추정."},
+    "sheep-2026": {"title": "LCK Updates Rulebook: Salary Cap Overhaul (Sheep Esports)", "url": "https://www.sheepesports.com/en/articles/lck-rulebook-updates-with-contract-length-salary-cap/en", "date": "2026-09-10", "confirmed": true, "says": "지출 상한선 40억 원, 사치세 4단계(최고 60%), 성적 우수 감면 팀당 2명."},
+    "mbn-2021": {"title": "2군까지 생긴 프로게이머…최저연봉도 프로야구 2배 (MBN)", "url": "https://mbn.co.kr/news/economy/4390617", "date": "2021-01-05", "confirmed": true, "says": "LCK 1군 최저 연봉 6,000만 원."}
+  },
+  "curve": {
+    "basis": "화면 능력치 r = 85 + 4·composite(반올림 전). 앵커 사이 로그-선형 보간.",
+    "anchors": [[81, 0.6], [84, 1.5], [85.2, 3.5], [87.8, 8], [91, 15], [93.5, 25], [95.5, 35], [97, 40]],
+    "anchorNote": "0.6억=LCK 최저 연봉(mbn-2021), 1.5억≈'대부분 1.3억 이상'(womansense-2025), 15억=A급 마지노선(인벤 기자 2022-11-12, 참고), 25억≈Zeus급 보도(tpnpn-2026)."
+  },
+  "rules": {
+    "years": [2024, 2026],
+    "starPremium": {"players": ["chovy", "ruler", "canyon"], "factor": 1.15, "source": ["kmib-2025", "hotspawn-2025"], "why": "LCK 공인 성적 우수 선수(시장가치 최상위)."},
+    "unreportedMax2024to2026": 38,
+    "why": "보도된 최상위(페이커 50, 바이퍼 40)보다 보도 없는 카드가 비싸지 않도록 2024–26 미보도 카드는 38억 이하."
+  },
+  "overrides": [
+    {"pkey": "faker", "years": [2024, 2025, 2026], "value": 50, "kind": "estimate", "source": "womansense-2025", "label": "업계 추정 약 50억"},
+    {"pkey": "viper", "years": [2024, 2025], "value": 40, "kind": "estimate", "source": "womansense-2025", "label": "업계 추정 약 40억"},
+    {"pkey": "zeus", "years": [2025, 2026], "value": 25, "kind": "estimate", "source": "tpnpn-2026", "label": "보도 약 25억(미확인)"},
+    {"pkey": "gumayusi", "years": [2026], "value": 25, "kind": "estimate", "source": "tpnpn-2026", "label": "보도 약 25억대(미확인)"},
+    {"pkey": "zeus", "years": [2024], "value": 10, "kind": "min", "source": "womansense-2025", "label": "업계 추정 10억 이상"},
+    {"pkey": "keria", "years": [2024, 2025, 2026], "value": 10, "kind": "min", "source": "womansense-2025", "label": "업계 추정 10억 이상"},
+    {"pkey": "oner", "years": [2024, 2025, 2026], "value": 10, "kind": "min", "source": "womansense-2025", "label": "업계 추정 10억 이상"},
+    {"pkey": "gumayusi", "years": [2024, 2025], "value": 10, "kind": "min", "source": "womansense-2025", "label": "업계 추정 10억 이상"},
+    {"pkey": "kiin", "years": [2024, 2025, 2026], "value": 15, "kind": "min", "source": "womansense-2025", "label": "KT 시절 15~20억 보도를 하한으로"},
+    {"pkey": "canyon", "years": [2024, 2025, 2026], "value": 20, "kind": "min", "source": "womansense-2025", "label": "담원 기아 당시 20억 보도를 하한으로"}
+  ]
+}

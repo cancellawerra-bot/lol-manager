@@ -4,6 +4,10 @@ import type { CardsFile, SeasonCard, Player, Team } from "../types";
 import type { Save, ClubInfo } from "./season";
 
 export const BUDGETS = { easy: 120, normal: 100, hard: 80 } as const;
+/** 판타지 드래프트 예산(억). 시장 추정 연봉(fantasySalary) 기준 — 어려움에서도 첫 픽에 페이커(50억)를 뽑을 수 있게 54억 (v2.17.0). */
+export const FANTASY_BUDGETS = { easy: 60, normal: 55, hard: 54 } as const;
+/** 판타지 드래프트 가격: 시장 추정 연봉(없으면 기존 연봉). 스토리·창단 모드는 salary를 그대로 씁니다. */
+export const fantasyPrice = (c: { salary: number; fantasySalary?: number }): number => c.fantasySalary ?? c.salary;
 export type Diff = keyof typeof BUDGETS;
 
 export function playerFromCard(c: SeasonCard): Player {

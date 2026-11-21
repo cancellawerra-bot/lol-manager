@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { loadCore, loadRanked, CARDS, CORE } from "../../src/data";
-import { BUDGETS } from "../../src/game/cards";
+import { FANTASY_BUDGETS as BUDGETS, fantasyPrice } from "../../src/game/cards";
 import { Rng } from "../../src/game/rng";
 import { FANTASY_ROUNDS, aiPick, applyPick, draftCtx, ctxLockReason, lockReason, pickMax, whoPicks, type Rosters } from "../../src/game/fantasy";
 import { cardRating } from "../../src/rating";
@@ -20,8 +20,8 @@ function run(seed: number, cap: number, strat: Strat): Rosters {
     if (who === me) {
       const ctx = draftCtx(me, st.rosters, cap); const ok = all.filter((c) => !ctxLockReason(c, ctx));
       assert(ok.length > 0, `dead end: seed ${seed} ${strat} round ${st.round}`);
-      { const pm = pickMax(me, st.rosters, cap), mn = Math.min(...ok.map((c) => c.salary)); assert(pm + 1e-9 >= mn, `pickMax ${pm} < min ${mn}`); }
-      const sorted = strat === "salaryHigh" ? ok.sort((a, b) => b.salary - a.salary) : strat === "ratingHigh" ? ok.sort((a, b) => cardRating(b) - cardRating(a)) : strat === "cheap" ? ok.sort((a, b) => a.salary - b.salary) : rng.shuffle(ok);
+      { const pm = pickMax(me, st.rosters, cap), mn = Math.min(...ok.map((c) => fantasyPrice(c))); assert(pm + 1e-9 >= mn, `pickMax ${pm} < min ${mn}`); }
+      const sorted = strat === "salaryHigh" ? ok.sort((a, b) => fantasyPrice(b) - fantasyPrice(a)) : strat === "ratingHigh" ? ok.sort((a, b) => cardRating(b) - cardRating(a)) : strat === "cheap" ? ok.sort((a, b) => fantasyPrice(a) - fantasyPrice(b)) : rng.shuffle(ok);
       id = sorted[0].id;
     } else {
       id = aiPick(who, st.rosters, cap, rng);
@@ -42,11 +42,17 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
   for (const [t, roster] of Object.entries(r)) {
     assert.deepEqual(roster.map((id) => CARDS[id].posIdx).sort(), [0, 1, 2, 3, 4], `${t} one per position`);
     assert.equal(new Set(roster.map((id) => CARDS[id].pkey)).size, 5, `${t} one card per person`);
-    assert(roster.reduce((n, id) => n + CARDS[id].salary, 0) <= cap + 1e-9, `${t} within cap`);
+    assert(roster.reduce((n, id) => n + fantasyPrice(CARDS[id]), 0) <= cap + 1e-9, `${t} within cap`);
   }
   const sigs = new Set(Object.values(r).map((x) => [...x].sort().join(",")));
   assert.equal(sigs.size, 10, "AI rosters distinct");
 }
+// 시장 추정 연봉(v2.17.0): 페이커 2024–26이 최고가, 쵸비는 페이커보다 낮음, 스토리용 salary는 그대로
+{ const f26 = fantasyPrice(CARDS["faker-2026"]), mx = Math.max(...all.map((c) => fantasyPrice(c)));
+  assert.equal(f26, mx, "Faker 2026 is the most expensive fantasy card");
+  assert(fantasyPrice(CARDS["chovy-2026"]) < f26, "Chovy below Faker");
+  assert.equal(CARDS["faker-2026"].salary, 50, "story salary unchanged");
+  for (const cap of Object.values(BUDGETS)) assert.equal(lockReason(CARDS["faker-2026"], "T1", {}, cap), undefined, `Faker draftable on first pick at ${cap}`); }
 // AI는 능력치 위주: 평균 능력치가 가성비 저가 카드(2012~15 위주)보다 확실히 높아야 함
 const r = run(7, BUDGETS.normal, "random");
 const avg = Object.values(r).flat().reduce((n, id) => n + cardRating(CARDS[id]), 0) / 50;

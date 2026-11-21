@@ -1,6 +1,6 @@
 import { CARDS, CARDS_FILE, PL, POS_KO, TM, recTxt, fmt } from "../data";
 import { useSave } from "../store";
-import { rosterSalary } from "../game/cards";
+import { fantasyPrice, rosterSalary } from "../game/cards";
 import { fmtMoney } from "../game/money";
 import { Card, PName, Ovr, TeamChip } from "../ui";
 import { standings } from "../game/season";
@@ -17,9 +17,9 @@ export default function Club() {
     const ct = s.story?.contracts.find((c) => c.key === k || c.cardId === k);
     if (ct) return ct.salary;
     const c = CARDS[k];
-    return c?.salary;
+    return c ? (s.mode === "fantasy" ? fantasyPrice(c) : c.salary) : undefined;
   };
-  const sal = s.story
+  const sal = s.story || s.mode === "fantasy"
     ? [...keys, ...bench].reduce((n, k) => n + (payOf(k) ?? 0), 0)
     : rosterSalary(s.cards.length ? s.cards : keys);
   return (

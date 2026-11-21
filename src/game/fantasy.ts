@@ -5,9 +5,11 @@
 //   어떤 순서로 골라도 드래프트가 막히지 않습니다.
 // - AI는 화면 능력치(cardRating) 위주로 고르되, 남은 예산과 포지션을 보고 약간의 무작위성을 둡니다.
 // 판타지 전용이며 스토리 모드 경제·밸런스와 무관합니다.
+// - 가격은 시장 추정 연봉(fantasyPrice = fantasySalary ?? salary, v2.17.0). 스토리 모드 salary는 그대로입니다.
 import { CARDS, CARDS_FILE } from "../data";
 import type { SeasonCard } from "../types";
 import { cardRating } from "../rating";
+import { fantasyPrice } from "./cards";
 import { fmtMoney, moneyRound } from "./money";
 import type { Rng } from "./rng";
 
@@ -26,7 +28,7 @@ export function takenMap(rosters: Rosters): Record<string, string> {
 }
 
 export const openPositions = (mine: string[]): number[] => [0, 1, 2, 3, 4].filter((p) => !mine.some((id) => CARDS[id]?.posIdx === p));
-export const spentOf = (mine: string[]): number => moneyRound(mine.reduce((n, id) => n + (CARDS[id]?.salary ?? 0), 0));
+export const spentOf = (mine: string[]): number => moneyRound(mine.reduce((n, id) => n + (CARDS[id] ? fantasyPrice(CARDS[id]) : 0), 0));
 
 let poolSrc: unknown = null;
 let pool: SeasonCard[][] = [];
@@ -35,25 +37,34 @@ function byPos(): SeasonCard[][] {
   if (poolSrc !== CARDS_FILE || !pool.length) {
     poolSrc = CARDS_FILE;
     const all = Object.values(CARDS);
-    pool = [0, 1, 2, 3, 4].map((p) => all.filter((c) => c.posIdx === p).sort((a, b) => a.salary - b.salary));
+    pool = [0, 1, 2, 3, 4].map((p) => all.filter((c) => c.posIdx === p).sort((a, b) => fantasyPrice(a) - fantasyPrice(b)));
   }
   return pool;
 }
 
-/** 아직 아무도 지명하지 않았고 우리 팀에 같은 인물이 없는 카드 중, 그 포지션 최저 연봉 카드 */
-function cheapest(pos: number, taken: Record<string, string>, people: Set<string>): SeasonCard | undefined {
-  return byPos()[pos].find((x) => !taken[x.id] && !people.has(x.pkey));
+/** 아직 아무도 지명하지 않았고 우리 팀에 같은 인물이 없는 카드 중, 그 포지션에서 (skip+1)번째로 싼 카드.
+ *  skip = 그 포지션을 아직 못 채운 다른 팀 수(우리가 다시 고르기 전까지 빠질 수 있는 최대 장수). 다른 팀이 싼 카드를 먼저 가져가도
+ *  남은 포지션을 반드시 채울 수 있도록 넉넉히 남겨 둡니다(v2.17.0, 시장 연봉에서 최저가 카드가 적어져 보강). */
+function cheapest(pos: number, taken: Record<string, string>, people: Set<string>, skip = 0): SeasonCard | undefined {
+  let n = 0;
+  for (const x of byPos()[pos]) if (!taken[x.id] && !people.has(x.pkey) && n++ >= skip) return x;
+  return undefined;
 }
 
-export type DraftCtx = { me: string; cap: number; taken: Record<string, string>; mine: string[]; open: number[]; people: Set<string>; spent: number; cheap: Record<number, SeasonCard | undefined> };
+export type DraftCtx = { me: string; cap: number; taken: Record<string, string>; mine: string[]; open: number[]; people: Set<string>; spent: number; skip: Record<number, number>; cheap: Record<number, SeasonCard | undefined> };
 
 /** 한 팀의 지금 지명 상황 (카드마다 다시 계산하지 않도록 한 번만 만듭니다) */
 export function draftCtx(me: string, rosters: Rosters, cap: number): DraftCtx {
   const taken = takenMap(rosters), mine = rosters[me] ?? [], open = openPositions(mine);
   const people = new Set(mine.map((id) => CARDS[id]?.pkey));
-  const cheap: Record<number, SeasonCard | undefined> = {};
-  for (const p of open) cheap[p] = cheapest(p, taken, people);
-  return { me, cap, taken, mine, open, people, spent: spentOf(mine), cheap };
+  // 다른 팀은 포지션마다 한 장씩만 뽑으므로, 그 포지션을 아직 못 채운 다른 팀 수만큼 싼 카드가 먼저 빠질 수 있습니다.
+  const skip: Record<number, number> = {}, cheap: Record<number, SeasonCard | undefined> = {};
+  for (const p of open) {
+    const filled = Object.entries(rosters).filter(([t, ids]) => t !== me && ids.some((id) => CARDS[id]?.posIdx === p)).length;
+    skip[p] = Math.max(0, FANTASY_TEAMS - 1 - filled);
+    cheap[p] = cheapest(p, taken, people, skip[p]);
+  }
+  return { me, cap, taken, mine, open, people, spent: spentOf(mine), skip, cheap };
 }
 
 /** 이 포지션 카드를 지금 뽑을 때 쓸 수 있는 최대 금액 (extraPerson: 이번에 뽑을 카드의 인물) */
@@ -62,8 +73,8 @@ export function ctxPickMax(ctx: DraftCtx, pos: number, extraPerson?: string): nu
   for (const p of ctx.open) {
     if (p === pos) continue;
     let c = ctx.cheap[p];
-    if (c && extraPerson && c.pkey === extraPerson) c = cheapest(p, ctx.taken, new Set([...ctx.people, extraPerson]));
-    reserve += c ? c.salary : Infinity;
+    if (c && extraPerson && c.pkey === extraPerson) c = cheapest(p, ctx.taken, new Set([...ctx.people, extraPerson]), ctx.skip[p]);
+    reserve += c ? fantasyPrice(c) : Infinity;
   }
   return moneyRound(ctx.cap - ctx.spent - reserve);
 }
@@ -84,7 +95,7 @@ export function ctxLockReason(c: SeasonCard, ctx: DraftCtx, teamName: (t: string
   if (ctx.people.has(c.pkey)) return "같은 선수의 다른 시즌 카드가 이미 있습니다";
   if (!ctx.open.includes(c.posIdx)) return "이미 채운 포지션입니다";
   const max = ctxPickMax(ctx, c.posIdx, c.pkey);
-  if (moneyRound(c.salary) > max) return `이번 픽 최대 ${fmtMoney(Math.max(0, max))}을 넘습니다`;
+  if (moneyRound(fantasyPrice(c)) > max) return `이번 픽 최대 ${fmtMoney(Math.max(0, max))}을 넘습니다`;
   return undefined;
 }
 
@@ -98,7 +109,7 @@ export function aiPick(team: string, rosters: Rosters, cap: number, rng: Rng): s
   const cands = all.some((c) => !c.small) ? all.filter((c) => !c.small) : all;
   if (!cands.length) return undefined;
   const share = (cap - ctx.spent) / open.length;
-  const score = (c: SeasonCard): number => cardRating(c) - 0.3 * Math.max(0, c.salary - share * 1.5);
+  const score = (c: SeasonCard): number => cardRating(c) - 0.3 * Math.max(0, fantasyPrice(c) - share * 1.5);
   const top = cands.map((c) => ({ c, s: score(c) })).sort((a, b) => b.s - a.s).slice(0, 6);
   const w = top.map((_, i) => Math.pow(0.55, i));
   let r = rng.next() * w.reduce((a, b) => a + b, 0);

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { CARDS, CORE, PL, TM, POS_KO, cardLabel, fmt } from "../data";
-import { BUDGETS, rosterSalary, weakestTeam, type Diff } from "../game/cards";
+import { BUDGETS, FANTASY_BUDGETS, fantasyPrice, rosterSalary, weakestTeam, type Diff } from "../game/cards";
 import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMoney, franchisePlayers } from "../game/story";
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
 import { slots, setSave } from "../store";
@@ -71,8 +71,8 @@ export default function Setup() {
   const [step, setStep] = useState<Step>("mode");
   const [mode, setMode] = useState<Mode>("story");
   const [diff, setDiff] = useState<Diff>("normal");
-  const cap = mode === "story" ? STORY_BUDGETS[diff] : BUDGETS[diff];
-  const priceOf = mode === "story" ? (c: import("../types").SeasonCard) => storySalary(c, "CK") : undefined;
+  const cap = mode === "story" ? STORY_BUDGETS[diff] : mode === "fantasy" ? FANTASY_BUDGETS[diff] : BUDGETS[diff];
+  const priceOf = mode === "story" ? (c: import("../types").SeasonCard) => storySalary(c, "CK") : mode === "fantasy" ? fantasyPrice : undefined;
   const sponsors = mode === "story" ? STORY_SPONSORS : SPONSORS;
   const goals = mode === "story" ? STORY_GOALS : GOALS;
   const [clubName, setClubName] = useState("");
@@ -263,7 +263,9 @@ export default function Setup() {
             <div className="row gap" style={{ marginTop: 16 }}><span className="muted sm">난이도(기본 자금)</span>
               {(mode === "story"
                 ? ([["easy", `쉬움 ${fmtMoney(STORY_BUDGETS.easy)}`], ["normal", `보통 ${fmtMoney(STORY_BUDGETS.normal)}`], ["hard", `어려움 ${fmtMoney(STORY_BUDGETS.hard)}`]] as const)
-                : ([["easy", "쉬움 120억"], ["normal", "보통 100억"], ["hard", "어려움 80억"]] as const)
+                : mode === "fantasy"
+                  ? ([["easy", `쉬움 ${fmtMoney(FANTASY_BUDGETS.easy)}`], ["normal", `보통 ${fmtMoney(FANTASY_BUDGETS.normal)}`], ["hard", `어려움 ${fmtMoney(FANTASY_BUDGETS.hard)}`]] as const)
+                  : ([["easy", "쉬움 120억"], ["normal", "보통 100억"], ["hard", "어려움 80억"]] as const)
               ).map(([k, l]) => (
                 <button key={k} className={"btn sm" + (diff === k ? " primary" : "")} onClick={() => setDiff(k)}>{l}</button>
               ))}
@@ -486,7 +488,7 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
   return (
     <div>
       <h2>판타지 드래프트</h2>
-      <p className="muted">5라운드 스네이크(1→10, 10→1), 포지션마다 한 명. 예산 {cap}억, 같은 사람 한 장. 남은 포지션을 가장 싸게 채울 돈은 남겨 두도록 「이번 픽 최대」 금액을 넘는 카드는 잠깁니다. {reshuffle > 0 && !started ? <>순서를 다시 섞을 수 있습니다 ({reshuffle}번 남음).</> : null}</p>
+      <p className="muted">5라운드 스네이크(1→10, 10→1), 포지션마다 한 명. 예산 {cap}억, 같은 사람 한 장. 가격은 실제 시장 기준 추정 연봉(2024–26 보도 추정치 우선, 「시장 추정치」 표시)이며 게임용 가상 금액입니다. 남은 포지션을 가장 싸게 채울 돈은 남겨 두도록 「이번 픽 최대」 금액을 넘는 카드는 잠깁니다. {reshuffle > 0 && !started ? <>순서를 다시 섞을 수 있습니다 ({reshuffle}번 남음).</> : null}</p>
       {!started && (
         <div className="card">
           <ol className="draft-order">{order.map((t) => <li key={t} className={t === me ? "me" : ""}>{t}{t === me ? " · 나" : ""}</li>)}</ol>
@@ -496,14 +498,14 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
       )}
       {started && (
         <div className="draft-slots" data-testid="draft-slots">
-          {slots.map((x) => <span key={x.n} className={"tag" + (x.id ? " good" : " warn")}>{x.n} {x.id ? `${cardLabel(CARDS[x.id])} ${fmtMoney(CARDS[x.id].salary)}` : "비어 있음"}</span>)}
+          {slots.map((x) => <span key={x.n} className={"tag" + (x.id ? " good" : " warn")}>{x.n} {x.id ? `${cardLabel(CARDS[x.id])} ${fmtMoney(fantasyPrice(CARDS[x.id]))}` : "비어 있음"}</span>)}
           <span className="tag">사용 {fmtMoney(ctx.spent)} / {fmtMoney(cap)}</span>
         </div>
       )}
       {started && !done && (
         <>
           <p data-testid="draft-turn"><b>{round + 1}라운드 · {pick + 1}번째 픽</b> — {who === me ? <>우리 차례입니다 · <span className="gold">{rules.headline}</span></> : `${teamName(who)} 차례`}{busy ? " · 진행 중…" : ""}</p>
-          {who === me && !busy && <CardMarket cap={cap} selected={mine} view={view} onView={setView} draft={rules} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
+          {who === me && !busy && <CardMarket cap={cap} selected={mine} view={view} onView={setView} draft={rules} priceOf={fantasyPrice} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
         </>
       )}
       {done && <p className="ok">드래프트가 끝났습니다. 우리 팀 {mine.length}명, 연봉 합 {fmtMoney(ctx.spent)}.</p>}
