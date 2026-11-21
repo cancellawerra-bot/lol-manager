@@ -30,7 +30,7 @@ export function CardTile({ c, on, disabled, reason, onClick, price, personView, 
 }
 
 export type MarketSort = "salary" | "salaryAsc" | "pct" | "year";
-export type MarketView = { q: string; pos: number | "all" | "open"; year: number | "all"; sort: MarketSort; availOnly?: boolean };
+export type MarketView = { q: string; pos: number | "all" | "open"; year: number | "all"; sort: MarketSort; availOnly?: boolean; team?: string; tab?: number };
 /** 판타지 드래프트용: 카드마다 잠금 이유, 남은 포지션, 한도 문구를 밖에서 정합니다. */
 export type DraftRules = { lock: (c: SeasonCard) => string | undefined; open: number[]; headline: string };
 

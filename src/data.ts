@@ -11,7 +11,7 @@ export const CARDS: Record<string, SeasonCard> = {};
 export const CARDS_BY_PERSON: Record<string, SeasonCard[]> = {};
 
 async function get<T>(name: string): Promise<T> {
-  const r = await fetch(`./data/${name}.json`, { cache: "force-cache" });
+  const r = await fetch(`./data/${name}.json`, { cache: "no-cache" });
   if (!r.ok) throw new Error(`${name}.json ${r.status}`);
   return r.json() as Promise<T>;
 }

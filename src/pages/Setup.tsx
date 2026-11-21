@@ -5,6 +5,7 @@ import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMon
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
 import { slots, setSave } from "../store";
 import { CardMarket, type DraftRules, type MarketView } from "./Market";
+import { DraftBoard } from "./DraftBoard";
 import { FANTASY_ROUNDS, aiPick, applyPick, ctxLockReason, ctxPickMax, draftCtx, lockReason, whoPicks } from "../game/fantasy";
 import { Rng } from "../game/rng";
 import { FanNotice, Ovr, TeamChip } from "../ui";
@@ -475,8 +476,8 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
   onPick: (c: SeasonCard) => void; onKick: () => void; onBack: () => void; onDone: () => void;
 }) {
   const [started, setStarted] = useState(false);
-  // 필터·정렬은 차례가 바뀌어도 그대로 둡니다 (기본: 남은 포지션 · 능력치 높은 순).
-  const [view, setView] = useState<MarketView>({ q: "", pos: "open", year: "all", sort: "pct" });
+  // 필터·정렬(팀·연도·검색·정렬·지명 가능만)은 차례가 바뀌어도 그대로 둡니다 (기본: 전체 팀 · 능력치 높은 순).
+  const [view, setView] = useState<MarketView>({ q: "", pos: "open", year: "all", sort: "pct", team: "all" });
   const who = whoPicks(order, round, pick) ?? "";
   const mine = rosters[me] ?? [];
   const done = round >= FANTASY_ROUNDS;
@@ -505,7 +506,7 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
       {started && !done && (
         <>
           <p data-testid="draft-turn"><b>{round + 1}라운드 · {pick + 1}번째 픽</b> — {who === me ? <>우리 차례입니다 · <span className="gold">{rules.headline}</span></> : `${teamName(who)} 차례`}{busy ? " · 진행 중…" : ""}</p>
-          {who === me && !busy && <CardMarket cap={cap} selected={mine} view={view} onView={setView} draft={rules} priceOf={fantasyPrice} ratingOf={fantasyRatingOf} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
+          {who === me && !busy && <DraftBoard cap={cap} mine={mine} view={view} onView={setView} rules={rules} priceOf={fantasyPrice} ratingOf={fantasyRatingOf} onPick={onPick} />}
         </>
       )}
       {done && <p className="ok">드래프트가 끝났습니다. 우리 팀 {mine.length}명, 연봉 합 {fmtMoney(ctx.spent)}.</p>}
