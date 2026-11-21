@@ -1,7 +1,7 @@
 import { PL } from "../data";
 import { addNews, type Save, type SeriesRec } from "./season";
-import { initializeTraining, playerTraining, trainingDate, trainingPerson } from "./trainingRuntime";
-import { trainingProfile } from "./training";
+import { initializeTraining, playerTraining, trainingDate, trainingPerson, growthCtx } from "./trainingRuntime";
+import { trainingProfile, matchExperience } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
 export const ROLE_LABEL = { 3: "주전", 2: "로테이션", 1: "육성" };
@@ -108,7 +108,7 @@ export function recordAppearances(s: Save, sr: SeriesRec, index: number): void {
     const date = s.days[sr.day].date, old = playerTraining(s, key)!;
     const load = 2 * trainingProfile(PLAYER_BIRTHDATES[person], date).fatigueLoad;
     const after = Math.min(100, old.fatigue + load);
-    training.players[person] = { ...old, fatigue: after };
+    training.players[person] = { ...matchExperience(old, growthCtx(s, key, date)), fatigue: after };
     const appearance = { person, name: PL[key].name, key, pos, first: index === 0, load: after - old.fatigue, before: old.fatigue, after };
     g.appearances[side].push(appearance);
     if ((side === "B" ? g.blue : g.red) === s.team) {

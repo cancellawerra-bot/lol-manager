@@ -28,22 +28,24 @@ SCALE = 8.0  # 4대 사이 차이가 보이도록 (편차 표준편차 약 3점)
 
 # 재료: (이름, 높을수록 좋음?)
 ING = {
-    "fight": [("dpm", True), ("dmgshare", True), ("kda", True), ("deathshare", False)],
-    "press": [("gd15", True), ("xpd15", True), ("csd15", True), ("ka15", True)],
-    "judge": [("kp", True), ("dpmin", False), ("fbpart", True), ("d15", False)],
-    "ops": [("vspm", True), ("wcpm", True), ("gpm", True), ("towerpm", True), ("cspm", True)],
+    # 피지컬 = 아는 것을 손으로 정확·빠르게 실행 (메카닉·반응속도는 직접 기록이 없어 아래 기록으로 대리)
+    "fight": [("dpm", True), ("dmgshare", True), ("kda", True), ("deathshare", False)],          # 교전: 한타 실행력
+    "press": [("cspm", True), ("gd15", True), ("xpd15", True), ("csd15", True), ("ka15", True), ("solo", True)],  # 압박: 라인전 손기술
+    # 뇌지컬 = 언제·어디서·무엇을 할지 고르는 능력
+    "judge": [("kp", True), ("dpmin", False), ("fbpart", True), ("d15", False)],                  # 판단: 싸울지 뺄지, 데스 관리
+    "ops": [("vspm", True), ("wcpm", True), ("gpm", True), ("towerpm", True), ("cspm", True), ("objp", True)],  # 운영: 시야·오브젝트·라인 관리
 }
-# 포지션별 가중치 (재료 순서는 ING와 같음)
+# 포지션별 가중치 (재료 순서는 ING와 같음). v2.21.0 재검토: 압박에 CS(막타)·솔로킬, 운영은 오브젝트 관여 추가·CS는 흐름 지표로 작게.
 W = {
     "fight": {"TOP": [.40, .20, .25, .15], "JNG": [.30, .15, .30, .25], "MID": [.40, .20, .25, .15], "BOT": [.45, .20, .20, .15], "SUP": [.25, .10, .35, .30]},
-    "press": {"TOP": [.35, .25, .30, .10], "JNG": [.40, .25, .10, .25], "MID": [.35, .25, .25, .15], "BOT": [.35, .20, .35, .10], "SUP": [.40, .35, .00, .25]},
+    "press": {"TOP": [.15, .25, .15, .20, .05, .20], "JNG": [.10, .30, .20, .05, .25, .10], "MID": [.15, .25, .15, .20, .10, .15], "BOT": [.20, .25, .10, .25, .05, .15], "SUP": [.00, .35, .30, .00, .25, .10]},
     "judge": {"TOP": [.30, .35, .15, .20], "JNG": [.35, .25, .25, .15], "MID": [.35, .30, .15, .20], "BOT": [.30, .35, .15, .20], "SUP": [.35, .25, .25, .15]},
-    "ops": {"TOP": [.15, .10, .30, .25, .20], "JNG": [.30, .20, .25, .10, .15], "MID": [.20, .15, .30, .15, .20], "BOT": [.10, .10, .35, .20, .25], "SUP": [.55, .30, .15, .00, .00]},
+    "ops": {"TOP": [.10, .05, .25, .25, .10, .25], "JNG": [.20, .15, .15, .05, .10, .35], "MID": [.15, .10, .25, .15, .10, .25], "BOT": [.10, .05, .30, .20, .10, .25], "SUP": [.40, .25, .05, .00, .00, .30]},
 }
 LABEL = {"dpm": "DPM", "dmgshare": "딜 비중", "kda": "KDA", "deathshare": "팀 데스 중 내 데스 비율(한타 생존, 낮을수록 좋음)",
          "gd15": "GD@15", "xpd15": "XPD@15", "csd15": "CSD@15", "ka15": "15분 킬+어시",
          "kp": "킬 관여율", "dpmin": "분당 데스(낮을수록 좋음)", "fbpart": "퍼스트 블러드 관여율", "d15": "15분 데스(낮을수록 좋음)",
-         "vspm": "분당 시야 점수", "wcpm": "분당 와드 제거", "gpm": "분당 골드", "towerpm": "분당 포탑 피해", "cspm": "분당 CS"}
+         "solo": "경기당 솔로킬", "objp": "오브젝트 관여율(용·전령·바론)", "vspm": "분당 시야 점수", "wcpm": "분당 와드 제거", "gpm": "분당 골드", "towerpm": "분당 포탑 피해", "cspm": "분당 CS(막타)"}
 
 
 def key(name: str) -> str:
@@ -116,6 +118,45 @@ def games_rows() -> list[dict]:
     return rows
 
 
+LIVE = Path("/workspace/leaguelab-collector/data/live.sqlite")
+
+
+def riot_extras(cards: list[dict]) -> dict[tuple[int, str], dict[str, tuple[float, int]]]:
+    """LeagueLab live.sqlite(읽기 전용)의 Riot 경기 기록(LCK 2024–2026): 솔로킬, 용·전령·바론 관여율."""
+    import sqlite3
+    if not LIVE.exists():
+        return {}
+    con = sqlite3.connect(f"file:{LIVE}?mode=ro", uri=True)
+    q = """select g.played_at, p.payload from games g join series s on g.series_id = s.id join tournaments t on s.tournament_id = t.id
+           join raw_payloads p on p.entity = 'match' and p.external_id = g.riot_match_id where t.league = 'LCK'"""
+    byname = defaultdict(list)
+    for c in cards:
+        byname[(c["year"], c["name"].casefold())].append(c["pkey"])
+        byname[(c["year"], c["pkey"].split(" (")[0])].append(c["pkey"])
+    acc = defaultdict(lambda: defaultdict(list))
+    unmatched = set()
+    for played, payload in con.execute(q):
+        year = int(str(played)[:4])
+        m = json.loads(payload); info = m.get("info", m)
+        team_obj = {t["teamId"]: sum(t["objectives"][k]["kills"] for k in ("dragon", "baron", "riftHerald")) for t in info["teams"]}
+        for pt in info["participants"]:
+            ign = str(pt.get("riotIdGameName") or "").strip()
+            name = ign.split(" ", 1)[1] if " " in ign else ign
+            cand = sorted(set(byname.get((year, name.casefold()), [])))
+            if len(cand) != 1:
+                unmatched.add((year, ign)); continue
+            ch = pt.get("challenges") or {}
+            a = acc[(year, cand[0])]
+            if ch.get("soloKills") is not None:
+                a["solo"].append(float(ch["soloKills"]))
+            tot = team_obj.get(pt["teamId"], 0)
+            if tot > 0:
+                a["objp"].append(sum(float(ch.get(k) or 0) for k in ("dragonTakedowns", "baronTakedowns", "riftHeraldTakedowns")) / tot)
+    con.close()
+    print("riot extras: matched", len(acc), "player-seasons; unmatched names", len(unmatched))
+    return {k: {n: (sum(v) / len(v), len(v)) for n, v in d.items() if v} for k, d in acc.items()}
+
+
 def main() -> None:
     rows = games_rows()
     # 팀 데스가 없으면 같은 경기·같은 팀 5명 데스 합
@@ -175,6 +216,8 @@ def main() -> None:
 
     data = json.loads(CARDS.read_text(encoding="utf-8"))
     cards = data["cards"]
+    for k_, ex in riot_extras(cards).items():
+        agg.setdefault(k_, {}).update(ex)
     # 재료 z (같은 시즌·포지션 카드끼리)
     zs: dict[str, dict[str, float]] = {c["id"]: {} for c in cards}
     pools = defaultdict(list)
@@ -223,12 +266,12 @@ def main() -> None:
         ingcov[str(y)] = {LABEL[i].split("(")[0]: round(100 * sum(1 for c in ys if i in zs[c["id"]]) / len(ys)) for i in allings}
     cov = {str(y): {st: f"{cover[y][st]}/{per_year[y]}" for st in ING} for y in sorted(per_year)}
     data["meta"]["fourStats"] = {
-        "version": "2.20.0",
+        "version": "2.21.0",
         "groups": {"피지컬": ["fight(교전)", "press(압박)"], "뇌지컬": ["judge(판단)", "ops(운영)"]},
         "ingredients": {st: [LABEL[n] for n, _ in v] for st, v in ING.items()},
         "weights": W,
         "formula": "재료 z = 같은 시즌·포지션 카드 내 z-score × n/(n+8) (낮을수록 좋은 재료는 −z). 4대 z = 포지션 가중 평균(없는 재료는 빼고 가중치 재정규화). 4대 값 = clamp(fantasyRating + 8·(z − 카드의 4대 z 평균), 60, 99). 재료가 없으면 null('기록 없음').",
-        "notInData": "용·전령·바론 관여, 솔로킬은 원자료에 선수별 값이 없어 넣지 않음.",
+        "notInData": "솔로킬·용/전령/바론 관여는 LCK 2024–2026 Riot 경기 기록(LeagueLab live.sqlite, 읽기 전용)에만 있어 그 시즌에만 반영. 2012–2023은 선수별 값이 없어 제외(가중치 재정규화). 메카닉·반응속도 직접 기록 없음.",
         "coverage": cov,
         "ingredientCoveragePct": ingcov,
     }

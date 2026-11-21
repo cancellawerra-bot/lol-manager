@@ -27,6 +27,8 @@ const rest = trainingSession({ ...one.progress, fatigue: 90 }, "recovery", "2014
 assert(rest.progress.fatigue < 90); assert.equal(rest.progress.mechanicsXp, one.progress.mechanicsXp);
 const tired = trainingSession({ ...p, fatigue: 100 }, "mechanics", "2014-05-07", birth);
 assert(tired.progress.mechanicsXp < one.progress.mechanicsXp);
-assert.deepEqual(trainingBonuses({ ...p, mechanicsXp: 1000, strategyXp: -4 }), { mechanics: 0.03, strategy: 0 });
+// v2.21.0: 옛 세이브(성장 필드 없음)는 XP 100 = 4점 → +2%, 성장 점수 1점 = +0.5% (상한 15점)
+assert.deepEqual(trainingBonuses({ ...p, mechanicsXp: 1000, strategyXp: -4 }), { mechanics: 0.02, strategy: 0 });
+assert.deepEqual(trainingBonuses({ ...p, physGain: 30, brainGain: 4 }), { mechanics: 0.075, strategy: 0.02 });
 assert.equal(trainingSession(p, "mechanics", "2027-01-01").progress.mechanicsXp, 10);
 console.log("OK age training core: birthday, interpolation, neutral missing data, fatigue, recovery, caps, person identity, save idempotence, enabled integration");

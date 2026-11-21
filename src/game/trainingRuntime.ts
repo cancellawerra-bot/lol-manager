@@ -1,6 +1,7 @@
-import { PL, CARDS } from "../data";
+import { PL, CARDS, CARDS_BY_PERSON } from "../data";
+import { ratingOf, cardRating } from "../rating";
 import type { Save, SeriesRec, DayAct } from "./season";
-import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, type TrainingProgress, type MatchTraining } from "./training";
+import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
 export interface TrainingState {
@@ -47,6 +48,24 @@ export function setTrainingPlan(s: Save, key: string, plan: DayAct[], automatic 
   state.automatic[person] = automatic;
   if (automatic) delete state.plans[person]; else state.plans[person] = [...plan];
 }
+/** 커리어 최고 시즌 능력치(실제 카드 기준). 카드가 없으면 undefined. */
+export function careerBest(person: string): number | undefined {
+  const cs = CARDS_BY_PERSON[person];
+  return cs?.length ? Math.max(...cs.map((c) => cardRating(c))) : undefined;
+}
+/** 성장 기준: 원본 능력치(지금 시즌 카드) + 잠재력 상한(커리어 최고 + 여유, 최대 100) */
+export function growthCtx(s: Save, key: string, date = trainingDate(s)): GrowthCtx | undefined {
+  const person = trainingPerson(s, key); if (!person) return;
+  const base = ratingOf(PL[key]) ?? 85;
+  const age = trainingProfile(PLAYER_BIRTHDATES[person], date);
+  const best = Math.max(base, careerBest(person) ?? base);
+  return { base, potential: Math.max(base, potentialFor(best, age.known ? age.age : undefined)) };
+}
+/** 화면용: 훈련 성장을 반영한 능력치(피지컬·뇌지컬·종합) */
+export function trainedRatingOf(s: Save, key: string): { phys: number; brain: number; overall: number; base: number; potential: number } | undefined {
+  const p = playerTraining(s, key), ctx = growthCtx(s, key); if (!p || !ctx) return;
+  return { ...trainedRating(p, ctx), ...ctx };
+}
 export function playerTraining(s: Save, key: string): TrainingProgress | undefined {
   const person = trainingPerson(s, key);
   if (!person) return;
@@ -75,13 +94,14 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
     const person = trainingPerson(s, key); if (!person) continue;
     let p = state.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0, lastDate: previousDate(state.periodStart > date ? date : state.periodStart) };
     if (p.lastDate && p.lastDate >= date) continue;
+    const ctx = growthCtx(s, key, date);
     for (let day = nextDate(p.lastDate ?? previousDate(state.periodStart > date ? date : state.periodStart)); day <= date; day = nextDate(day)) {
       const weekday = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7;
       const chosen = trainingPlan(s, key, day, team);
       let act = (validPlan(chosen) ? chosen : recommendedTraining(person, day))[weekday];
       const automatic = team !== s.team || state.automatic[person] || (!state.plans[person] && !validPlan(s.sched[key])) || !validPlan(chosen);
       if (automatic && p.fatigue >= 60) act = "rest";
-      p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : "recovery", day, PLAYER_BIRTHDATES[person]).progress;
+      p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : "recovery", day, PLAYER_BIRTHDATES[person], ctx).progress;
     }
     state.players[person] = p;
   }
@@ -95,7 +115,7 @@ export function matchTraining(s: Save, keys: string[]): MatchTraining | undefine
   const result: MatchTraining = {};
   for (const key of keys) {
     const p = playerTraining(s, key); if (!p) continue;
-    result[key] = { ...trainingBonuses(p), fatigue: Math.max(0, Math.min(100, p.fatigue)) / 100 * 0.02 };
+    result[key] = { ...trainingBonuses(p), fatigue: fatiguePenalty(p.fatigue) };
   }
   return result;
 }

@@ -2,8 +2,9 @@ import { POS_KO, PL } from "../data";
 import { useSave, mutate, fillSchedule, setStarter } from "../store";
 import { Card, PName, Ovr } from "../ui";
 import type { DayAct } from "../game/season";
-import { playerTraining, trainingPlan, trainingPerson, trainingDate, setTrainingPlan } from "../game/trainingRuntime";
-import { trainingProfile, trainingBonuses } from "../game/training";
+import { playerTraining, trainingPlan, trainingPerson, trainingDate, setTrainingPlan, trainedRatingOf } from "../game/trainingRuntime";
+import { trainingProfile, trainingBonuses, fatiguePenalty, WEEKLY_POINTS } from "../game/training";
+import { ratingColor } from "../rating";
 import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
 import { RotationControls } from "./Rotation";
 
@@ -53,16 +54,17 @@ export default function Squad() {
         <p className={s.schedOk ? "ok sm" : "err sm"}>{s.schedOk ? "일정이 준비되었습니다." : story ? "권장 계획을 변경하거나 수석코치에게 맡겨 확정해 주세요. 선수마다 휴식일이 하나 이상 필요합니다." : "빈 칸을 채우고, 선수마다 휴식일을 하나 이상 넣어 주세요."}</p>
       </Card>
       {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">다음 일정 {date}</span>}>
-        <p className="muted sm">훈련 숙련도는 선수 개인에게 쌓이고 시즌이 바뀌어도 유지됩니다. 원본 시즌 성적·종합·연봉과 구분되는 게임 효과입니다. 피지컬은 라인 실행력, 전략은 경기 준비에 반영하며 피로는 준비 효과를 낮춥니다.</p>
+        <p className="muted sm">훈련 성장은 선수 개인에게 쌓이고 시즌이 바뀌어도 유지됩니다(원본 시즌 기록·연봉과 별개인 게임 효과). 피지컬 훈련은 교전·압박(손으로 실행), 전략 스크림과 출전 경험은 판단·운영(뇌지컬)을 올립니다. 능력치가 높을수록 천천히 오르고 선수마다 성장 한도가 있어 100은 최상위 재능만 여러 시즌에 걸쳐 닿을 수 있습니다. 한 주 훈련은 5포인트까지 성장에 반영되고, 넘으면 피로만 크게 쌓여 컨디션이 떨어집니다. 어린 선수는 피지컬이 빨리 오르고, 25세 무렵부터 피지컬은 조금씩 내려가며 뇌지컬은 유지됩니다.</p>
         <div className="card-grid" data-testid="training-roster">{[...new Map([...keys, ...(s.story?.contracts.map((c) => c.key) ?? [])].map((k) => [trainingPerson(s, k), k])).values()].map((k) => {
           const person = trainingPerson(s, k), p = playerTraining(s, k); if (!person || !p) return null;
-          const birth = PLAYER_BIRTHDATES[person], profile = trainingProfile(birth, date), bonus = trainingBonuses(p);
+          const birth = PLAYER_BIRTHDATES[person], profile = trainingProfile(birth, date), bonus = trainingBonuses(p), tr = trainedRatingOf(s, k);
           return <div className="card-tile" key={person} data-testid={`training-${person}`}>
             <b>{PL[k]?.name ?? person}</b><div className="muted sm">{profile.known ? `만 ${profile.age}세` : "생년 정보 없음 · 나이 보정 없음"}</div>
-            <p className="sm">피지컬 숙련 {p.mechanicsXp.toFixed(1)} / 100<br />전략 숙련 {p.strategyXp.toFixed(1)} / 100<br />피로 {p.fatigue.toFixed(1)} / 100</p>
-            <div className="xs muted">학습 효율: 피지컬 {profile.mechanics.toFixed(2)}배 · 전략 {profile.strategy.toFixed(2)}배 · 회복 {profile.recovery.toFixed(2)}배<br />피로 누적 {profile.fatigueLoad.toFixed(2)}배</div>
+            {tr && <p className="sm" data-testid={`trained-${person}`}>능력치 <b style={{ color: ratingColor(tr.overall) }}>{tr.overall}</b> · 피지컬 {tr.phys.toFixed(1)} · 뇌지컬 {tr.brain.toFixed(1)}</p>}
+            <p className="sm">이번 주 훈련 {p.weekPts ?? 0} / {WEEKLY_POINTS}포인트{(p.overDays ?? 0) > 0 ? ` · 과훈련 ${p.overDays}일` : ""}<br />피로 {p.fatigue.toFixed(1)} / 100{p.fatigue >= 60 ? " · 컨디션 저하" : ""}</p>
+            <div className="xs muted">학습 효율: 피지컬 {profile.mechanics.toFixed(2)}배 · 뇌지컬 {profile.strategy.toFixed(2)}배 · 회복 {profile.recovery.toFixed(2)}배<br />피로 누적 {profile.fatigueLoad.toFixed(2)}배</div>
             <div className="xs muted">반영 기준: {p.lastDate ?? "훈련 시작 전"}</div>
-            <p className="sm">경기 보정: 피지컬 +{(bonus.mechanics * 100).toFixed(2)}% · 전략 +{(bonus.strategy * 100).toFixed(2)}% · 피로 −{(p.fatigue * 0.02).toFixed(2)}%</p>
+            <p className="sm">경기 보정: 피지컬 +{(bonus.mechanics * 100).toFixed(2)}% · 뇌지컬 +{(bonus.strategy * 100).toFixed(2)}% · 피로 −{(fatiguePenalty(p.fatigue) * 100).toFixed(2)}%</p>
             {birth && <a className="xs" href={birth.sourceUrl} target="_blank" rel="noreferrer">생년 자료 출처</a>}
           </div>;
         })}</div>
