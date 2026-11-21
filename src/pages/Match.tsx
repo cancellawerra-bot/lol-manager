@@ -264,19 +264,6 @@ function Draft({ d }: { d: DraftState }) {
   );
 }
 
-function Scoreboard({ d, r, upto }: { d: DraftState; r: GameResult; upto: number }) {
-  const ev = r.events.slice(0, upto);
-  const cnt = (side: Side, k: string): number => ev.filter((e) => e.side === side && e.kind === k).length;
-  const lastLead = [...ev].reverse().find((e) => e.lead != null)?.lead;
-  return (
-    <div className="sboard">
-      {(["B", "R"] as Side[]).map((sd) => (
-        <div key={sd} className={"sb-side " + sd}><TeamChip t={d.teams[sd]} /><span>드래곤 {cnt(sd, "drake")}</span><span>전령 {cnt(sd, "herald")}</span><span>바론 {cnt(sd, "baron")}</span></div>
-      ))}
-      {lastLead != null && <div className="sb-lead">골드 {lastLead >= 0 ? d.teams.B : d.teams.R} +{fmt(Math.abs(lastLead))}</div>}
-    </div>
-  );
-}
 function LeadChart({ d, r, upto }: { d: DraftState; r: GameResult; upto: number }) {
   const pts = [{ t: 0, v: 0 }, ...r.events.slice(0, upto).filter((e) => e.lead != null).map((e) => ({ t: e.t, v: e.lead! }))];
   const W = 320, H = 90, maxT = Math.max(20, r.dur), maxV = Math.max(3000, ...pts.map((p) => Math.abs(p.v)));
@@ -291,39 +278,89 @@ function LeadChart({ d, r, upto }: { d: DraftState; r: GameResult; upto: number 
   );
 }
 
+// 사건 설명에 나온 챔피언 이름으로 그 팀의 실제 픽을 찾습니다(없으면 null — 아이콘을 지어내지 않음).
+function champInEvent(d: DraftState, side: Side | undefined, text: string): string | null {
+  const sides: Side[] = side ? [side, other(side)] : ["B", "R"];
+  for (const sd of sides) { const p = d.picks[sd].find((x) => CH[x.c] && text.includes(CH[x.c].ko)); if (p) return p.c; }
+  return null;
+}
+const OBJ_KEYS = [["drake", "드래곤"], ["herald", "전령"], ["baron", "바론"]] as const;
+
 function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
+  const s = useSave()!; const me = mySide(s);
   const [auto, setAuto] = useState(false);
   const end = step >= r.events.length;
-  useEffect(() => { if (auto && !end) { const id = setTimeout(() => simNext(), 900); return () => clearTimeout(id); } }, [auto, step, end]);
+  useEffect(() => { if (auto && !end) { const id = setTimeout(() => simNext(), 1100); return () => clearTimeout(id); } }, [auto, step, end]);
   const ev = r.events.slice(0, step);
+  const now = ev[ev.length - 1];
+  const clock = now ? now.t : 0;
+  const lead = [...ev].reverse().find((e) => e.lead != null)?.lead;
+  const cnt = (sd: Side, k: string): number => ev.filter((e) => e.side === sd && e.kind === k).length;
+  const pMe = me === "B" ? r.pPre : 1 - r.pPre;
+  const nowChamp = now ? champInEvent(d, now.side, now.text) : null;
+  const span = Math.max(30, clock + 5);
+  const leadPct = lead == null ? 50 : 50 + Math.max(-46, Math.min(46, (lead / 8000) * 46));
+  const sorted = (sd: Side) => [...d.picks[sd]].sort((a, b) => a.pos - b.pos);
   return (
-    <div className="sim">
-      <div className="sim-head">
+    <div className="sim bc">
+      <div className="bc-board" data-testid="sim-board">
         {(["B", "R"] as Side[]).map((sd) => (
-          <div key={sd} className={"sim-team " + sd}>
-            <TeamChip t={d.teams[sd]} full />
-            <div className="sim-picks">{[...d.picks[sd]].sort((a, b) => a.pos - b.pos).map((p) => <span key={p.c}><ChampIcon id={p.c} size={36} /><small>{PL[d.lineup[sd][p.pos]].name}</small></span>)}</div>
+          <div key={sd} className={"bc-team " + sd + (sd === me ? " me" : "")}>
+            <div className="bc-name"><span className={"side-dot " + sd}>{sd === "B" ? "블루" : "레드"}</span><TeamChip t={d.teams[sd]} size="lg" full />{sd === me && <span className="tag good">우리</span>}</div>
+            <div className="bc-obj">{OBJ_KEYS.map(([k, ko]) => <span key={k} className={cnt(sd, k) ? "on" : ""}><b>{cnt(sd, k)}</b>{ko}</span>)}</div>
           </div>
         ))}
-      </div>
-      <div className="sim-body">
-        <div className="feed">
-          {ev.length === 0 && <p className="muted">경기가 곧 시작됩니다. "다음 장면"을 눌러 진행하세요.</p>}
-          {ev.map((e, i) => (
-            <div key={i} className={`ev ${e.kind} ${e.side ?? ""}` + (i === ev.length - 1 ? " new" : "")}>
-              <span className="ev-t">{e.t}:00</span><span className="ev-k">{EV_KO[e.kind]}</span><span>{e.text}</span>
-            </div>
-          ))}
+        <div className="bc-mid">
+          <div className="bc-clock" aria-label="경기 시간">{clock}:00</div>
+          <div className="bc-gold">{lead == null ? <span className="muted">골드 차 집계 전</span> : <>골드 <b className={(lead >= 0 ? "B" : "R") === me ? "up" : "down"}>{lead >= 0 ? d.teams.B : d.teams.R} +{fmt(Math.abs(lead))}</b></>}</div>
+          <div className="bc-tug" aria-hidden="true"><i style={{ width: `${leadPct}%` }} /></div>
+          <div className="muted xs">경기 전 예상 승률 {d.teams[me]} {(pMe * 100).toFixed(0)}%</div>
         </div>
-        <div className="sim-side">
-          <Scoreboard d={d} r={r} upto={step} />
-          <LeadChart d={d} r={r} upto={step} />
-          <div className="col gap">
-            {!end && <button className="btn primary lg block" onClick={() => simNext()} data-testid="sim-next">다음 장면 ▶</button>}
-            {!end && <button className="btn block" onClick={() => setAuto(!auto)}>{auto ? "자동 진행 멈춤" : "자동 진행"}</button>}
-            {!end && <button className="btn ghost block rc-insta" onClick={() => simNext(true)} data-testid="sim-all">즉시 결과</button>}
-            {end && <button className="btn primary lg block" onClick={toPog} data-testid="to-result">Player Of the Game ▶</button>}
+      </div>
+
+      <div className="bc-track" aria-label="경기 흐름">
+        {ev.map((e, i) => <i key={i} className={`${e.side ?? ""} ${e.kind}`} style={{ left: `${(e.t / span) * 100}%` }} title={`${e.t}:00 ${EV_KO[e.kind]} ${e.text}`} />)}
+        <span className="bc-now" style={{ left: `${(clock / span) * 100}%` }} />
+      </div>
+
+      <div className="bc-body">
+        <div className="bc-main">
+          <div className={"bc-scene " + (now ? `${now.kind} ${now.side ?? ""}` : "idle")} key={step} data-testid="sim-scene">
+            {now ? <>
+              <div className="bc-scene-h"><span className="bc-kind">{EV_KO[now.kind] || "소식"}</span><span className="bc-t">{now.t}:00</span>{now.side && <TeamChip t={d.teams[now.side]} />}</div>
+              <div className="bc-scene-b">{nowChamp && <ChampIcon id={nowChamp} size={64} ring={now.side === "B" ? "#3B82F6" : "#EF4444"} />}<p>{now.text}</p></div>
+            </> : <div className="bc-scene-b"><p>선수들이 소환사의 협곡에 들어섰습니다. "다음 장면"을 눌러 경기를 시작하세요.</p></div>}
           </div>
+          <div className="bc-controls">
+            {!end && <button className="btn primary lg" onClick={() => simNext()} data-testid="sim-next">다음 장면 ▶</button>}
+            {!end && <button className={"btn" + (auto ? " on" : "")} onClick={() => setAuto(!auto)}>{auto ? "❚❚ 자동 진행 멈춤" : "▶▶ 자동 진행"}</button>}
+            {!end && <button className="btn ghost rc-insta" onClick={() => simNext(true)} data-testid="sim-all">즉시 결과</button>}
+            {end && <button className="btn primary lg" onClick={toPog} data-testid="to-result">Player Of the Game ▶</button>}
+          </div>
+          <div className="feed bc-feed">
+            {ev.length <= 1 && <p className="muted sm">지난 장면이 여기에 쌓입니다.</p>}
+            {ev.slice(0, -1).reverse().map((e, i) => (
+              <div key={i} className={`ev ${e.kind} ${e.side ?? ""}`}>
+                <span className="ev-t">{e.t}:00</span><span className="ev-k">{EV_KO[e.kind]}</span><span>{e.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bc-side">
+          <div className="bc-lanes">
+            <div className="bc-lanes-h"><TeamChip t={d.teams.B} /><span className="muted xs">라인 맞대결</span><TeamChip t={d.teams.R} /></div>
+            {[0, 1, 2, 3, 4].map((i) => {
+              const b = sorted("B")[i], rr = sorted("R")[i];
+              return (
+                <div key={i} className="bc-lane">
+                  <span className="bl B">{b && <><ChampIcon id={b.c} size={34} /><small>{PL[d.lineup.B[b.pos]]?.name}</small></>}</span>
+                  <em>{POS_KO[i]}</em>
+                  <span className="bl R">{rr && <><small>{PL[d.lineup.R[rr.pos]]?.name}</small><ChampIcon id={rr.c} size={34} /></>}</span>
+                </div>
+              );
+            })}
+          </div>
+          <LeadChart d={d} r={r} upto={step} />
         </div>
       </div>
     </div>
