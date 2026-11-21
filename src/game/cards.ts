@@ -1,5 +1,6 @@
 // 시즌 카드 → 시뮬용 선수, 로스터 규칙, 구단 하이드레이션
 import { CARDS, CARDS_FILE, CORE, PL, TM, cardLabel, resetWorld } from "../data";
+import { cardRating } from "../rating";
 import type { CardsFile, SeasonCard, Player, Team } from "../types";
 import type { Save, ClubInfo } from "./season";
 
@@ -8,6 +9,8 @@ export const BUDGETS = { easy: 120, normal: 100, hard: 80 } as const;
 export const FANTASY_BUDGETS = { easy: 60, normal: 55, hard: 54 } as const;
 /** 판타지 드래프트 가격: 시장 추정 연봉(없으면 기존 연봉). 스토리·창단 모드는 salary를 그대로 씁니다. */
 export const fantasyPrice = (c: { salary: number; fantasySalary?: number }): number => c.fantasySalary ?? c.salary;
+/** 판타지 드래프트 전용 능력치 (연도·나이 보정, 없으면 화면 능력치) */
+export const fantasyRatingOf = (c: SeasonCard): number => c.fantasyRating ?? cardRating(c);
 export type Diff = keyof typeof BUDGETS;
 
 export function playerFromCard(c: SeasonCard): Player {

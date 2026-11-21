@@ -3,13 +3,12 @@
 // - 5라운드 스네이크, 포지션마다 한 명. 이미 채운 포지션은 잠급니다.
 // - "이번 픽 최대 X억" = 남은 예산 − (남은 다른 포지션을 가장 싸게 채우는 비용). 이 금액을 넘는 카드는 잠가서
 //   어떤 순서로 골라도 드래프트가 막히지 않습니다.
-// - AI는 화면 능력치(cardRating) 위주로 고르되, 남은 예산과 포지션을 보고 약간의 무작위성을 둡니다.
+// - AI는 판타지 능력치(fantasyRatingOf: 연도·나이 보정) 위주로 고르되, 남은 예산과 포지션을 보고 약간의 무작위성을 둡니다.
 // 판타지 전용이며 스토리 모드 경제·밸런스와 무관합니다.
 // - 가격은 시장 추정 연봉(fantasyPrice = fantasySalary ?? salary, v2.17.0). 스토리 모드 salary는 그대로입니다.
 import { CARDS, CARDS_FILE } from "../data";
 import type { SeasonCard } from "../types";
-import { cardRating } from "../rating";
-import { fantasyPrice } from "./cards";
+import { fantasyPrice, fantasyRatingOf } from "./cards";
 import { fmtMoney, moneyRound } from "./money";
 import type { Rng } from "./rng";
 
@@ -109,7 +108,7 @@ export function aiPick(team: string, rosters: Rosters, cap: number, rng: Rng): s
   const cands = all.some((c) => !c.small) ? all.filter((c) => !c.small) : all;
   if (!cands.length) return undefined;
   const share = (cap - ctx.spent) / open.length;
-  const score = (c: SeasonCard): number => cardRating(c) - 0.3 * Math.max(0, fantasyPrice(c) - share * 1.5);
+  const score = (c: SeasonCard): number => fantasyRatingOf(c) - 0.3 * Math.max(0, fantasyPrice(c) - share * 1.5);
   const top = cands.map((c) => ({ c, s: score(c) })).sort((a, b) => b.s - a.s).slice(0, 6);
   const w = top.map((_, i) => Math.pow(0.55, i));
   let r = rng.next() * w.reduce((a, b) => a + b, 0);

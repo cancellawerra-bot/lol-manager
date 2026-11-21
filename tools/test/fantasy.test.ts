@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { loadCore, loadRanked, CARDS, CORE } from "../../src/data";
-import { FANTASY_BUDGETS as BUDGETS, fantasyPrice } from "../../src/game/cards";
+import { FANTASY_BUDGETS as BUDGETS, fantasyPrice, fantasyRatingOf } from "../../src/game/cards";
 import { Rng } from "../../src/game/rng";
 import { FANTASY_ROUNDS, aiPick, applyPick, draftCtx, ctxLockReason, lockReason, pickMax, whoPicks, type Rosters } from "../../src/game/fantasy";
 import { cardRating } from "../../src/rating";
@@ -21,7 +21,7 @@ function run(seed: number, cap: number, strat: Strat): Rosters {
       const ctx = draftCtx(me, st.rosters, cap); const ok = all.filter((c) => !ctxLockReason(c, ctx));
       assert(ok.length > 0, `dead end: seed ${seed} ${strat} round ${st.round}`);
       { const pm = pickMax(me, st.rosters, cap), mn = Math.min(...ok.map((c) => fantasyPrice(c))); assert(pm + 1e-9 >= mn, `pickMax ${pm} < min ${mn}`); }
-      const sorted = strat === "salaryHigh" ? ok.sort((a, b) => fantasyPrice(b) - fantasyPrice(a)) : strat === "ratingHigh" ? ok.sort((a, b) => cardRating(b) - cardRating(a)) : strat === "cheap" ? ok.sort((a, b) => fantasyPrice(a) - fantasyPrice(b)) : rng.shuffle(ok);
+      const sorted = strat === "salaryHigh" ? ok.sort((a, b) => fantasyPrice(b) - fantasyPrice(a)) : strat === "ratingHigh" ? ok.sort((a, b) => fantasyRatingOf(b) - fantasyRatingOf(a)) : strat === "cheap" ? ok.sort((a, b) => fantasyPrice(a) - fantasyPrice(b)) : rng.shuffle(ok);
       id = sorted[0].id;
     } else {
       id = aiPick(who, st.rosters, cap, rng);
@@ -53,10 +53,20 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
   assert(fantasyPrice(CARDS["chovy-2026"]) < f26, "Chovy below Faker");
   for (const [id, v] of [["faker-2026", 50], ["zeus-2026", 23], ["gumayusi-2026", 20], ["keria-2026", 20], ["scout-2026", 10]] as const) assert.equal(fantasyPrice(CARDS[id]), v, `owner-set ${id}`);
   assert(all.every((c) => c.pkey === "faker" || fantasyPrice(c) < f26), "nobody above Faker");
+  // v2.18.0: 같은 시즌 페이커 카드보다 비싼 카드 없음 (연도별)
+  const fk: Record<number, number> = {};
+  for (const c of all) if (c.pkey === "faker") fk[c.year] = Math.max(fk[c.year] ?? 0, fantasyPrice(c));
+  const over = all.filter((c) => c.pkey !== "faker" && fk[c.year] !== undefined && fantasyPrice(c) >= fk[c.year]);
+  assert.equal(over.length, 0, `same-season Faker cap: ${over.slice(0, 5).map((c) => c.id).join(",")}`);
+  for (const [id, v] of [["zeus-2025", 20], ["zeus-2024", 17.5], ["zeus-2023", 15], ["zeus-2022", 12.5], ["faker-2025", 25], ["faker-2024", 25], ["faker-2023", 25], ["faker-2022", 25]] as const) assert.equal(fantasyPrice(CARDS[id]), v, `owner-set ${id}`);
+  // 판타지 능력치: 60–99, 옛 시즌은 하향 (스토리 표시 능력치는 그대로)
+  assert(all.every((c) => fantasyRatingOf(c) >= 60 && fantasyRatingOf(c) <= 99), "fantasy rating range");
+  assert(fantasyRatingOf(CARDS["zeus-2022"]) < fantasyRatingOf(CARDS["zeus-2026"]), "older Zeus lower");
+  assert.equal(fantasyRatingOf(CARDS["faker-2026"]), cardRating(CARDS["faker-2026"]), "2026 rating unchanged");
   assert.equal(CARDS["faker-2026"].salary, 50, "story salary unchanged");
   for (const cap of Object.values(BUDGETS)) assert.equal(lockReason(CARDS["faker-2026"], "T1", {}, cap), undefined, `Faker draftable on first pick at ${cap}`); }
 // AI는 능력치 위주: 평균 능력치가 가성비 저가 카드(2012~15 위주)보다 확실히 높아야 함
 const r = run(7, BUDGETS.normal, "random");
-const avg = Object.values(r).flat().reduce((n, id) => n + cardRating(CARDS[id]), 0) / 50;
+const avg = Object.values(r).flat().reduce((n, id) => n + fantasyRatingOf(CARDS[id]), 0) / 50;
 assert(avg >= 85, `AI average rating ${avg.toFixed(1)}`);
 console.log(`OK fantasy draft: ${drafts} drafts, no dead end, no duplicates, valid rosters within cap, AI distinct; sample avg rating ${avg.toFixed(1)}`);

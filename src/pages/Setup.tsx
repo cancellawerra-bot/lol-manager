@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { CARDS, CORE, PL, TM, POS_KO, cardLabel, fmt } from "../data";
-import { BUDGETS, FANTASY_BUDGETS, fantasyPrice, rosterSalary, weakestTeam, type Diff } from "../game/cards";
+import { BUDGETS, FANTASY_BUDGETS, fantasyPrice, fantasyRatingOf, rosterSalary, weakestTeam, type Diff } from "../game/cards";
 import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMoney, franchisePlayers } from "../game/story";
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
 import { slots, setSave } from "../store";
@@ -505,7 +505,7 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
       {started && !done && (
         <>
           <p data-testid="draft-turn"><b>{round + 1}라운드 · {pick + 1}번째 픽</b> — {who === me ? <>우리 차례입니다 · <span className="gold">{rules.headline}</span></> : `${teamName(who)} 차례`}{busy ? " · 진행 중…" : ""}</p>
-          {who === me && !busy && <CardMarket cap={cap} selected={mine} view={view} onView={setView} draft={rules} priceOf={fantasyPrice} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
+          {who === me && !busy && <CardMarket cap={cap} selected={mine} view={view} onView={setView} draft={rules} priceOf={fantasyPrice} ratingOf={fantasyRatingOf} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
         </>
       )}
       {done && <p className="ok">드래프트가 끝났습니다. 우리 팀 {mine.length}명, 연봉 합 {fmtMoney(ctx.spent)}.</p>}
