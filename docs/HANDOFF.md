@@ -32,6 +32,7 @@
 
 - 테스트: `growth.test.ts` 재작성(모든 카드 상한 100, 기본 90–97도 1시즌 내 100 불가, 최상위 3–5시즌, 평범 82 6–10시즌, 낮은 선수 더 오래, 베테랑 유한 시즌, 피지컬 훈련 안 하면 25세+ 하락, 과훈련). fantasy(72 드래프트)·story·training·training-runtime·birthdates·rotation·season 통과. in-season·scouting·stove는 HEAD와 동일한 기존 실패. 난이도 재측정 안 함. 스토리/창단·예산·판타지 연봉 그대로.
 - 화면: 선수단 훈련 설명 문구를 「모든 선수가 100까지 … 재능은 속도만 … 25세부터 주 2회 미만이면 하락」으로 교체.
+- 배포: main `e47023e` → gh-pages `990c846`, 번들 `index-B5KDvHMM.js`. 라이브 QA(`/workspace/qa/fd11_audit.mjs`, 1280·390): v2.21.1 표시, 판타지 드래프트 10팀 정상, 스토리 1시즌 뒤 최고 94(100 없음), 콘솔 오류 0. 스크린샷 `/workspace/qa/fd11-live-*.png`.
 
 ### 2026-11-22 · Grok · v2.21.0 4대 능력치 재정의 · 훈련 성장 규칙
 
