@@ -32,6 +32,7 @@
 - **역전 검수** (`tools/test/card-audit.ts`, 같은 선수·포지션 2024–26 쌍에서 KDA·승률·GD@15·DPM·KP 5개 중 4개 이상 좋은데 능력치/연봉/판단이 낮은 경우): 수정 전 능력치 10·연봉 18·판단 18(합 46) → 후 4·4·5(합 13). 남은 것: 능력치·연봉 역전은 모두 교수님 평가 2026 카드(페이커 93·오너 88·구마유시 91)와 2026 페이커 50억 지정 때문; 판단 역전 5건 중 페이커 2건(평가 카드), dudu·rich·teddy 3건은 더 좋은 시즌의 킬 관여가 7–8%p 낮아 판단이 1–2점 낮음.
 - 테스트: `card-audit.test.ts` 신규(쵸비 2024 능력치·판단·연봉 최고, 4대 평균=종합, 연도 평균 차 < 1.2, 남는 역전은 평가 카드/킬 관여 사유만), `fantasy.test.ts` 갱신(2026 페이커 50 최고, 최저 5억, 능력치→연봉 단조성, 72 드래프트 통과·AI 평균 87.7). growth·story·training 등 통과, in-season·scouting·stove는 HEAD와 같은 기존 실패. 난이도 재측정 안 함. 스토리/창단(salary·composite) 그대로, 훈련 v2.21.1 그대로.
 - 파이프라인: build_cards → apply_honors → build_fantasy_salary → build_four_stats → build_recent_cards → build_fantasy_price.
+- 배포: main `4eeace7` → gh-pages `42f0e6e`, 번들 `index-CgDkKVhf.js`. 라이브 QA(`/workspace/qa/fd12_audit.mjs`, 1280·390): v2.22.0, 2024 쵸비 상세 42.5억·능력치 96·교전96/압박94/판단95/운영99, 2026 쵸비 37.5억·95·94/97/94/96, 예산 85억 드래프트 정상(10팀), 콘솔 오류 0. 스크린샷 `/workspace/qa/fd12-live-*.png`.
 
 ### 2026-11-22 · Grok · v2.21.1 교수님 정정: 모든 선수 100까지 성장 가능
 
