@@ -50,7 +50,7 @@ for c in cf["cards"]:
     if recent and c["pkey"] in PREM["players"]:
         v *= PREM["factor"]
     os_ = ov.get((c["pkey"], c["year"]), []) if recent else []
-    est = [o for o in os_ if o["kind"] == "estimate"]
+    est = sorted([o for o in os_ if o["kind"] in ("owner", "estimate")], key=lambda o: o["kind"] != "owner")
     if recent and not est:
         v = min(v, UMAX)
     for o in os_:
@@ -73,5 +73,8 @@ cf["meta"]["fantasySalary"] = {
     "marketCards": n_market,
 }
 CF.write_text(json.dumps(cf, ensure_ascii=False, separators=(",", ":")), "utf-8")
+fmax = max(c["fantasySalary"] for c in cf["cards"] if c["pkey"] == "faker")
+over = [c["id"] for c in cf["cards"] if c["pkey"] != "faker" and c["fantasySalary"] >= fmax]
+assert not over, f"페이커({fmax})보다 비싸거나 같은 카드: {over}"
 top = sorted(cf["cards"], key=lambda c: -c["fantasySalary"])[:12]
 print("market cards", n_market, "top:", [(c["id"], c["fantasySalary"]) for c in top])

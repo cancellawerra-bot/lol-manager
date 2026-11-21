@@ -51,6 +51,8 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
 { const f26 = fantasyPrice(CARDS["faker-2026"]), mx = Math.max(...all.map((c) => fantasyPrice(c)));
   assert.equal(f26, mx, "Faker 2026 is the most expensive fantasy card");
   assert(fantasyPrice(CARDS["chovy-2026"]) < f26, "Chovy below Faker");
+  for (const [id, v] of [["faker-2026", 50], ["zeus-2026", 23], ["gumayusi-2026", 20], ["keria-2026", 20], ["scout-2026", 10]] as const) assert.equal(fantasyPrice(CARDS[id]), v, `owner-set ${id}`);
+  assert(all.every((c) => c.pkey === "faker" || fantasyPrice(c) < f26), "nobody above Faker");
   assert.equal(CARDS["faker-2026"].salary, 50, "story salary unchanged");
   for (const cap of Object.values(BUDGETS)) assert.equal(lockReason(CARDS["faker-2026"], "T1", {}, cap), undefined, `Faker draftable on first pick at ${cap}`); }
 // AI는 능력치 위주: 평균 능력치가 가성비 저가 카드(2012~15 위주)보다 확실히 높아야 함
