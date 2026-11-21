@@ -58,6 +58,8 @@ export interface SeasonCard {
   fantasySalary?: number; market?: boolean; marketNote?: string;
   /** 판타지 드래프트 전용 연도·나이 보정 능력치 (스토리·창단 표시는 cardRating 그대로) */
   fantasyRating?: number;
+  /** v2.20.0 판타지 4대 능력치 (피지컬: 교전 fight·압박 press / 뇌지컬: 판단 judge·운영 ops). null = 기록 없음 */
+  four?: { fight: number | null; press: number | null; judge: number | null; ops: number | null };
   small: boolean; limited: boolean; source: string; metrics: string[]; eligible: boolean;
 }
 export interface CardsFile { meta: { builtAt: string; years: [number, number]; cards: number; eligible: number; minGames: number; eligibleMinGames: number; formula: string; salaryNote: string; sources: string[]; rule: string }; cards: SeasonCard[] }

@@ -532,3 +532,12 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
   .db-bar input,.db-bar select{width:100%;min-width:0}
   .db-bar label{grid-column:1/-1}.db-bar input[type=checkbox]{width:auto}
 }
+/* v2.20.0 4대 능력치 막대 · 목록 '능력치' 라벨 (Grok 2026-11-22) */
+.db-rt{white-space:nowrap;flex:none}
+.four{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.four-g{display:flex;flex-direction:column;gap:6px;min-width:0}
+.four-row{display:grid;grid-template-columns:34px minmax(0,1fr) 46px;align-items:center;gap:6px}
+.four-bar{height:8px;border-radius:5px;background:var(--panel3);overflow:hidden}
+.four-bar i{display:block;height:100%;border-radius:5px}
+.four-v{text-align:right;white-space:nowrap}
+@media (max-width:420px){.four{grid-template-columns:1fr}}

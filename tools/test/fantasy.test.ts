@@ -63,6 +63,15 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
   assert(all.every((c) => fantasyRatingOf(c) >= 60 && fantasyRatingOf(c) <= 99), "fantasy rating range");
   assert(fantasyRatingOf(CARDS["zeus-2022"]) < fantasyRatingOf(CARDS["zeus-2026"]), "older Zeus lower");
   assert.equal(fantasyRatingOf(CARDS["faker-2026"]), cardRating(CARDS["faker-2026"]), "2026 rating unchanged");
+  // v2.20.0 4대 능력치: 모든 카드에 있고, 값은 60–99 정수 또는 null(기록 없음). 4대 평균은 판타지 종합과 1점 이내.
+  for (const c of all) {
+    assert(c.four, `four stats missing ${c.id}`);
+    const vs = (["fight", "press", "judge", "ops"] as const).map((k) => c.four![k]);
+    for (const v of vs) assert(v === null || (Number.isInteger(v) && v >= 60 && v <= 99), `four range ${c.id} ${v}`);
+    const ok = vs.filter((v): v is number => v !== null);
+    if (ok.length) assert(Math.abs(ok.reduce((n, v) => n + v, 0) / ok.length - fantasyRatingOf(c)) <= 1.5, `four avg vs rating ${c.id}`);
+  }
+  assert(all.filter((c) => c.year >= 2015).every((c) => Object.values(c.four!).every((v) => v !== null)), "2015+ cards have all four stats");
   assert.equal(CARDS["faker-2026"].salary, 50, "story salary unchanged");
   for (const cap of Object.values(BUDGETS)) assert.equal(lockReason(CARDS["faker-2026"], "T1", {}, cap), undefined, `Faker draftable on first pick at ${cap}`); }
 // AI는 능력치 위주: 평균 능력치가 가성비 저가 카드(2012~15 위주)보다 확실히 높아야 함

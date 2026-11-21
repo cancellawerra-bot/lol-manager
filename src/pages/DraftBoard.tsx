@@ -82,7 +82,7 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
                   return (
                     <button key={x.id} type="button" className={"db-row" + (r ? " dim" : "") + (detail === x.id ? " cur" : "")} onClick={() => setDetail(x.id)} title={r ?? ""} data-testid={`card-${x.id}`} data-person={x.pkey} data-locked={r ? "1" : "0"}>
                       <span className="db-r1"><b>{cardLabel(x)}</b><span className="gold">{fmtMoney(priceOf(x))}</span></span>
-                      <span className="db-r2"><span className="db-team">{x.team}</span><b style={{ color: ratingColor(rt) }}>{rt}</b></span>
+                      <span className="db-r2"><span className="db-team">{x.team}</span><span className="db-rt">능력치 <b style={{ color: ratingColor(rt) }}>{rt}</b></span></span>
                       {r && <span className="db-lock xs">{r}</span>}
                     </button>
                   );
@@ -97,6 +97,7 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
         <div className="db-modal" role="dialog" aria-label="카드 상세" onClick={() => setDetail(null)} data-testid="card-detail">
           <div className="db-panel" onClick={(e) => e.stopPropagation()}>
             <CardTile c={dc} price={priceOf(dc)} ratingOf={ratingOf} reason={dReason} />
+            <FourStats c={dc} />
             <div className="row gap" style={{ marginTop: 10, justifyContent: "flex-end" }}>
               <button type="button" className="btn" onClick={() => setDetail(null)}>닫기</button>
               <button type="button" className="btn primary" disabled={!!dReason} onClick={() => { setDetail(null); onPick(dc); }} data-testid="detail-pick">지명하기</button>
@@ -104,6 +105,35 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const FOUR_GROUPS: { title: string; items: { k: "fight" | "press" | "judge" | "ops"; n: string }[] }[] = [
+  { title: "피지컬", items: [{ k: "fight", n: "교전" }, { k: "press", n: "압박" }] },
+  { title: "뇌지컬", items: [{ k: "judge", n: "판단" }, { k: "ops", n: "운영" }] },
+];
+
+/** 상세 창: 4대 능력치 막대 (60–99, 기록 없으면 '기록 없음') */
+function FourStats({ c }: { c: SeasonCard }) {
+  if (!c.four) return null;
+  return (
+    <div className="four" data-testid="four-stats">
+      {FOUR_GROUPS.map((g) => (
+        <div key={g.title} className="four-g">
+          <b className="sm">{g.title}</b>
+          {g.items.map((it) => {
+            const v = c.four![it.k];
+            return (
+              <div key={it.k} className="four-row" data-testid={`four-${it.k}`}>
+                <span className="four-n sm">{it.n}</span>
+                <span className="four-bar">{v != null && <i style={{ width: `${Math.max(4, ((v - 60) / 39) * 100)}%`, background: ratingColor(v) }} />}</span>
+                <span className="four-v sm">{v != null ? <b style={{ color: ratingColor(v) }}>{v}</b> : <span className="muted xs">기록 없음</span>}</span>
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
