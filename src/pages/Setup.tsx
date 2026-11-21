@@ -230,7 +230,7 @@ export default function Setup() {
   };
 
   return (
-    <div className="title-wrap">
+    <div className={"title-wrap" + (mode === "fantasy" && (step === "club" || step === "fantasy") ? " fit" : "")}>
       <div className="newc">
         <div className="row between wrap gap">
           <div><a href="#/" className="muted">← 타이틀</a><h1>새 게임</h1></div>
@@ -279,9 +279,9 @@ export default function Setup() {
         {step === "club" && mode === "fantasy" && (
           <div>
             <h2>어느 팀 자리에서 드래프트할까요?</h2>
-            <p className="muted">기존 2026 구단 자리 하나를 맡아 완전히 새로운 로스터를 뽑습니다. 로고는 쓰지 않습니다.</p>
-            <TeamGrid value={team} onChange={setTeam} />
-            <div className="setup-foot"><button className="btn" onClick={() => goStep("mode")}>뒤로</button><button className="btn primary lg" disabled={!team} onClick={startFantasy}>드래프트 순서</button></div>
+            <p className="muted sm">기존 2026 구단 자리 하나를 맡아 완전히 새로운 로스터를 뽑습니다. 로고는 쓰지 않습니다. 아래 명단은 그 팀의 실제 2026 선수(참고용)입니다.</p>
+            <TeamGrid value={team} onChange={setTeam} compact />
+            <div className="setup-foot sticky"><button className="btn" onClick={() => goStep("mode")}>뒤로</button><button className="btn primary lg" disabled={!team} onClick={startFantasy}>드래프트 순서</button></div>
           </div>
         )}
 
@@ -349,8 +349,20 @@ export default function Setup() {
   );
 }
 
-function TeamGrid({ value, onChange }: { value: string; onChange: (t: string) => void }) {
+function TeamGrid({ value, onChange, compact }: { value: string; onChange: (t: string) => void; compact?: boolean }) {
   const teams = useMemo(() => [...CORE.teams].sort((a, b) => b.gw / (b.gw + b.gl) - a.gw / (a.gw + a.gl)), []);
+  if (compact) return (
+    <div className="team-grid compact">
+      {teams.map((t) => (
+        <button key={t.short} className={"team-card" + (value === t.short ? " on" : "")} onClick={() => onChange(t.short)} data-testid={`team-${t.short}`} style={{ ["--tc" as string]: t.color }} aria-pressed={value === t.short}>
+          <div className="tc-head"><TeamChip t={t.short} size="sm" /><b className="tc-name">{t.ko}</b><span className="muted xs tc-rec">{t.gw}승 {t.gl}패</span></div>
+          <div className="tc-roster">
+            {t.starters.map((k, i) => <span key={k}><small>{POS_KO[i]}</small><span className="tc-pl">{PL[k].name}</span><Ovr p={PL[k]} /></span>)}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
   return (
     <div className="team-grid">
       {teams.map((t) => (

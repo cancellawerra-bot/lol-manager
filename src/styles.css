@@ -471,4 +471,30 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 @keyframes mmhl{50%{transform:scale(1.35)}}
 .mm-ch.out{opacity:.35;filter:grayscale(1)}
 .mm-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
-@media (max-width:860px){.bc-body{grid-template-columns:minmax(0,1fr)}.mm-field{max-width:420px;margin:0 auto}}
+@media (max-width:860px){.bc-body{grid-template-columns:minmax(0,1fr)}.mm-field{max-width:420px;margin:0 auto}}/* v2.16.1 판타지 팀 자리·드래프트 순서: 한 화면에 들어오게 (Grok 2026-11-22) */
+.title-wrap.fit{padding-top:14px;min-height:100vh}
+.title-wrap.fit .newc h1{font-size:22px;margin:2px 0}
+.title-wrap.fit .newc h2{font-size:19px;margin:4px 0 2px}
+.title-wrap.fit .newc > div > p.muted{margin:2px 0 6px}
+.title-wrap.fit .fan{margin-top:8px;padding:8px 4px 10px;font-size:10.5px;line-height:1.35}
+.title-wrap.fit .fan p{margin:1px 0}.title-wrap.fit .fan .links{margin-top:3px}
+.team-grid.compact{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:8px 0}
+.team-grid.compact .team-card{padding:8px 10px 9px;gap:5px;border-radius:12px}
+.team-grid.compact .team-card:hover{transform:none}
+.team-grid.compact .tc-head{display:flex;align-items:center;gap:6px;min-width:0}
+.team-grid.compact .tc-name{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.team-grid.compact .tc-rec{white-space:nowrap}
+.team-grid.compact .tc-roster{gap:1px;font-size:12.5px;line-height:1.35}
+.team-grid.compact .tc-roster > span{gap:6px;min-width:0}
+.team-grid.compact .tc-roster small{width:26px;flex:none}
+.team-grid.compact .tc-pl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.setup-foot.sticky{position:sticky;bottom:0;z-index:5;margin:8px 0 0;padding:10px 0;background:rgba(7,11,18,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.title-wrap.fit .draft-order{margin:4px 0}
+@media (max-width:860px){
+  .team-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .team-grid.compact .team-card{padding:7px 8px}
+  .team-grid.compact .tc-roster{font-size:12px}
+  .team-grid.compact .tc-rec{display:none}
+  .setup-foot.sticky{flex-wrap:nowrap}
+  .setup-foot.sticky .btn{width:auto;flex:1}
+}
