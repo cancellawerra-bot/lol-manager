@@ -592,7 +592,7 @@ export function academyPlayer(team: string, pos: number, year: number): string {
   const key = `acad-${team}-${year}-${pos}`;
   if (!PL[key]) {
     const band = 30;
-    const posKo = ["탑", "정글", "미드", "원딜", "서폿"][pos] ?? "연습생";
+    const posKo = ["탑", "정글", "미드", "원딜", "서포터"][pos] ?? "연습생";
     PL[key] = {
       key, name: `연습생 ${posKo}`, full: "연습생", team: -1, pos: pos as 0 | 1 | 2 | 3 | 4,
       games: 0, gamesPos: 0, wins: 0, teamsPlayed: {}, m: { gd: null, csd: null, xpd: null, kda: 0, kp: 0, dpm: 0, dsh: 0, gpm: 0, cspm: 0, vspm: 0, wk: 0, pool: 0 },
@@ -1098,7 +1098,7 @@ export function ghostLineup(tag: string, _year: number, diff: StoryDiff = "norma
     const zFight = (band - 50) / 20;
     if (!PL[key]) {
       PL[key] = {
-        key, name: `${intlName(tag)} ${["탑", "정글", "미드", "원딜", "서폿"][pos]}`, full: intlName(tag), team: -1, pos: pos as 0 | 1 | 2 | 3 | 4,
+        key, name: `${intlName(tag)} ${["탑", "정글", "미드", "원딜", "서포터"][pos]}`, full: intlName(tag), team: -1, pos: pos as 0 | 1 | 2 | 3 | 4,
         games: 0, gamesPos: 0, wins: 0, teamsPlayed: {}, m: { gd: null, csd: null, xpd: null, kda: 0, kp: 0, dpm: 0, dsh: 0, gpm: 0, cspm: 0, vspm: 0, wk: 0, pool: 0 },
         kdaRaw: [0, 0, 0], pool: [], z: { lane: 0, fight: zFight, farm: 0, vision: 0, pool: 0, ovr: zFight },
         pct: { lane: band, fight: band, farm: band, vision: 50, pool: 50, ovr: band },

@@ -22,7 +22,7 @@ export default function Method() {
           <li>2026 LCK 경기가 없는 로스터 행(Team CJ Entus Rolster, Team Samsung Telecom)은 뺐습니다.</li>
           <li>이름이 바뀐 팀은 합쳤습니다: BRION → HANJIN BRION, DRX → Kiwoom DRX.</li>
           <li>선수는 경기 기록의 Riot ID(팀 약칭 뒤 이름)로 묶고, <b>마지막으로 뛴 팀</b>에 배정했습니다. 시즌 중 팀을 옮긴 선수는 선수 카드에 팀별 경기 수가 나옵니다.</li>
-          <li>포지션은 경기 기록의 참가자 순서(탑·정글·미드·원딜·서폿)로 정하고, 가장 많이 뛴 포지션의 기록만 능력치에 씁니다.</li>
+          <li>포지션은 경기 기록의 참가자 순서(탑·정글·미드·원딜·서포터)로 정하고, 가장 많이 뛴 포지션의 기록만 능력치에 씁니다.</li>
           <li>AI 팀의 기본 주전은 포지션별 2026 LCK 출전 수가 가장 많은 선수입니다.</li>
         </ul>
         <h3>3. 선수 능력치</h3>

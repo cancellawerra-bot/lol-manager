@@ -42,7 +42,7 @@ export function loadRanked(): Promise<Ranked> {
   return rankedP;
 }
 
-export const POS_KO = ["탑", "정글", "미드", "원딜", "서폿"];
+export const POS_KO = ["탑", "정글", "미드", "원딜", "서포터"];
 export const POS_EN = ["TOP", "JGL", "MID", "BOT", "SUP"];
 export const POS_CARD = ["TOP", "JNG", "MID", "BOT", "SUP"];
 export const TAG_KO: Record<string, string> = { F: "전사", T: "탱커", M: "마법사", A: "암살자", K: "원거리 딜러", S: "서포터" };

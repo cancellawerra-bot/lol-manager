@@ -488,7 +488,7 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
   return (
     <div>
       <h2>판타지 드래프트</h2>
-      <p className="muted">5라운드 스네이크(1→10, 10→1), 포지션마다 한 명. 예산 {cap}억, 같은 사람 한 장. 가격은 실제 시장 기준 추정 연봉(2024–26 보도 추정치 우선, 「시장 추정치」 표시)이며 게임용 가상 금액입니다. 남은 포지션을 가장 싸게 채울 돈은 남겨 두도록 「이번 픽 최대」 금액을 넘는 카드는 잠깁니다. {reshuffle > 0 && !started ? <>순서를 다시 섞을 수 있습니다 ({reshuffle}번 남음).</> : null}</p>
+      <p className="muted">5라운드 스네이크(1→10, 10→1), 포지션마다 한 명. 예산 {cap}억, 같은 사람 한 장. 가격은 실제 시장 기준 추정 연봉이며 게임용 가상 금액입니다. 남은 포지션을 가장 싸게 채울 돈은 남겨 두도록 「이번 픽 최대」 금액을 넘는 카드는 잠깁니다. {reshuffle > 0 && !started ? <>순서를 다시 섞을 수 있습니다 ({reshuffle}번 남음).</> : null}</p>
       {!started && (
         <div className="card">
           <ol className="draft-order">{order.map((t) => <li key={t} className={t === me ? "me" : ""}>{t}{t === me ? " · 나" : ""}</li>)}</ol>

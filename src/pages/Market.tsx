@@ -11,11 +11,10 @@ import { franchisePlayers } from "../game/story";
 import InSeasonMarket from "./InSeasonMarket";
 import { OpeningScouting } from "./Scouting";
 
-export function CardTile({ c, on, disabled, reason, onClick, price, personView, market }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean; market?: boolean }) {
+export function CardTile({ c, on, disabled, reason, onClick, price, personView }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean }) {
   return (
     <button type="button" className={"card-tile" + (on ? " on" : "") + (disabled ? " dim" : "")} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
       <div className="row between"><b>{personView ? c.name : cardLabel(c)}</b><span className="gold">{fmtMoney(price ?? c.salary)}</span></div>
-      {market && c.market && <div className="xs" data-testid="market-est"><span className="tag good">시장 추정치</span> <span className="muted">{c.marketNote}</span></div>}
       <div className="muted sm">{personView && `${c.year} 기록 · `}{POS_KO[c.posIdx]} · {c.team} · {c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""}</div>
       <div className="sm">{c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`} · 능력치 <b style={{ color: ratingColor(cardRating(c)) }}>{cardRating(c)}</b>{c.honors?.length ? <span className="muted"> · {c.honors.join(", ")}</span> : null}</div>
       <div className="tile-metrics xs muted">
@@ -107,7 +106,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
       <div className="card-grid">
         {shown.slice(0, hideOwn ? 240 : 240).map((c) => {
           const r = reason(c);
-          return <CardTile key={c.id} c={c} on={selected.includes(c.id)} disabled={!!r} reason={r} onClick={() => toggle(c)} price={price(c)} personView={!!seasonYear} market={!!draft} />;
+          return <CardTile key={c.id} c={c} on={selected.includes(c.id)} disabled={!!r} reason={r} onClick={() => toggle(c)} price={price(c)} personView={!!seasonYear} />;
         })}
       </div>
       {seasonYear && <p className="muted sm">{seasonYear}년 기준 선수당 한 명만 표시합니다. 시즌 기록은 연도에 맞춰 자동 적용하며, 해당 연도 기록이 없으면 가장 가까운 과거 기록을 사용합니다.</p>}
