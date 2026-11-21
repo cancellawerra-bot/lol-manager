@@ -74,7 +74,9 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
     if (selected.length >= 8) return "로스터는 최대 8명입니다";
     if (moneyRound(used + price(c)) > moneyRound(cap)) return "예산을 초과합니다";
   };
-  const shown = draft && view.availOnly ? list.filter((c) => !draft.lock(c)) : list;
+  // 드래프트: 지금 지명할 수 있는 카드를 먼저 보여 주고(정렬 순서 유지), 잠긴 카드는 뒤에 흐리게 둡니다.
+  const avail = draft ? list.filter((c) => !draft.lock(c)) : list;
+  const shown = !draft ? list : view.availOnly ? avail : [...avail, ...list.filter((c) => !!draft.lock(c))];
   const years = useMemo(() => [...new Set(Object.values(CARDS).filter((c) => !yearMax || c.year <= yearMax).map((c) => c.year))].sort((a, b) => b - a), [yearMax]);
   return (
     <div data-testid={seasonYear ? "franchise-market" : "card-market"}>
@@ -99,7 +101,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
           </select>
           {draft && <label className="sm row gap" style={{ gap: 4 }}><input type="checkbox" checked={!!view.availOnly} onChange={(e) => setView({ availOnly: e.target.checked })} data-testid="avail-only" />지명 가능한 카드만</label>}
         </div>
-        <div className="sm">{draft && <b className="gold" data-testid="pick-max">{draft.headline} · </b>}사용 {fmtMoney(used)} / 한도 {fmtMoney(cap)} · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
+        <div className="sm">{draft && <b className="gold" data-testid="pick-max">{draft.headline} · 지명 가능 {fmt(avail.length)}장 · </b>}사용 {fmtMoney(used)} / 한도 {fmtMoney(cap)} · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
       </div>
       <div className="card-grid">
         {shown.slice(0, hideOwn ? 240 : 240).map((c) => {
