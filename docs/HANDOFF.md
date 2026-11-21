@@ -23,6 +23,7 @@
 - **캐시 수정:** `src/data.ts` 데이터 fetch `cache: "force-cache"` → `"no-cache"`(ETag 재확인). 이전에는 새 번들이 옛 `cards.json`을 써서 `fantasyRating`이 없어 보정 전 능력치(예: 2025 Chovy 96)가 보일 수 있었음.
 - **안 바꾼 것:** 판타지 연봉·연도 보정(v2.18), 예산 60/55/54, 스토리·창단 모드, 경기 계산. 난이도 재측정 안 함.
 - **확인함:** tsc·build 통과, `fantasy.test.ts` 72 드래프트 통과, story 테스트 통과. QA 스크립트 `/workspace/qa/fd8_audit.mjs`(Gen.G 필터로 드래프트 끝까지).
+- **배포:** main@`0fb62be` → gh-pages@`193b9d0`, 라이브 번들 `assets/index-h1QFMAW_.js`(2.19.0). 공개 사이트 1280×800·390×844: Gen.G 필터로 드래프트 끝까지(필터 차례 간 유지, 행 팀은 Gen.G·Samsung·MVP·KSV 계열만), 콘솔 오류 0, 가로 넘침 없음, 「서포터」 표기, 2025 Chovy 보정값 95 표시. 스크린샷 `/workspace/qa/fd8-live-*.png`.
 
 ### 2026-11-22 · Grok · v2.18.0 판타지 카드 연도·나이 보정
 
