@@ -28,23 +28,35 @@ export function CardTile({ c, on, disabled, reason, onClick, price, personView }
   );
 }
 
-export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf, seasonYear }: { cap: number; selected: string[]; onChange: (ids: string[]) => void; hideOwn?: boolean; yearMax?: number; priceOf?: (c: SeasonCard) => number; seasonYear?: number }) {
-  const [q, setQ] = useState("");
-  const [pos, setPos] = useState<number | "all">("all");
-  const [year, setYear] = useState<number | "all">("all");
-  const [sort, setSort] = useState<"salary" | "salaryAsc" | "pct" | "year">("salary");
+export type MarketSort = "salary" | "salaryAsc" | "pct" | "year";
+export type MarketView = { q: string; pos: number | "all" | "open"; year: number | "all"; sort: MarketSort; availOnly?: boolean };
+/** 판타지 드래프트용: 카드마다 잠금 이유, 남은 포지션, 한도 문구를 밖에서 정합니다. */
+export type DraftRules = { lock: (c: SeasonCard) => string | undefined; open: number[]; headline: string };
+
+export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf, seasonYear, view: viewProp, onView, draft }: { cap: number; selected: string[]; onChange: (ids: string[]) => void; hideOwn?: boolean; yearMax?: number; priceOf?: (c: SeasonCard) => number; seasonYear?: number; view?: MarketView; onView?: (v: MarketView) => void; draft?: DraftRules }) {
+  const [own, setOwn] = useState<MarketView>({ q: "", pos: "all", year: "all", sort: "salary" });
+  const view = viewProp ?? own;
+  const setView = (patch: Partial<MarketView>): void => { const v = { ...view, ...patch }; if (onView) onView(v); else setOwn(v); };
+  const { q, pos, year, sort } = view;
+  const setQ = (x: string): void => setView({ q: x });
+  const setPos = (x: MarketView["pos"]): void => setView({ pos: x });
+  const setYear = (x: MarketView["year"]): void => setView({ year: x });
+  const setSort = (x: MarketSort): void => setView({ sort: x });
+  const openKey = draft ? draft.open.join(",") : "";
   const list = useMemo(() => {
     let arr = seasonYear ? franchisePlayers(seasonYear) : Object.values(CARDS);
     if (yearMax) arr = arr.filter((c) => c.year <= yearMax);
-    if (pos !== "all") arr = arr.filter((c) => c.posIdx === pos);
+    if (pos === "open") { const op = openKey.split(",").filter(Boolean).map(Number); arr = arr.filter((c) => op.includes(c.posIdx)); }
+    else if (pos !== "all") arr = arr.filter((c) => c.posIdx === pos);
     if (!seasonYear && year !== "all") arr = arr.filter((c) => c.year === year);
     if (q.trim()) { const t = q.trim().toLowerCase(); arr = arr.filter((c) => c.name.toLowerCase().includes(t) || String(c.year).includes(t) || c.team.toLowerCase().includes(t)); }
-    arr = [...arr].sort((a, b) => { const pa = priceOf ? priceOf(a) : a.salary, pb = priceOf ? priceOf(b) : b.salary; return sort === "salary" ? pb - pa : sort === "salaryAsc" ? pa - pb : sort === "pct" ? b.percentile - a.percentile : b.year - a.year || pb - pa; });
+    arr = [...arr].sort((a, b) => { const pa = priceOf ? priceOf(a) : a.salary, pb = priceOf ? priceOf(b) : b.salary; return sort === "salary" ? pb - pa : sort === "salaryAsc" ? pa - pb : sort === "pct" ? cardRating(b) - cardRating(a) || b.percentile - a.percentile || pb - pa : b.year - a.year || pb - pa; });
     return arr;
-  }, [q, pos, year, sort, yearMax, priceOf, seasonYear]);
+  }, [q, pos, year, sort, yearMax, priceOf, seasonYear, openKey]);
   const price = (c: SeasonCard): number => priceOf ? priceOf(c) : c.salary;
   const used = selected.reduce((n, id) => n + (CARDS[id] ? price(CARDS[id]) : 0), 0);
   const toggle = (c: SeasonCard): void => {
+    if (draft) { if (!selected.includes(c.id) && !draft.lock(c)) onChange([...selected, c.id]); return; }
     if (selected.includes(c.id)) { onChange(selected.filter((x) => x !== c.id)); return; }
     const starters = selected.filter((id) => CARDS[id]);
     if (starters.filter((id) => CARDS[id].posIdx === c.posIdx).length >= 2 && !selected.includes(c.id)) {
@@ -57,10 +69,12 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
   };
   const reason = (c: SeasonCard): string | undefined => {
     if (selected.includes(c.id)) return;
+    if (draft) return draft.lock(c);
     if (personUsed(selected, c.pkey)) return seasonYear ? "이미 영입한 선수입니다" : "같은 선수의 다른 시즌 카드가 이미 있습니다";
     if (selected.length >= 8) return "로스터는 최대 8명입니다";
     if (moneyRound(used + price(c)) > moneyRound(cap)) return "예산을 초과합니다";
   };
+  const shown = draft && view.availOnly ? list.filter((c) => !draft.lock(c)) : list;
   const years = useMemo(() => [...new Set(Object.values(CARDS).filter((c) => !yearMax || c.year <= yearMax).map((c) => c.year))].sort((a, b) => b - a), [yearMax]);
   return (
     <div data-testid={seasonYear ? "franchise-market" : "card-market"}>
@@ -68,7 +82,8 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
       <div className="row between wrap gap market-bar">
         <div className="row wrap gap">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={seasonYear ? "선수 이름·팀 검색" : "이름·팀·연도 검색"} aria-label={seasonYear ? "선수 검색" : "카드 검색"} />
-          <select value={pos} onChange={(e) => setPos(e.target.value === "all" ? "all" : Number(e.target.value))} data-testid="card-pos">
+          <select value={pos} onChange={(e) => setPos(e.target.value === "all" || e.target.value === "open" ? e.target.value : Number(e.target.value))} data-testid="card-pos">
+            {draft && <option value="open">남은 포지션 ({draft.open.map((i) => POS_KO[i]).join("·") || "없음"})</option>}
             <option value="all">전 포지션</option>
             {POS_KO.map((n, i) => <option key={n} value={i}>{n}</option>)}
           </select>
@@ -79,20 +94,22 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
           <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} data-testid="card-sort">
             <option value="salary">연봉 높은 순</option>
             <option value="salaryAsc" data-testid="sort-asc">연봉 낮은 순</option>
-            <option value="pct">능력치 순</option>
+            <option value="pct">능력치 높은 순</option>
             {!seasonYear && <option value="year">최신 연도 순</option>}
           </select>
+          {draft && <label className="sm row gap" style={{ gap: 4 }}><input type="checkbox" checked={!!view.availOnly} onChange={(e) => setView({ availOnly: e.target.checked })} data-testid="avail-only" />지명 가능한 카드만</label>}
         </div>
-        <div className="sm">사용 {fmtMoney(used)} / 한도 {fmtMoney(cap)} · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
+        <div className="sm">{draft && <b className="gold" data-testid="pick-max">{draft.headline} · </b>}사용 {fmtMoney(used)} / 한도 {fmtMoney(cap)} · {selected.length}명 · {CARDS_FILE.meta.salaryNote}</div>
       </div>
       <div className="card-grid">
-        {list.slice(0, hideOwn ? 240 : 240).map((c) => {
+        {shown.slice(0, hideOwn ? 240 : 240).map((c) => {
           const r = reason(c);
           return <CardTile key={c.id} c={c} on={selected.includes(c.id)} disabled={!!r} reason={r} onClick={() => toggle(c)} price={price(c)} personView={!!seasonYear} />;
         })}
       </div>
       {seasonYear && <p className="muted sm">{seasonYear}년 기준 선수당 한 명만 표시합니다. 시즌 기록은 연도에 맞춰 자동 적용하며, 해당 연도 기록이 없으면 가장 가까운 과거 기록을 사용합니다.</p>}
-      {list.length > 240 && <p className="muted sm">검색·필터로 더 좁혀 주세요. {fmt(list.length)}{seasonYear ? "명" : "장"} 중 240{seasonYear ? "명" : "장"}만 표시합니다.</p>}
+      {draft && shown.length === 0 && <p className="muted sm">조건에 맞는 카드가 없습니다. 필터를 바꿔 주세요.</p>}
+      {shown.length > 240 && <p className="muted sm">검색·필터로 더 좁혀 주세요. {fmt(shown.length)}{seasonYear ? "명" : "장"} 중 240{seasonYear ? "명" : "장"}만 표시합니다.</p>}
     </div>
   );
 }

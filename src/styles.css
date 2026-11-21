@@ -376,6 +376,7 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 .pog-card{background:linear-gradient(180deg,rgba(233,196,106,.16),var(--panel));border:1px solid var(--gold);border-radius:16px;padding:22px 26px;min-width:280px}
 .draft-order{columns:2;margin:8px 0}
 .draft-order .me{color:var(--teal);font-weight:800}
+.draft-slots{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.draft-slots .tag{margin-left:0;white-space:normal}
 .help-page{max-width:860px}.help-page h1{margin:8px 0 16px}.help-page h2{margin:22px 0 8px;font-size:18px}
 .sched-grid select{width:100%;min-width:0;padding:4px 6px;font-size:13px}
 @media (max-width:860px){

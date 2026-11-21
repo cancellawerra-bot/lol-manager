@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { CARDS, CORE, PL, TM, POS_KO, cardLabel, fmt } from "../data";
-import { BUDGETS, personUsed, rosterSalary, weakestTeam, type Diff } from "../game/cards";
+import { BUDGETS, rosterSalary, weakestTeam, type Diff } from "../game/cards";
 import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMoney, franchisePlayers } from "../game/story";
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
 import { slots, setSave } from "../store";
-import { CardMarket } from "./Market";
+import { CardMarket, type DraftRules, type MarketView } from "./Market";
+import { FANTASY_ROUNDS, aiPick, applyPick, ctxLockReason, ctxPickMax, draftCtx, lockReason, whoPicks } from "../game/fantasy";
+import { Rng } from "../game/rng";
 import { FanNotice, Ovr, TeamChip } from "../ui";
 import { go } from "../nav";
 import type { SeasonCard } from "../types";
@@ -125,66 +127,30 @@ export default function Setup() {
     setReshuffle((n) => n - 1);
   };
 
-  const aiPickFor = (_short: string, used: string[]): string | undefined => {
-    const have = used;
-    const people = new Set(have.map((id) => CARDS[id].pkey));
-    const spent = rosterSalary(have);
-    const needPos = [0, 1, 2, 3, 4].find((i) => !have.some((id) => CARDS[id].posIdx === i));
-    const cands = Object.values(CARDS).filter((c) => !people.has(c.pkey) && spent + c.salary <= cap && (needPos == null || c.posIdx === needPos) && !c.small)
-      .sort((a, b) => (b.composite / Math.max(1, b.salary)) - (a.composite / Math.max(1, a.salary)));
-    return cands[0]?.id;
-  };
-
-  const applyFantasyPick = (id: string, ord: string[], rosters: Record<string, string[]>, round: number, pick: number): { rosters: Record<string, string[]>; round: number; pick: number } => {
-    const snake = (r: number): string[] => (r % 2 === 0 ? ord : [...ord].reverse());
-    const who = snake(round)[pick];
-    const nextR = { ...rosters, [who]: [...(rosters[who] ?? []), id] };
-    let r = round, p = pick + 1;
-    if (p >= 10) { r += 1; p = 0; }
-    return { rosters: nextR, round: r, pick: p };
-  };
-
-  const onFantasyUser = (c: SeasonCard): void => {
-    const snake = (r: number): string[] => (r % 2 === 0 ? order : [...order].reverse());
-    const who = snake(fRound)[fPick];
-    if (who !== team) return;
-    const have = fRosters[team] ?? [];
-    if (personUsed(have, c.pkey) || rosterSalary(have) + c.salary > cap || have.length >= 6) return;
-    if (have.some((id) => CARDS[id].posIdx === c.posIdx) && have.length < 5) { /* allow later bench */ }
-    let st = applyFantasyPick(c.id, order, fRosters, fRound, fPick);
-    // auto AI until user again or 5 rounds done (50 picks) + maybe 6th for some
+  const fantasyTick = (start: { rosters: Record<string, string[]>; round: number; pick: number }): void => {
+    // AI 차례를 하나씩 진행하다가 우리 차례이거나 드래프트가 끝나면 멈춥니다.
     setFBusy(true);
-    const tick = (cur: typeof st): void => {
-      if (cur.round >= 5) { setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick); setFBusy(false); setPicks(cur.rosters[team] ?? []); return; }
-      const w = (cur.round % 2 === 0 ? order : [...order].reverse())[cur.pick];
+    const rng = new Rng((Date.now() ^ (Math.random() * 1e9)) >>> 0);
+    const tick = (cur: typeof start): void => {
+      if (cur.round >= FANTASY_ROUNDS) { setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick); setFBusy(false); setPicks(cur.rosters[team] ?? []); return; }
+      const w = whoPicks(order, cur.round, cur.pick)!;
       if (w === team) { setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick); setFBusy(false); return; }
-      const id = aiPickFor(w, cur.rosters[w] ?? []);
-      if (!id) { // skip
-        let r = cur.round, p = cur.pick + 1; if (p >= 10) { r += 1; p = 0; }
-        cur = { rosters: cur.rosters, round: r, pick: p };
-      } else cur = applyFantasyPick(id, order, cur.rosters, cur.round, cur.pick);
+      cur = applyPick(aiPick(w, cur.rosters, cap, rng), order, cur.rosters, cur.round, cur.pick);
       setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick);
       setTimeout(() => tick(cur), 40);
     };
-    tick(st);
+    tick(start);
+  };
+
+  const onFantasyUser = (c: SeasonCard): void => {
+    if (fBusy || whoPicks(order, fRound, fPick) !== team) return;
+    if (lockReason(c, team, fRosters, cap)) return;
+    fantasyTick(applyPick(c.id, order, fRosters, fRound, fPick));
   };
 
   const kickFantasy = (): void => {
     if (fBusy) return;
-    setFBusy(true);
-    const tick = (cur: { rosters: Record<string, string[]>; round: number; pick: number }): void => {
-      if (cur.round >= 5) { setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick); setFBusy(false); setPicks(cur.rosters[team] ?? []); return; }
-      const w = (cur.round % 2 === 0 ? order : [...order].reverse())[cur.pick];
-      if (w === team) { setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick); setFBusy(false); return; }
-      const id = aiPickFor(w, cur.rosters[w] ?? []);
-      if (!id) {
-        let r = cur.round, p = cur.pick + 1; if (p >= 10) { r += 1; p = 0; }
-        cur = { rosters: cur.rosters, round: r, pick: p };
-      } else cur = applyFantasyPick(id, order, cur.rosters, cur.round, cur.pick);
-      setFRosters(cur.rosters); setFRound(cur.round); setFPick(cur.pick);
-      setTimeout(() => tick(cur), 40);
-    };
-    tick({ rosters: fRosters, round: fRound, pick: fPick });
+    fantasyTick({ rosters: fRosters, round: fRound, pick: fPick });
   };
 
   const startCareer = (): void => {
@@ -495,29 +461,40 @@ function FantasyBoard({ order, reshuffle, onReshuf, round, pick, rosters, me, ca
   onPick: (c: SeasonCard) => void; onKick: () => void; onBack: () => void; onDone: () => void;
 }) {
   const [started, setStarted] = useState(false);
-  const snake = round % 2 === 0 ? order : [...order].reverse();
-  const who = round < 5 ? snake[pick] : "";
+  // 필터·정렬은 차례가 바뀌어도 그대로 둡니다 (기본: 남은 포지션 · 능력치 높은 순).
+  const [view, setView] = useState<MarketView>({ q: "", pos: "open", year: "all", sort: "pct" });
+  const who = whoPicks(order, round, pick) ?? "";
   const mine = rosters[me] ?? [];
-  const done = round >= 5;
+  const done = round >= FANTASY_ROUNDS;
+  const ctx = useMemo(() => draftCtx(me, rosters, cap), [me, rosters, cap]);
+  const teamName = (t: string): string => TM[t]?.ko ?? t;
+  const max = ctx.open.length ? Math.max(...ctx.open.map((p) => ctxPickMax(ctx, p))) : 0;
+  const rules: DraftRules = { lock: (c) => ctxLockReason(c, ctx, teamName), open: ctx.open, headline: `이번 픽 최대 ${fmtMoney(Math.max(0, max))}` };
+  const slots = POS_KO.map((n, i) => ({ n, id: mine.find((id) => CARDS[id]?.posIdx === i) }));
   return (
     <div>
       <h2>판타지 드래프트</h2>
-      <p className="muted">5라운드 스네이크(1→10, 10→1). 예산 {cap}억, 같은 사람 한 장. {reshuffle > 0 && !started ? <>순서를 다시 섞을 수 있습니다 ({reshuffle}번 남음).</> : null}</p>
+      <p className="muted">5라운드 스네이크(1→10, 10→1), 포지션마다 한 명. 예산 {cap}억, 같은 사람 한 장. 남은 포지션을 가장 싸게 채울 돈은 남겨 두도록 「이번 픽 최대」 금액을 넘는 카드는 잠깁니다. {reshuffle > 0 && !started ? <>순서를 다시 섞을 수 있습니다 ({reshuffle}번 남음).</> : null}</p>
       {!started && (
         <div className="card">
-          <ol className="draft-order">{order.map((t, i) => <li key={t} className={t === me ? "me" : ""}>{i + 1}. {t}{t === me ? " · 나" : ""}</li>)}</ol>
+          <ol className="draft-order">{order.map((t) => <li key={t} className={t === me ? "me" : ""}>{t}{t === me ? " · 나" : ""}</li>)}</ol>
           <div className="row gap"><button className="btn" disabled={reshuffle <= 0} onClick={onReshuf}>순서 다시 섞기</button>
             <button className="btn primary" onClick={() => { setStarted(true); onKick(); }} data-testid="draft-start">드래프트 시작</button></div>
         </div>
       )}
+      {started && (
+        <div className="draft-slots" data-testid="draft-slots">
+          {slots.map((x) => <span key={x.n} className={"tag" + (x.id ? " good" : " warn")}>{x.n} {x.id ? `${cardLabel(CARDS[x.id])} ${fmtMoney(CARDS[x.id].salary)}` : "비어 있음"}</span>)}
+          <span className="tag">사용 {fmtMoney(ctx.spent)} / {fmtMoney(cap)}</span>
+        </div>
+      )}
       {started && !done && (
         <>
-          <p><b>{round + 1}라운드 · {pick + 1}번째 픽</b> — {who === me ? "우리 차례입니다" : `${who} 차례`}{busy ? " · 진행 중…" : ""}</p>
-          {who === me && !busy && <CardMarket cap={cap} selected={mine} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
-          <div className="picked-line">{mine.map((id) => <span key={id} className="tag">{cardLabel(CARDS[id])}</span>)}</div>
+          <p data-testid="draft-turn"><b>{round + 1}라운드 · {pick + 1}번째 픽</b> — {who === me ? <>우리 차례입니다 · <span className="gold">{rules.headline}</span></> : `${teamName(who)} 차례`}{busy ? " · 진행 중…" : ""}</p>
+          {who === me && !busy && <CardMarket cap={cap} selected={mine} view={view} onView={setView} draft={rules} onChange={(ids) => { const add = ids.find((x) => !mine.includes(x)); if (add) onPick(CARDS[add]); }} />}
         </>
       )}
-      {done && <p className="ok">드래프트가 끝났습니다. 우리 팀 {mine.length}명, 연봉 합 {rosterSalary(mine)}억.</p>}
+      {done && <p className="ok">드래프트가 끝났습니다. 우리 팀 {mine.length}명, 연봉 합 {fmtMoney(ctx.spent)}.</p>}
       <div className="setup-foot"><button className="btn" onClick={onBack}>뒤로</button>{done && <button className="btn primary lg" onClick={onDone}>다음 · 감독 계약서</button>}</div>
     </div>
   );
