@@ -6,6 +6,7 @@
 v2.17: 능력치 곡선 + 2024–26 보도 추정치. v2.18.0(2026-11-22, Grok, 오너 지시): 연도별 보정(옛 시즌 연봉 크게·능력치 소폭 하향),
 어린 선수(만 22세 이하) 성장 곡선, 페이커 2022–25 25억 고정, 같은 시즌 페이커 초과 금지. 공식은 tools/market_salaries.json "yearAdjust".
 스토리·창단 모드가 쓰는 salary·composite·percentile은 건드리지 않습니다.
+v2.22.0: 여기서 쓴 fantasySalary는 build_fantasy_price.py가 덮어씁니다(교수님 결정: 기본 5억 + 능력치 가산). 2012–2023 fantasyRating은 여기 값을 그대로 씁니다.
 """
 import json, math, re
 from datetime import date

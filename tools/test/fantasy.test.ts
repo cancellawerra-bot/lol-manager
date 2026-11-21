@@ -47,18 +47,17 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
   const sigs = new Set(Object.values(r).map((x) => [...x].sort().join(",")));
   assert.equal(sigs.size, 10, "AI rosters distinct");
 }
-// 시장 추정 연봉(v2.17.0): 페이커 2024–26이 최고가, 쵸비는 페이커보다 낮음, 스토리용 salary는 그대로
+// v2.22.0 연봉 = 기본 5억 + 그 시즌 능력치 가산 (교수님 결정). 2026 페이커 50억만 지정값, 2026은 페이커가 최고가.
 { const f26 = fantasyPrice(CARDS["faker-2026"]), mx = Math.max(...all.map((c) => fantasyPrice(c)));
+  assert.equal(f26, 50, "Faker 2026 owner-set 50");
   assert.equal(f26, mx, "Faker 2026 is the most expensive fantasy card");
-  assert(fantasyPrice(CARDS["chovy-2026"]) < f26, "Chovy below Faker");
-  for (const [id, v] of [["faker-2026", 50], ["zeus-2026", 23], ["gumayusi-2026", 20], ["keria-2026", 20], ["scout-2026", 10]] as const) assert.equal(fantasyPrice(CARDS[id]), v, `owner-set ${id}`);
-  assert(all.every((c) => c.pkey === "faker" || fantasyPrice(c) < f26), "nobody above Faker");
-  // v2.18.0: 같은 시즌 페이커 카드보다 비싼 카드 없음 (연도별)
-  const fk: Record<number, number> = {};
-  for (const c of all) if (c.pkey === "faker") fk[c.year] = Math.max(fk[c.year] ?? 0, fantasyPrice(c));
-  const over = all.filter((c) => c.pkey !== "faker" && fk[c.year] !== undefined && fantasyPrice(c) >= fk[c.year]);
-  assert.equal(over.length, 0, `same-season Faker cap: ${over.slice(0, 5).map((c) => c.id).join(",")}`);
-  for (const [id, v] of [["zeus-2025", 20], ["zeus-2024", 17.5], ["zeus-2023", 15], ["zeus-2022", 12.5], ["faker-2025", 25], ["faker-2024", 25], ["faker-2023", 25], ["faker-2022", 25]] as const) assert.equal(fantasyPrice(CARDS[id]), v, `owner-set ${id}`);
+  assert(all.filter((c) => c.year === 2026 && c.pkey !== "faker").every((c) => fantasyPrice(c) < f26), "2026: nobody at or above Faker");
+  assert(all.every((c) => fantasyPrice(c) >= 5), "minimum 5억");
+  // 단조성: 능력치가 높으면 항상 더 비쌈 (2026 페이커 지정값 제외)
+  const rest = all.filter((c) => c.id !== "faker-2026");
+  for (const a of rest) for (const b of rest) if (fantasyRatingOf(a) > fantasyRatingOf(b)) assert(fantasyPrice(a) > fantasyPrice(b), `monotone ${a.id} ${fantasyRatingOf(a)}/${fantasyPrice(a)} vs ${b.id} ${fantasyRatingOf(b)}/${fantasyPrice(b)}`);
+  // 쵸비: 지표가 가장 좋은 2024가 2025·2026보다 비쌈
+  assert(fantasyPrice(CARDS["chovy-2024"]) > fantasyPrice(CARDS["chovy-2026"]) && fantasyPrice(CARDS["chovy-2024"]) > fantasyPrice(CARDS["chovy-2025"]), "Chovy 2024 most expensive");
   // 판타지 능력치: 60–99, 옛 시즌은 하향 (스토리 표시 능력치는 그대로)
   assert(all.every((c) => fantasyRatingOf(c) >= 60 && fantasyRatingOf(c) <= 99), "fantasy rating range");
   assert(fantasyRatingOf(CARDS["zeus-2022"]) < fantasyRatingOf(CARDS["zeus-2026"]), "older Zeus lower");

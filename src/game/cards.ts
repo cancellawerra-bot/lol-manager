@@ -5,9 +5,10 @@ import type { CardsFile, SeasonCard, Player, Team } from "../types";
 import type { Save, ClubInfo } from "./season";
 
 export const BUDGETS = { easy: 120, normal: 100, hard: 80 } as const;
-/** 판타지 드래프트 예산(억). 시장 추정 연봉(fantasySalary) 기준 — 어려움에서도 첫 픽에 페이커(50억)를 뽑을 수 있게 54억 (v2.17.0). */
-export const FANTASY_BUDGETS = { easy: 60, normal: 55, hard: 54 } as const;
-/** 판타지 드래프트 가격: 시장 추정 연봉(없으면 기존 연봉). 스토리·창단 모드는 salary를 그대로 씁니다. */
+/** 판타지 드래프트 예산(억). v2.22.0 연봉(기본 5억 + 능력치 가산)에 맞춰 재조정: 예전 60/55/54억에서 만들 수 있던 최고 팀 수준(평균 90.2/89.6)과
+ *  같게 쉬움 90 · 보통 85 · 어려움 80. 최소 5명 25억, 어려움에서도 첫 픽 페이커(50억) + 최저 4명(20억) 가능. */
+export const FANTASY_BUDGETS = { easy: 90, normal: 85, hard: 80 } as const;
+/** 판타지 드래프트 가격: 기본 5억 + 그 시즌 능력치 가산(fantasySalary, 없으면 기존 연봉). 스토리·창단 모드는 salary를 그대로 씁니다. */
 export const fantasyPrice = (c: { salary: number; fantasySalary?: number }): number => c.fantasySalary ?? c.salary;
 /** 판타지 드래프트 전용 능력치 (연도·나이 보정, 없으면 화면 능력치) */
 export const fantasyRatingOf = (c: SeasonCard): number => c.fantasyRating ?? cardRating(c);

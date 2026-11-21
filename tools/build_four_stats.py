@@ -157,7 +157,8 @@ def riot_extras(cards: list[dict]) -> dict[tuple[int, str], dict[str, tuple[floa
     return {k: {n: (sum(v) / len(v), len(v)) for n, v in d.items() if v} for k, d in acc.items()}
 
 
-def main() -> None:
+def aggregate(cards: list[dict]) -> dict[tuple[int, str], dict]:
+    """선수·시즌별 재료값과 재료별 경기 수: {(year, pkey): {재료: (값, n)}}"""
     rows = games_rows()
     # 팀 데스가 없으면 같은 경기·같은 팀 5명 데스 합
     # 팀 킬도 없으면 같은 경기·같은 팀 5명 킬 합 (compute_cards.py와 같은 방식)
@@ -213,11 +214,15 @@ def main() -> None:
         m["towerpm"] = mean([r["tower"] / L(r) if r.get("tower") is not None and L(r) else None for r in g])
         m["cspm"] = mean([r["cs"] / L(r) if r.get("cs") is not None and L(r) else None for r in g])
         agg[k_] = m
-
-    data = json.loads(CARDS.read_text(encoding="utf-8"))
-    cards = data["cards"]
     for k_, ex in riot_extras(cards).items():
         agg.setdefault(k_, {}).update(ex)
+    return agg
+
+
+def main() -> None:
+    data = json.loads(CARDS.read_text(encoding="utf-8"))
+    cards = data["cards"]
+    agg = aggregate(cards)
     # 재료 z (같은 시즌·포지션 카드끼리)
     zs: dict[str, dict[str, float]] = {c["id"]: {} for c in cards}
     pools = defaultdict(list)
