@@ -1,6 +1,6 @@
 import { POS_KO, PL } from "../data";
 import { useSave, mutate, fillSchedule, setStarter } from "../store";
-import { Card, PName, Pct } from "../ui";
+import { Card, PName, Ovr } from "../ui";
 import type { DayAct } from "../game/season";
 import { playerTraining, trainingPlan, trainingPerson, trainingDate, setTrainingPlan } from "../game/trainingRuntime";
 import { trainingProfile, trainingBonuses } from "../game/training";
@@ -80,7 +80,7 @@ export default function Squad() {
                 <tr key={k}>
                   <td>{POS_KO[i]}</td>
                   <td><PName k={k} /> {p?.small && <span className="tag warn">표본 부족</span>}</td>
-                  <td><Pct v={p?.pct.ovr ?? 0} /></td>
+                  <td><Ovr p={p} /></td>
                   <td>{opts.length > 1 && <select disabled={!!s.session && !["press", "lineup"].includes(s.session.stage)} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{opts.map((x) => <option key={x} value={x}>{PL[x]?.label ?? PL[x]?.name ?? x}</option>)}</select>}</td>
                 </tr>
               );

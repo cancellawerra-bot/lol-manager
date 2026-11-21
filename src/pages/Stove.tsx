@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CARDS, PL, POS_KO, TM, cardLabel } from "../data";
 import { useSave, mutate, confirmStove, autoStove } from "../store";
 import { Card } from "../ui";
+import { cardRating } from "../rating";
 import { fmtMoney } from "../game/money";
 import type { Bonus } from "../game/stove";
 import { storySalary } from "../game/story";
@@ -80,7 +81,7 @@ function Tryout() {
             <label><input type="checkbox" checked={starter} onChange={(e) => setStarter(e.target.checked)} /> 주전 보장</label>
             <label><input type="checkbox" checked={!!bon.callup} onChange={(e) => setBon({ ...bon, callup: e.target.checked })} /> 1부 콜업 보너스</label>
           </div>
-          {c && <p className="muted sm">{c.name} · {c.year}시즌 · 퍼센타일 {c.percentile} · 2부 계약가 {fmtMoney(storySalary(c, s.story!.tier))} (게임용 가상 금액)</p>}
+          {c && <p className="muted sm">{c.name} · {c.year}시즌 · 능력치 {cardRating(c)} · 2부 계약가 {fmtMoney(storySalary(c, s.story!.tier))} (게임용 가상 금액)</p>}
           <div className="row gap wrap">
             <button className="btn" data-testid="tryout-offer" onClick={() => {
               if (!c) return;

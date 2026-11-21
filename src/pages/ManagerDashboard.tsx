@@ -6,6 +6,7 @@ import { seasonMarketWeek } from "../game/inSeason";
 import { trainingPerson } from "../game/trainingRuntime";
 import { fmtMoney } from "../game/money";
 import { ChampIcon } from "../ui";
+import { ratingOf } from "../rating";
 
 const ROLES = ["TOP", "JGL", "MID", "ADC", "SUP"];
 const goalLabel = { win: "우승", final: "결승 진출", sf: "4강 진출", po: "플레이오프 진출", top8: "8위 이내" };
@@ -71,7 +72,7 @@ export default function ManagerDashboard({ s, onAdvance }: { s: Save; onAdvance?
     {!finished && <section className="mh-squad" aria-label="현재 선발 구성"><div className="mh-section-heading"><div><small>THE STARTING FIVE</small><h2>우리의 다음 승부를 맡길 5명</h2></div><a href="#/squad">선발·로테이션 관리 ↗</a></div>
       <div className="mh-five">{[0, 1, 2, 3, 4].map(pos => {
         const key = s.starters[s.team]?.[pos], p = key ? PL[key] : undefined, person = key ? trainingPerson(s, key) : undefined, training = person ? s.training?.players[person] : undefined, promise = person ? s.rotation?.promises[person] : undefined, champion = key ? homeChampion(s, key) : undefined;
-        return <article className="mh-player" key={pos} data-testid={`home-player-${pos}`}><div className="mh-player-top"><span>{ROLES[pos]}</span><span>{p ? p.pct.ovr : "–"}<small>OVR</small></span></div>
+        return <article className="mh-player" key={pos} data-testid={`home-player-${pos}`}><div className="mh-player-top"><span>{ROLES[pos]}</span><span>{p ? ratingOf(p) : "–"}<small>OVR</small></span></div>
           <div className="mh-player-identity">{champion ? <ChampIcon id={champion.id} size={48} title={champion.source} /> : <span className="mh-role-icon" aria-hidden="true">{ROLES[pos]}</span>}<div>{p ? <a href={`#/player/${key}`}>{p.name}</a> : <b>선발 공백</b>}<span>{POS_KO[pos]} · {p?.cardYear ? `${p.cardYear} 기록` : p ? "시즌 기록 없음" : "선수단에서 구성"}</span></div></div>
           <div className="mh-fatigue"><span>피로</span><b className={training && training.fatigue >= 45 ? "mh-warning" : ""}>{training ? `${training.fatigue.toFixed(1)} / 100` : "기록 없음"}</b></div><div className="mh-fatigue-track" aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, training?.fatigue ?? 0))}%`, background: training && training.fatigue >= 45 ? "var(--gold)" : undefined }} /></div>
           <p className="mh-player-note">{promise ? `첫 선발 약속 ${promise.starts}/${promise.target} · 기회 ${promise.opportunities}/4` : "개별 출전 약속 없음"}</p><p className="mh-player-evidence">{p?.small ? "표본 부족 · " : ""}{champion ? champion.source : "챔피언 기록 없음"}</p>

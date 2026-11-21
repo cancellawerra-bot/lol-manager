@@ -1,7 +1,7 @@
 import { CH, CORE, PL, POS_KO, TM, fmt } from "../data";
 import { useSave } from "../store";
 import { standings } from "../game/season";
-import { Card, ChampIcon, Pct, TeamChip, Bar } from "../ui";
+import { Card, ChampIcon, Ovr, TeamChip, Bar } from "../ui";
 
 function ChampRow({ list, games, max = 10 }: { list: [string, number][]; games: number; max?: number }) {
   return (
@@ -46,7 +46,7 @@ export default function Scout({ team }: { team?: string }) {
         <div className="tbl-wrap"><table className="tbl">
           <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th><th>주력 챔피언 (2026 LCK)</th></tr></thead>
           <tbody>{s.starters[t].map((k, i) => { const p = PL[k]; return (
-            <tr key={k}><td className="muted">{POS_KO[i]}</td><td><a className="pname" href={`#/player/${k}`}>{p.name}</a>{p.small && <span className="tag warn xs">표본 부족</span>}</td><td className="r"><Pct v={p.pct.ovr} /></td>
+            <tr key={k}><td className="muted">{POS_KO[i]}</td><td><a className="pname" href={`#/player/${k}`}>{p.name}</a>{p.small && <span className="tag warn xs">표본 부족</span>}</td><td className="r"><Ovr p={p} /></td>
               <td><span className="mini-pool">{p.pool.slice(0, 6).map(([c, n]) => <span key={c} title={`${CH[c]?.ko} ${n}경기`}><ChampIcon id={c} size={26} /><small>{n}</small></span>)}</span></td></tr>
           ); })}</tbody>
         </table></div>

@@ -34,7 +34,9 @@ export default function Method() {
             <div className="tbl-wrap"><table className="tbl compact"><thead><tr><th>포지션</th>{Object.keys(G).map((g) => <th key={g} className="r">{G[g]}</th>)}</tr></thead>
               <tbody>{[0, 1, 2, 3, 4].map((p) => <tr key={p}><td>{POS_KO[p]}</td>{Object.keys(G).map((g) => <td key={g} className="r">{Math.round((m.weights[String(p)][g] ?? 0) * 100)}%</td>)}</tr>)}</tbody></table></div>
           </li>
-          <li>화면의 숫자는 같은 포지션 선수 사이의 <b>백분위</b>(0~100)입니다. 2026 LCK {m.games}경기 기록 {m.players}명 기준.</li>
+          <li><b>국제대회 보정</b>(게임 설계 값): 그해 LCK 팀의 월즈·MSI 성적을 종합 z에 더합니다 — 월즈 우승 +0.6, 준우승 +0.35, 4강 +0.2, MSI 우승 +0.35, 준우승 +0.2, 4강 +0.1, 다음 시즌에 절반 이월. 성적 자료와 출처(위키백과 대회 페이지)는 저장소 tools/international_results.json에 있습니다. 경기 기록 숫자는 바꾸지 않습니다.</li>
+          <li><b>교수님 평가</b>: 운영자(교수님)가 직접 정한 2026 선수 능력치(쵸비·페이커 등 14명, 저장소 tools/owner_ratings.json)는 기록 대신 그 값을 쓰고, 선수 화면에 "교수님 평가 반영"으로 표시합니다. 경기 계산에도 같은 값을 씁니다.</li>
+          <li>화면의 <b>능력치</b> = 85 + 4 × (보정된 종합 z), 60~99. 평균 선수가 약 85점이고 정상급은 90점대입니다. 같은 포지션 순위(<b>백분위</b>, 0~100)는 선수 화면과 연봉·교체 기준에 그대로 씁니다. 2026 LCK {m.games}경기 기록 {m.players}명 기준.</li>
           <li>2026 LCK {m.small}경기 미만인 선수는 <b>'표본 부족'</b>으로 표시합니다. 기록이 없는 지표는 0으로 채우지 않고 빼고 계산합니다.</li>
         </ol>
         <h3>4. AI 밴픽</h3>

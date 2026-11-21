@@ -2,7 +2,7 @@ import { CARDS, CARDS_FILE, PL, POS_KO, TM, recTxt, fmt } from "../data";
 import { useSave } from "../store";
 import { rosterSalary } from "../game/cards";
 import { fmtMoney } from "../game/money";
-import { Card, PName, Pct, TeamChip } from "../ui";
+import { Card, PName, Ovr, TeamChip } from "../ui";
 import { standings } from "../game/season";
 import ClubTimeline from "./ClubTimeline";
 
@@ -53,7 +53,7 @@ export default function Club() {
                     <td>{c ? recTxt(c.wr, (n) => `${(n * 100).toFixed(1)}%`) : `${((p.wins / Math.max(1, p.games)) * 100).toFixed(1)}%`}</td>
                     <td>{c ? recTxt(c.gd15, (n) => (n >= 0 ? "+" : "") + fmt(n, 0)) : recTxt(p.m.gd, (n) => (n >= 0 ? "+" : "") + fmt(n, 0))}</td>
                     <td>{c ? recTxt(c.dpm, (n) => fmt(n, 0)) : recTxt(p.m.dpm || null, (n) => fmt(n, 0))}</td>
-                    <td><Pct v={p.pct.ovr} /></td>
+                    <td><Ovr p={p} /></td>
                     <td>{payOf(k) != null ? fmtMoney(payOf(k)!) : "–"}</td>
                   </tr>
                 );

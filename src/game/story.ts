@@ -12,6 +12,7 @@ import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 import { prepareInSeason } from "./inSeason";
 import { syncPromises } from "./rotation";
 import { initializeClubTimeline, archiveClubSplit } from "./clubTimeline";
+import { cardRating } from "../rating";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
 export const cmpStr = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -329,7 +330,7 @@ export function ensurePlayer(card: SeasonCard, year: number, estimated: boolean)
   let p = playerFromCard(card);
   if (estimated) {
     const pct = Math.max(5, Math.round(card.percentile) - DECAY_PCT);
-    p = { ...p, key: `${card.pkey}-est-${year}-p${card.posIdx}`, pct: { ...p.pct, ovr: pct, fight: pct }, label: `${cardLabel(card)} · 추정`, small: true };
+    p = { ...p, key: `${card.pkey}-est-${year}-p${card.posIdx}`, pct: { ...p.pct, ovr: pct, fight: pct }, label: `${cardLabel(card)} · 추정`, small: true, rating: cardRating(card, true) };
   }
   if (!PL[p.key]) PL[p.key] = p;
   return p.key;

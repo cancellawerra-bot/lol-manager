@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { POS_KO, TM, recTxt } from "../data";
+import { PL, POS_KO, TM, recTxt } from "../data";
 import type { SeasonCard } from "../types";
 import { useSave, mutate, setStarter } from "../store";
 import { Card } from "../ui";
+import { cardRating, ratingOf } from "../rating";
 import { fmtMoney } from "../game/money";
 import { SCOUT_GOALS, scoutingReport, scoutPreferences, scoutWatch, scoutBench, setScoutPreferences, toggleScoutWatch, openingScout, type ScoutContext, type ScoutCandidate, type ScoutGoal } from "../game/scouting";
 
@@ -24,14 +25,14 @@ export function ScoutingPanel({ context, onSelect }: { context: ScoutContext; on
     {report.notice && <p className="notice" data-testid="scout-notice">{report.notice}</p>}
     {message && <p className="sm" role="status">{message}</p>}
     {!!bench.length && <div className="notice" data-testid="scout-bench"><b>영입 전 보유 벤치 검토 · 추가 영입 비용 없음</b>{bench.map(b => <div className="sm" key={b.key}>
-      <p>{POS_KO[b.pos]} {b.name} · 현재 종합 {b.ovr} / 주전 {b.starterOvr} · 피로 {b.fatigue.toFixed(1)}/100{b.promise && <><br />{b.promise}</>}</p>
+      <p>{POS_KO[b.pos]} {b.name} · 현재 능력치 {ratingOf(PL[b.key]) ?? "–"} / 주전 {ratingOf(PL[s.starters[s.team]?.[b.pos]]) ?? "–"} · 피로 {b.fatigue.toFixed(1)}/100{b.promise && <><br />{b.promise}</>}</p>
       <button className="btn sm" data-testid={`scout-promote-${b.pos}`} disabled={!!s.session || s.story?.phase !== "regular"} onClick={() => setStarter(s.team, b.pos, b.key)}>선발 구성에 반영</button>
     </div>)}<p className="muted xs">자동 로테이션과 출전 약속 기한에 따라 실제 첫 선발이 조정될 수 있습니다.</p></div>}
     {!report.candidates.length && <p data-testid="scout-empty">{pref.goal === "watch" ? "저장한 관심 선수 중 이 포지션의 기록이 없습니다." : "현재 목적·예산·명단 조건에 맞는 추천이 없습니다. 관심 검토는 자금 조건 필터를 풀어 확인할 수 있습니다."}</p>}
     <div className="card-grid" data-testid="scout-list">{report.candidates.map(c => <article className="card-tile" key={c.person} data-testid={`scout-candidate-${c.person}`}>
       <div className="row between wrap"><b>{c.card?.name ?? c.person}</b><span className="tag">{c.card ? POS_KO[c.card.posIdx] : "포지션 기록 없음"}</span></div>
       <p className="muted sm">근거 {c.card ? `${c.card.year}년 · 당시 ${c.card.team} · ${c.card.games > 0 ? `${c.card.games}경기` : "기록 없음"}` : "현재 연도 기록 없음"}<br />현재 게임 소속 {TM[c.owner]?.ko ?? c.owner}</p>
-      <p className="sm">현재 기록 기반 게임 종합 <b>{c.ovr ?? "기록 없음"}</b> · {c.age == null ? "생년 정보 없음" : `만 ${c.age}세`}</p>
+      <p className="sm">현재 기록 기반 능력치 <b>{c.card ? cardRating(c.card, c.estimated) : "기록 없음"}</b> · {c.age == null ? "생년 정보 없음" : `만 ${c.age}세`}</p>
       {c.card && <p className="xs muted">KDA {recTxt(c.card.kda, n => n.toFixed(2))} · GD@15 {recTxt(c.card.gd15, n => n.toFixed(0))} · DPM {recTxt(c.card.dpm, n => n.toFixed(0))}</p>}
       <ul className="sm">{c.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
       {c.offerCardId && c.salary != null && c.cost != null && <p className="sm">기존 시장 희망 연봉 {fmtMoney(c.salary)} · {c.years}시즌<br />이번 지급 참고 {fmtMoney(c.cost)}{context === "season" && ` (이적료 ${fmtMoney(c.fee ?? 0)} + 남은 연봉)`}<br />기존 계약·다른 제안·가입금 유보 {fmtMoney(c.reserve ?? 0)}</p>}
@@ -47,7 +48,7 @@ export function ScoutingPanel({ context, onSelect }: { context: ScoutContext; on
 export function OpeningScouting({ year, cap, selected, priceOf, onPick }: { year: number; cap: number; selected: string[]; priceOf: (c: SeasonCard) => number; onPick: (c: SeasonCard) => void }) {
   const candidates = openingScout(year, cap, selected, priceOf);
   return <section className="notice" data-testid="opening-scout"><h3>창단 스카우팅 · 남은 포지션 예산 우선</h3><p className="sm">선발이 비어 있는 포지션을 먼저 추천합니다. 다른 빈 포지션의 최저 연봉을 남기고 현재 확인된 기록으로 비교합니다. 선수당 한 명이며 과거 기록은 추정 기준을 함께 표시합니다.</p>
-    <div className="card-grid">{candidates.map(c => <div className="card-tile" key={c.card.pkey} data-testid={`opening-scout-${c.card.pkey}`}><b>{c.card.name} · {POS_KO[c.card.posIdx]}</b><p className="sm">{c.card.year} 기록 · {c.card.games}경기 · 현재 기준 게임 종합 {c.ovr}{c.card.year < Math.min(year, 2026) && " · 과거 기록 기반 추정"}{c.card.small && " · 표본 부족"}</p><p className="sm">연봉 {fmtMoney(c.salary)} · 다른 빈 포지션 유보 {fmtMoney(c.reserve)}</p><button className="btn sm" data-testid={`opening-scout-pick-${c.card.pkey}`} onClick={() => onPick(c.card)}>추천 선수 선택</button></div>)}</div>
+    <div className="card-grid">{candidates.map(c => <div className="card-tile" key={c.card.pkey} data-testid={`opening-scout-${c.card.pkey}`}><b>{c.card.name} · {POS_KO[c.card.posIdx]}</b><p className="sm">{c.card.year} 기록 · {c.card.games}경기 · 현재 기준 능력치 {cardRating(c.card, c.card.year < Math.min(year, 2026))}{c.card.year < Math.min(year, 2026) && " · 과거 기록 기반 추정"}{c.card.small && " · 표본 부족"}</p><p className="sm">연봉 {fmtMoney(c.salary)} · 다른 빈 포지션 유보 {fmtMoney(c.reserve)}</p><button className="btn sm" data-testid={`opening-scout-pick-${c.card.pkey}`} onClick={() => onPick(c.card)}>추천 선수 선택</button></div>)}</div>
     {!candidates.length && <p className="sm">현재 예산·남은 자리에서 추천할 후보가 없습니다. 보유 선택과 포지션을 확인해 주세요.</p>}
     <p className="muted xs">추천은 게임용 비교이며 성장이나 승리를 보장하지 않습니다. 모든 연봉은 게임용 가상 금액입니다.</p>
   </section>;

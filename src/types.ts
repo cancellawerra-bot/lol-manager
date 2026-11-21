@@ -15,6 +15,12 @@ export interface Player {
   salary?: number;
   limited?: boolean;
   label?: string;
+  /** 화면 능력치를 따로 정한 선수(과거 카드 추정 등). 없으면 z.ovr로 계산 (src/rating.ts) */
+  rating?: number;
+  /** 국제대회 성적 보정 내역 (tools/apply_honors.py) */
+  honors?: string[];
+  /** 교수님(오너) 평가 능력치 (tools/owner_ratings.json) */
+  ownerRating?: number;
 }
 export interface Team {
   id: number; short: string; name: string; ko: string; color: string;
@@ -47,6 +53,7 @@ export interface SeasonCard {
   kills: number | null; deaths: number | null; assists: number | null;
   kda: number | null; wr: number | null; kp: number | null; gd15: number | null; dpm: number | null; cspm: number | null;
   percentile: number; rank: number | null; pool: number | null; salary: number; composite: number;
+  honors?: string[]; honorBonus?: number; compositeBase?: number; percentileBase?: number; ownerRating?: number;
   small: boolean; limited: boolean; source: string; metrics: string[]; eligible: boolean;
 }
 export interface CardsFile { meta: { builtAt: string; years: [number, number]; cards: number; eligible: number; minGames: number; eligibleMinGames: number; formula: string; salaryNote: string; sources: string[]; rule: string }; cards: SeasonCard[] }

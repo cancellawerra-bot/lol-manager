@@ -4,6 +4,7 @@ import type { SeasonCard } from "../types";
 import { personUsed } from "../game/cards";
 import { getSave, useSave } from "../store";
 import { Card } from "../ui";
+import { cardRating, ratingColor } from "../rating";
 import { go } from "../nav";
 import { fmtMoney, moneyRound } from "../game/money";
 import { franchisePlayers } from "../game/story";
@@ -15,7 +16,7 @@ export function CardTile({ c, on, disabled, reason, onClick, price, personView }
     <button type="button" className={"card-tile" + (on ? " on" : "") + (disabled ? " dim" : "")} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
       <div className="row between"><b>{personView ? c.name : cardLabel(c)}</b><span className="gold">{fmtMoney(price ?? c.salary)}</span></div>
       <div className="muted sm">{personView && `${c.year} 기록 · `}{POS_KO[c.posIdx]} · {c.team} · {c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""}</div>
-      <div className="sm">{c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`}</div>
+      <div className="sm">{c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`} · 능력치 <b style={{ color: ratingColor(cardRating(c)) }}>{cardRating(c)}</b>{c.honors?.length ? <span className="muted"> · {c.honors.join(", ")}</span> : null}</div>
       <div className="tile-metrics xs muted">
         <span>KDA {recTxt(c.kda, (n) => n.toFixed(2))}</span>
         <span>승률 {recTxt(c.wr, (n) => `${(n * 100).toFixed(1)}%`)}</span>
@@ -78,7 +79,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
           <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} data-testid="card-sort">
             <option value="salary">연봉 높은 순</option>
             <option value="salaryAsc" data-testid="sort-asc">연봉 낮은 순</option>
-            <option value="pct">퍼센타일 순</option>
+            <option value="pct">능력치 순</option>
             {!seasonYear && <option value="year">최신 연도 순</option>}
           </select>
         </div>

@@ -5,7 +5,7 @@ import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, S
 import { STAGE_KO } from "../game/season";
 import type { GameResult, GEvent } from "../game/sim";
 import { sigmoid } from "../game/rng";
-import { ChampIcon, TeamChip, Pct } from "../ui";
+import { ChampIcon, TeamChip, Ovr } from "../ui";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
 import { TacticsControls, TacticsReview } from "./Tactics";
@@ -79,13 +79,13 @@ function Lineup() {
         <div className="brief-team"><TeamChip t={s.team} full />
           <ul>{mine.map((k, i) => {
             const opts = bench.filter((x) => PL[x]?.pos === i);
-            return <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Pct v={PL[k]?.pct.ovr ?? 0} />
+            return <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Ovr p={PL[k]} />
               {opts.length > 0 && <select data-testid={`lineup-player-${i}`} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select>}
             </li>;
           })}</ul>
         </div>
         <div className="brief-team"><TeamChip t={op} full />
-          <ul>{s.starters[op].map((k, i) => <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Pct v={PL[k]?.pct.ovr ?? 0} /></li>)}</ul>
+          <ul>{s.starters[op].map((k, i) => <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Ovr p={PL[k]} /></li>)}</ul>
         </div>
       </div>
       <button className="btn primary lg" data-testid="lineup-next" onClick={confirmLineup}>선발 확정 · 선택권 ▶</button>

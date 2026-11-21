@@ -5,7 +5,7 @@ import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMon
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
 import { slots, setSave } from "../store";
 import { CardMarket } from "./Market";
-import { FanNotice, TeamChip } from "../ui";
+import { FanNotice, Ovr, TeamChip } from "../ui";
 import { go } from "../nav";
 import type { SeasonCard } from "../types";
 import { moneyRound } from "../game/money";
@@ -392,7 +392,7 @@ function TeamGrid({ value, onChange }: { value: string; onChange: (t: string) =>
           <div className="row between"><TeamChip t={t.short} size="lg" /><span className="muted sm">2026 LCK 세트 {t.gw}승 {t.gl}패</span></div>
           <b className="tc-name">{t.name}</b>
           <div className="tc-roster">
-            {t.starters.map((k, i) => <span key={k}><small>{POS_KO[i]}</small>{PL[k].name}<b className="pctv">{PL[k].pct.ovr}</b></span>)}
+            {t.starters.map((k, i) => <span key={k}><small>{POS_KO[i]}</small>{PL[k].name}<Ovr p={PL[k]} /></span>)}
           </div>
         </button>
       ))}

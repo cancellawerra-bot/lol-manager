@@ -2,7 +2,7 @@ import { CORE, PL, POS_KO, TM, fmt } from "../data";
 import { useSave, fillSchedule, mutate, autoSimSplit, autoToOffseason, acceptFranchise } from "../store";
 import { standings, nextMySeries, dateKo, STAGE_KO, opp } from "../game/season";
 import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO, fmtMoney } from "../game/story";
-import { Card, Pct, TeamChip, form5, PName } from "../ui";
+import { Card, Ovr, TeamChip, form5, PName } from "../ui";
 import { TacticsControls } from "./Tactics";
 import ManagerDashboard from "./ManagerDashboard";
 import "./home.css";
@@ -93,7 +93,7 @@ export default function Home({ onAdvance }: { onAdvance?: () => void }) {
             <div className="tbl-wrap"><table className="tbl compact" data-testid="ending-roster">
               <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th></tr></thead>
               <tbody>{(s.starters[s.team] ?? []).map((k, i) => (
-                <tr key={k || i}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r">{PL[k] ? <Pct v={PL[k].pct.ovr} /> : "–"}</td></tr>
+                <tr key={k || i}><td className="muted">{POS_KO[i]}</td><td><PName k={k} /></td><td className="r">{PL[k] ? <Ovr p={PL[k]} /> : "–"}</td></tr>
               ))}</tbody>
             </table></div>
             <div className="row gap wrap end-actions">
@@ -122,7 +122,7 @@ export default function Home({ onAdvance }: { onAdvance?: () => void }) {
             <thead><tr><th>{s.team}</th><th className="c">포지션</th><th className="r">{op}</th></tr></thead>
             <tbody>{[0, 1, 2, 3, 4].map((i) => {
               const a = PL[s.starters[s.team]?.[i]], b = PL[s.starters[op]?.[i]];
-              return <tr key={i}><td>{a ? <><PName k={a.key} /> <Pct v={a.pct.ovr} />{a.small && <span className="tag warn">표본 부족</span>}</> : "–"}</td><td className="c muted">{POS_KO[i]}</td><td className="r">{b ? <>{b.small && <span className="tag warn">표본 부족</span>}<Pct v={b.pct.ovr} /> <PName k={b.key} /></> : "–"}</td></tr>;
+              return <tr key={i}><td>{a ? <><PName k={a.key} /> <Ovr p={a} />{a.small && <span className="tag warn">표본 부족</span>}</> : "–"}</td><td className="c muted">{POS_KO[i]}</td><td className="r">{b ? <>{b.small && <span className="tag warn">표본 부족</span>}<Ovr p={b} /> <PName k={b.key} /></> : "–"}</td></tr>;
             })}</tbody>
           </table></div>
           <div className="row gap wrap"><a className="btn" href={`#/scout/${op}`}>{op} 밴픽 성향 보기</a><span className="muted sm">숫자는 적용된 시즌 기록 기반 게임 종합 지표입니다. 상단 "{nx.day === s.day ? "경기 시작" : "진행하기"}"로 진행합니다.</span></div>

@@ -21,7 +21,7 @@ export function playerFromCard(c: SeasonCard): Player {
     pool: [],
     z: { lane: zLane, fight: zFight, farm: zFarm, vision: 0, pool: 0, ovr: zOvr },
     pct: { lane: c.gd15 == null ? 50 : pct, fight: pct, farm: c.cspm == null && c.dpm == null ? 50 : pct, vision: 50, pool: 50, ovr: pct },
-    small: c.small, cardYear: c.year, cardTeam: c.team, personKey: c.pkey, salary: c.salary, limited: c.limited, label: cardLabel(c),
+    small: c.small, cardYear: c.year, cardTeam: c.team, personKey: c.pkey, salary: c.salary, limited: c.limited, label: cardLabel(c), honors: c.honors, ownerRating: c.ownerRating,
   };
 }
 

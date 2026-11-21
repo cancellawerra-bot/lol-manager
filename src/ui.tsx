@@ -1,5 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { CH, TM, PL } from "./data";
+import type { Player } from "./types";
+import { ratingOf, ratingColor } from "./rating";
 
 export function ChampIcon({ id, size = 36, dim, title, ring }: { id: string; size?: number; dim?: boolean; title?: string; ring?: string }) {
   const c = CH[id];
@@ -22,6 +24,12 @@ export function Sample({ n, min, unit = "경기" }: { n: number; min: number; un
 }
 export function Bar({ v, max = 100, color }: { v: number; max?: number; color?: string }) {
   return <span className="bar"><i style={{ width: `${Math.max(0, Math.min(100, (v / max) * 100))}%`, background: color }} /></span>;
+}
+/** 화면 능력치 (55~99). 선수 객체 또는 이미 계산한 값 */
+export function Ovr({ p, v }: { p?: Player | null; v?: number | null }) {
+  const r = v ?? ratingOf(p);
+  if (r == null) return <b className="pctv muted">–</b>;
+  return <b className="pctv" style={{ color: ratingColor(r) }} title="능력치 (실제 기록 + 국제대회 성적)">{r}</b>;
 }
 export function Pct({ v }: { v: number }) {
   const c = v >= 80 ? "var(--good)" : v >= 55 ? "var(--teal)" : v >= 30 ? "var(--warn)" : "var(--bad)";
