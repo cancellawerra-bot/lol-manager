@@ -8,14 +8,14 @@ export interface TrainingProgress {
   /** v2.21.0 성장(능력치 점수). 피지컬 = 교전·압박, 뇌지컬 = 판단·운영. 원본 카드 능력치 위에 더합니다. */
   physGain?: number; brainGain?: number;
   /** 주간 훈련 포인트(월요일 기준 주) */
-  weekKey?: string; weekPts?: number;
+  weekKey?: string; weekPts?: number; weekPhys?: number;
   /** 누적 출전 세트 수(뇌지컬 경험) · 누적 과훈련 일수 */
   sets?: number; overDays?: number;
   /** 처리한 일정 일수(훈련·스크림·휴식 포함) */
   days?: number;
 }
-/** 성장 계산에 필요한 그 선수의 기준값: 원본 능력치(base)와 잠재력 상한(potential, 최대 100) */
-export interface GrowthCtx { base: number; potential: number }
+/** 성장 계산 기준: 원본 능력치(base), 상한(potential = 모든 선수 100), 재능에 따른 성장 속도(speed, 기본 1) */
+export interface GrowthCtx { base: number; potential: number; speed?: number }
 export interface TrainingImpact { mechanics: number; strategy: number; fatigue: number }
 export type MatchTraining = Record<string, TrainingImpact>;
 export type TrainingSummary = { B: TrainingImpact; R: TrainingImpact };
@@ -61,34 +61,38 @@ export function trainingProfile(birth: VerifiedBirth | undefined, date: string):
 /** 주간 훈련 포인트 한도(훈련·스크림 1회 = 1포인트). 넘는 날은 성장 없이 피로만 크게 쌓입니다. */
 export const WEEKLY_POINTS = 5;
 /** 훈련 1포인트당 기본 성장(능력치 점수) */
-export const GROWTH_STEP = 0.07;
-/** 피지컬 하락(시즌당): 25–27세 0.6, 28–30세 1.2, 31세+ 1.8. 스토리 한 시즌의 훈련 처리 일수(실측 약 189일)를 한 시즌으로 봅니다. */
+export const GROWTH_STEP = 0.09;
+/** 피지컬 하락(훈련을 쉰 시즌 기준): 25–27세 0.4, 28–30세 0.7, 31세+ 1.0. 스토리 한 시즌의 훈련 처리 일수(실측 약 189일)를 한 시즌으로 봅니다. */
 export const SEASON_DAYS = 189;
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * clamp(t, 0, 1);
 /** 체감 성장: 70대는 잘 오르고 90+는 느리고 95+는 더 느립니다. */
 export function growthRoom(r: number): number {
   if (r < 80) return 1;
-  if (r < 90) return lerp(1, 0.45, (r - 80) / 10);
-  if (r < 95) return lerp(0.45, 0.3, (r - 90) / 5);
-  return lerp(0.3, 0.15, (r - 95) / 5);
+  if (r < 90) return lerp(1, 0.55, (r - 80) / 10);
+  if (r < 95) return lerp(0.55, 0.4, (r - 90) / 5);
+  return lerp(0.4, 0.3, (r - 95) / 5);
 }
-/** 상한까지 남은 거리(1.5점 안쪽부터 느려지고 상한에서 0) */
-const headroom = (r: number, pot: number): number => clamp((pot - r) / 1.5, 0, 1);
-/** 잠재력 상한: 커리어 최고 시즌 능력치 + 여유(3) + 재능 보너스(최고 92 초과분) + 어린 선수(≤22) 1. 최대 100. */
-export function potentialFor(best: number, age?: number): number {
-  return Math.min(100, best + 3 + Math.max(0, best - 91) + (age != null && age <= 22 ? 1 : 0));
-}
-/** 나이 곡선: 어린 선수는 피지컬이 빨리 오르고, 뇌지컬은 출전 경험이 쌓여야 오릅니다. 25세부터 피지컬은 서서히 하락. */
+/** 상한(100)에 닿으면 멈춤 */
+const headroom = (r: number, pot: number): number => (r < pot ? 1 : 0);
+/** v2.21.1 (교수님 정정 "모든 선수가 다 올릴 수 있다고"): 모든 선수의 상한은 100입니다. 재능 차이는 상한이 아니라 성장 속도로만 둡니다. */
+export const GROWTH_CAP = 100;
+export function potentialFor(_best?: number, _age?: number): number { return GROWTH_CAP; }
+/** 재능 = 성장 속도: 커리어 최고 시즌 능력치 88 기준 1배, 1점당 ±2.5% (0.85–1.2배) */
+export const talentSpeed = (best?: number): number => best == null ? 1 : clamp(1 + (best - 88) * 0.025, 0.85, 1.2);
+/** 나이 곡선: 어린 선수는 피지컬이 빨리 오르고, 뇌지컬은 출전 경험이 쌓여야 오릅니다.
+ *  25세부터 피지컬이 서서히 내려가지만, 그 주에 피지컬 훈련을 2회 이상 하면 하락하지 않습니다(훈련으로 극복 가능). */
 export function ageGrowth(age?: number): { phys: number; brain: number; decline: number } {
   if (age == null) return { phys: 1, brain: 1, decline: 0 };
-  if (age <= 22) return { phys: 1.3, brain: 0.85, decline: 0 };
+  if (age <= 22) return { phys: 1.3, brain: 0.95, decline: 0 };
   if (age <= 24) return { phys: 1, brain: 1, decline: 0 };
-  if (age <= 27) return { phys: 0.75, brain: 1.1, decline: 0.6 };
-  if (age <= 30) return { phys: 0.6, brain: 1.1, decline: 1.2 };
-  return { phys: 0.5, brain: 1.05, decline: 1.8 };
+  if (age <= 27) return { phys: 0.85, brain: 1.1, decline: 0.4 };
+  if (age <= 30) return { phys: 0.75, brain: 1.1, decline: 0.7 };
+  return { phys: 0.65, brain: 1.05, decline: 1.0 };
 }
-/** 뇌지컬 경험 계수: 출전 0세트 0.4배 → 90세트 1.3배(최대) */
-export const experienceFactor = (sets = 0): number => clamp(0.4 + sets / 100, 0.4, 1.3);
+/** 피지컬 하락을 막는 주간 피지컬 훈련 횟수 */
+export const DECLINE_GUARD = 2;
+/** 뇌지컬 경험 계수: 출전 0세트 0.6배 → 70세트 1.3배(최대) */
+export const experienceFactor = (sets = 0): number => clamp(0.6 + sets / 100, 0.6, 1.3);
 function weekKeyOf(date: string): string {
   const t = Date.parse(date + "T00:00:00Z"), wd = (new Date(t).getUTCDay() + 6) % 7;
   return new Date(t - wd * 86400000).toISOString().slice(0, 10);
@@ -99,13 +103,13 @@ export function trainedRating(p: TrainingProgress, ctx: GrowthCtx): { phys: numb
   const phys = clamp(ctx.base + (p.physGain ?? 0), 60, cap), brain = clamp(ctx.base + (p.brainGain ?? 0), 60, cap);
   return { phys, brain, overall: Math.min(100, Math.round((phys + brain) / 2)) };
 }
-function grow(r: number, pot: number, factor: number): number {
-  return GROWTH_STEP * factor * growthRoom(r) * headroom(r, pot);
+function grow(r: number, pot: number, factor: number, speed = 1): number {
+  return GROWTH_STEP * factor * speed * growthRoom(r) * headroom(r, pot);
 }
 /** 출전 1세트: 뇌지컬 경험(세트 수)과 작은 뇌지컬 성장. 같은 세트는 호출하는 쪽에서 한 번만 처리합니다. */
 export function matchExperience(p: TrainingProgress, ctx?: GrowthCtx): TrainingProgress {
   const out = { ...p, sets: (p.sets ?? 0) + 1 };
-  if (ctx) { const b = p.brainGain ?? p.strategyXp * 0.04; out.brainGain = b + grow(ctx.base + b, ctx.potential, 0.15 * experienceFactor(p.sets)); }
+  if (ctx) { const b = p.brainGain ?? p.strategyXp * 0.04; out.brainGain = b + grow(ctx.base + b, ctx.potential, 0.15 * experienceFactor(p.sets), ctx.speed); }
   return out;
 }
 
@@ -116,17 +120,22 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
   const p = { ...progress, mechanicsXp: clamp(progress.mechanicsXp, 0, 100), strategyXp: clamp(progress.strategyXp, 0, 100), fatigue: clamp(progress.fatigue, 0, 100), lastDate: date };
   p.days = (p.days ?? 0) + 1;
   const wk = weekKeyOf(date);
-  if (p.weekKey !== wk) { p.weekKey = wk; p.weekPts = 0; }
   // 옛 세이브: 성장 필드가 없으면 숙련 XP 100 = 4점으로 한 번 옮깁니다.
   if (ctx && p.physGain === undefined) p.physGain = p.mechanicsXp * 0.04;
   if (ctx && p.brainGain === undefined) p.brainGain = p.strategyXp * 0.04;
+  const ag0 = ageGrowth(profile.known ? profile.age : undefined);
+  if (p.weekKey !== wk) {
+    // 지난주 피지컬 훈련이 2회 미만이면 그 주만큼 피지컬 하락(25세+). 성장분에서만, 최저 −2.
+    if (ctx && p.weekKey && ag0.decline > 0 && (p.weekPhys ?? 0) < DECLINE_GUARD) p.physGain = Math.max(-2, (p.physGain ?? 0) - ag0.decline * 7 / SEASON_DAYS);
+    p.weekKey = wk; p.weekPts = 0; p.weekPhys = 0;
+  }
   const ag = ageGrowth(profile.known ? profile.age : undefined);
   let over = false;
-  if (ctx && ag.decline > 0) p.physGain = Math.max(-2, (p.physGain ?? 0) - ag.decline / SEASON_DAYS);
   if (kind === "recovery") p.fatigue = clamp(p.fatigue - 25 * profile.recovery, 0, 100);
   else {
     p.weekPts = (p.weekPts ?? 0) + 1;
     over = p.weekPts > WEEKLY_POINTS;
+    if (kind === "mechanics" && !over) p.weekPhys = (p.weekPhys ?? 0) + 1;
     const attr = kind === "mechanics" ? "mechanicsXp" : "strategyXp";
     const fatigueFactor = Math.max(0.5, 1 - p.fatigue / 150);
     const progressFactor = 1 - p[attr] / 200;
@@ -135,8 +144,8 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
     p.fatigue = clamp(p.fatigue + 12 * profile.fatigueLoad * (over ? 3 : 1), 0, 100);
     if (over) p.overDays = (p.overDays ?? 0) + 1;
     else if (ctx) {
-      if (kind === "mechanics") p.physGain = (p.physGain ?? 0) + grow(ctx.base + (p.physGain ?? 0), ctx.potential, ag.phys * fatigueFactor);
-      else p.brainGain = (p.brainGain ?? 0) + grow(ctx.base + (p.brainGain ?? 0), ctx.potential, ag.brain * experienceFactor(p.sets) * fatigueFactor);
+      if (kind === "mechanics") p.physGain = (p.physGain ?? 0) + grow(ctx.base + (p.physGain ?? 0), ctx.potential, ag.phys * fatigueFactor, ctx.speed);
+      else p.brainGain = (p.brainGain ?? 0) + grow(ctx.base + (p.brainGain ?? 0), ctx.potential, ag.brain * experienceFactor(p.sets) * fatigueFactor, ctx.speed);
     }
   }
   return { progress: p, profile, applied: true, over };

@@ -1,7 +1,7 @@
 import { PL, CARDS, CARDS_BY_PERSON } from "../data";
 import { ratingOf, cardRating } from "../rating";
 import type { Save, SeriesRec, DayAct } from "./season";
-import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
+import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, talentSpeed, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
 export interface TrainingState {
@@ -53,13 +53,12 @@ export function careerBest(person: string): number | undefined {
   const cs = CARDS_BY_PERSON[person];
   return cs?.length ? Math.max(...cs.map((c) => cardRating(c))) : undefined;
 }
-/** 성장 기준: 원본 능력치(지금 시즌 카드) + 잠재력 상한(커리어 최고 + 여유, 최대 100) */
-export function growthCtx(s: Save, key: string, date = trainingDate(s)): GrowthCtx | undefined {
+/** 성장 기준: 원본 능력치(지금 시즌 카드), 상한 100(모든 선수), 커리어 최고 기록에 따른 성장 속도 */
+export function growthCtx(s: Save, key: string, _date = trainingDate(s)): GrowthCtx | undefined {
   const person = trainingPerson(s, key); if (!person) return;
   const base = ratingOf(PL[key]) ?? 85;
-  const age = trainingProfile(PLAYER_BIRTHDATES[person], date);
   const best = Math.max(base, careerBest(person) ?? base);
-  return { base, potential: Math.max(base, potentialFor(best, age.known ? age.age : undefined)) };
+  return { base, potential: potentialFor(), speed: talentSpeed(best) };
 }
 /** 화면용: 훈련 성장을 반영한 능력치(피지컬·뇌지컬·종합) */
 export function trainedRatingOf(s: Save, key: string): { phys: number; brain: number; overall: number; base: number; potential: number } | undefined {
