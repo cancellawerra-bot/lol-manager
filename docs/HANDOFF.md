@@ -26,6 +26,7 @@
 - **예산:** 60/55/54억 유지. DP 최고 조합 평균 판타지 능력치 55억 89.6 · 60억 90.2(v2.17 때 89.8·90.2와 비슷), 최고 조합에 여러 시대 카드가 섞임(옛 카드가 헐값 최강이 아님).
 - **코드:** `types.ts` SeasonCard `fantasyRating?`, `cards.ts` `fantasyRatingOf`, `fantasy.ts` aiPick 점수, `Market.tsx` CardTile/CardMarket `ratingOf`(표시·「능력치 높은 순」), `Setup.tsx` 판타지 드래프트에서 전달. `fantasy.test.ts`: 같은 시즌 페이커 이상 금지(연도별), 지정값 13개, 판타지 능력치 60–99, 72 드래프트.
 - **확인함:** tsc·build 통과. `fantasy.test.ts` 72 드래프트 통과(AI 평균 판타지 능력치 88.0). 나머지 테스트 통과, in-season·scouting·stove 3개는 이전부터 실패(이번 변경과 무관).
+- **배포:** main@`196971d` → gh-pages@`ef78122`, 라이브 번들 `assets/index-pgqNYVQU.js`(2.18.0). 공개 사이트 1280×800·390×844 판타지 드래프트 끝까지 진행: 콘솔 오류 0, 가로 넘침 없음, 「서폿」 0·「서포터」 표시, 연봉 근거 표시 없음, 드래프트 카드 능력치는 판타지 보정값(예: 2024 Chovy 93). 스크린샷 `/workspace/qa/fd7-live-*.png`.
 
 ### 2026-11-22 · Grok · v2.17.2 카드 표시 정리 · 「서포터」
 
