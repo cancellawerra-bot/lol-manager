@@ -1,4 +1,4 @@
-export const PATCH_VERSION = "2.13.0";
+export const PATCH_VERSION = "2.14.0";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
   { v: "2.12.0", date: "2026-11-19", items: [
     "감독 홈을 다음 경기·현재 선발 5명·지금 확인할 일 중심으로 개편했습니다. 남색 경기 카드와 금색 진행 버튼, 간결한 현황, PC/휴대폰 전용 배치를 적용했습니다.",

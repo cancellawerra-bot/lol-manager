@@ -3,7 +3,7 @@ import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
 import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
 import { STAGE_KO } from "../game/season";
-import type { GameResult } from "../game/sim";
+import type { GameResult, GEvent } from "../game/sim";
 import { sigmoid } from "../game/rng";
 import { ChampIcon, TeamChip, Pct } from "../ui";
 import type { PosIdx } from "../types";
@@ -286,6 +286,74 @@ function champInEvent(d: DraftState, side: Side | undefined, text: string): stri
 }
 const OBJ_KEYS = [["drake", "드래곤"], ["herald", "전령"], ["baron", "바론"]] as const;
 
+// ── 협곡 도식 미니맵 ──
+// 엔진에는 선수 좌표가 없습니다. 위치는 "사건 종류"로 정한 도식이며(라인전=각 라인, 드래곤/바론=둥지, 종료=진 팀 본진),
+// 화면에도 그렇게 밝힙니다. 아이콘은 실제 픽, 둥지 색은 실제로 그 오브젝트를 가져간 팀입니다.
+type Pt = [number, number];
+const LANE_POS: Record<Side, Pt[]> = { // 탑·정글·미드·원딜·서폿 (0~100)
+  B: [[10, 30], [30, 66], [44, 56], [72, 90], [64, 87]],
+  R: [[30, 10], [70, 34], [56, 44], [90, 72], [87, 64]],
+};
+const PIT = { baron: [31, 33] as Pt, drake: [69, 67] as Pt, base: { B: [9, 91] as Pt, R: [91, 9] as Pt } };
+const GROUP: Pt[] = [[0, 0], [-7, 3], [3, -7], [-6, -6], [6, 4]];
+function sceneFocus(e: GEvent | undefined): { at: Pt | null; mode: "lane" | "group" | "end" } {
+  if (!e) return { at: null, mode: "lane" };
+  if (e.kind === "end") return { at: PIT.base[other(e.side ?? "B")], mode: "end" };
+  if (e.kind === "drake") return { at: PIT.drake, mode: "group" };
+  if (e.kind === "baron" || e.kind === "herald" || e.kind === "grub") return { at: PIT.baron, mode: "group" };
+  if (e.kind === "fight") return { at: e.text.includes("드래곤") ? PIT.drake : e.text.includes("바론") ? PIT.baron : [50, 50], mode: "group" };
+  return { at: null, mode: "lane" };
+}
+function Minimap({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
+  const ev = r.events.slice(0, step);
+  const now = ev[ev.length - 1];
+  const f = sceneFocus(now);
+  const lastOf = (k: string): Side | undefined => [...ev].reverse().find((e) => e.kind === k)?.side;
+  const drakeBy = lastOf("drake"), topBy = lastOf("baron") ?? lastOf("herald") ?? lastOf("grub");
+  const hl = now?.kind === "kill" ? champInEvent(d, now.side, now.text) : null;
+  const towers = ev.filter((e) => e.kind === "tower");
+  const pos = (sd: Side, i: number): Pt => {
+    if (f.mode === "end" && now?.side && f.at) {
+      const [bx, by] = f.at; const g = GROUP[i];
+      const dir: Pt = now.side === "B" ? [-1, 1] : [1, -1]; // 진 팀 본진에서 맵 가운데 쪽
+      if (sd === now.side) return [bx + dir[0] * 13 + g[0], by + dir[1] * 13 + g[1]];
+      return [bx + g[0] * 0.5, by + g[1] * 0.5];
+    }
+    if (f.mode === "group" && f.at) {
+      const s = sd === "B" ? 1 : -1; const g = GROUP[i];
+      return [f.at[0] - 8 * s + g[0], f.at[1] + 8 * s + g[1]];
+    }
+    return LANE_POS[sd][i];
+  };
+  const loser = now?.kind === "end" ? other(now.side ?? "B") : null;
+  return (
+    <div className="mm" data-testid="minimap">
+      <div className="mm-field">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <rect x="1" y="1" width="98" height="98" rx="5" className="mm-bg" />
+          <path d="M12 12 L88 88" className="mm-river" />
+          <path d="M10 90 L10 10 L90 10" className="mm-lane" /><path d="M10 90 L90 90 L90 10" className="mm-lane" /><path d="M10 90 L90 10" className="mm-lane" />
+          <circle cx={PIT.baron[0]} cy={PIT.baron[1]} r="6" className={"mm-pit " + (topBy ?? "")} />
+          <circle cx={PIT.drake[0]} cy={PIT.drake[1]} r="6" className={"mm-pit " + (drakeBy ?? "")} />
+          <rect x="2" y="84" width="14" height="14" rx="3" className={"mm-base B" + (loser === "B" ? " fall" : "")} />
+          <rect x="84" y="2" width="14" height="14" rx="3" className={"mm-base R" + (loser === "R" ? " fall" : "")} />
+          {f.at && <circle key={step} cx={f.at[0]} cy={f.at[1]} r="9" className={"mm-ping " + (now?.side ?? "")} />}
+        </svg>
+        <span className="mm-lbl" style={{ left: `${PIT.baron[0]}%`, top: `${PIT.baron[1] - 10}%` }}>바론·전령</span>
+        <span className="mm-lbl" style={{ left: `${PIT.drake[0]}%`, top: `${PIT.drake[1] + 10}%` }}>드래곤</span>
+        {(["B", "R"] as Side[]).map((sd) => [...d.picks[sd]].sort((a, b) => a.pos - b.pos).map((p, i) => {
+          const [x, y] = pos(sd, i);
+          return <span key={sd + p.c} className={`mm-ch ${sd}` + (hl === p.c ? " hl" : "") + (loser === sd ? " out" : "")} style={{ left: `${x}%`, top: `${y}%` }} title={`${CH[p.c]?.ko} · ${PL[d.lineup[sd][p.pos]]?.name}`}><ChampIcon id={p.c} size={30} /></span>;
+        }))}
+      </div>
+      <div className="mm-foot muted xs">
+        <span>포탑 파괴 {towers.length ? towers.map((t) => d.teams[t.side!]).join("·") : "없음"}</span>
+        <span>위치는 사건 종류로 정한 도식(실제 좌표 아님)</span>
+      </div>
+    </div>
+  );
+}
+
 function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
   const s = useSave()!; const me = mySide(s);
   const [auto, setAuto] = useState(false);
@@ -324,6 +392,10 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
       </div>
 
       <div className="bc-body">
+        <div className="bc-map">
+          <Minimap d={d} r={r} step={step} />
+          <LeadChart d={d} r={r} upto={step} />
+        </div>
         <div className="bc-main">
           <div className={"bc-scene " + (now ? `${now.kind} ${now.side ?? ""}` : "idle")} key={step} data-testid="sim-scene">
             {now ? <>
@@ -345,8 +417,6 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
               </div>
             ))}
           </div>
-        </div>
-        <div className="bc-side">
           <div className="bc-lanes">
             <div className="bc-lanes-h"><TeamChip t={d.teams.B} /><span className="muted xs">라인 맞대결</span><TeamChip t={d.teams.R} /></div>
             {[0, 1, 2, 3, 4].map((i) => {
@@ -360,7 +430,6 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
               );
             })}
           </div>
-          <LeadChart d={d} r={r} upto={step} />
         </div>
       </div>
     </div>
