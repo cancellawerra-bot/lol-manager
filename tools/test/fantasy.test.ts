@@ -53,8 +53,13 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
   assert.equal(f26, mx, "Faker 2026 is the most expensive fantasy card");
   assert(all.filter((c) => c.year === 2026 && c.pkey !== "faker").every((c) => fantasyPrice(c) < f26), "2026: nobody at or above Faker");
   assert(all.every((c) => fantasyPrice(c) >= 5), "minimum 5억");
-  // 단조성: 능력치가 높으면 항상 더 비쌈 (2026 페이커 지정값 제외)
-  const rest = all.filter((c) => c.id !== "faker-2026");
+  // v2.22.1 교수님 지정: 페이커 월즈 우승 시즌(카드 honors 기준) + 2026 = 50억, 나머지 페이커는 가산 방식
+  const worlds = all.filter((c) => c.pkey === "faker" && (c.honors ?? []).includes(`${c.year} 월즈 우승`)).map((c) => c.year).sort();
+  assert.deepEqual(worlds, [2013, 2015, 2016, 2023, 2024, 2025], "Faker Worlds-winning seasons from data");
+  const f50 = (c: { pkey: string; year: number }) => c.pkey === "faker" && (c.year === 2026 || worlds.includes(c.year));
+  for (const c of all.filter((c) => c.pkey === "faker")) assert(f50(c) ? fantasyPrice(c) === 50 : fantasyPrice(c) < 50, `Faker ${c.year} price ${fantasyPrice(c)}`);
+  // 단조성: 능력치가 높으면 항상 더 비쌈 (페이커 50억 지정 카드 제외)
+  const rest = all.filter((c) => !f50(c));
   for (const a of rest) for (const b of rest) if (fantasyRatingOf(a) > fantasyRatingOf(b)) assert(fantasyPrice(a) > fantasyPrice(b), `monotone ${a.id} ${fantasyRatingOf(a)}/${fantasyPrice(a)} vs ${b.id} ${fantasyRatingOf(b)}/${fantasyPrice(b)}`);
   // 쵸비: 지표가 가장 좋은 2024가 2025·2026보다 비쌈
   assert(fantasyPrice(CARDS["chovy-2024"]) > fantasyPrice(CARDS["chovy-2026"]) && fantasyPrice(CARDS["chovy-2024"]) > fantasyPrice(CARDS["chovy-2025"]), "Chovy 2024 most expensive");
@@ -73,6 +78,22 @@ for (const cap of Object.values(BUDGETS)) for (const strat of ["salaryHigh", "ra
   assert(all.filter((c) => c.year >= 2015).every((c) => Object.values(c.four!).every((v) => v !== null)), "2015+ cards have all four stats");
   assert.equal(CARDS["faker-2026"].salary, 50, "story salary unchanged");
   for (const cap of Object.values(BUDGETS)) assert.equal(lockReason(CARDS["faker-2026"], "T1", {}, cap), undefined, `Faker draftable on first pick at ${cap}`); }
+// v2.22.1: 페이커 50억 카드 7장이 있어도 막히지 않음 — 1라운드에 7팀이 50억 페이커 카드를 하나씩 집어도(사람·AI 모두) 나머지가 채워짐
+{ const f50 = all.filter((c) => c.pkey === "faker" && fantasyPrice(c) === 50).map((c) => c.id);
+  assert.equal(f50.length, 7);
+  for (const cap of Object.values(BUDGETS)) for (let seed = 1; seed <= 4; seed++) {
+    const rng = new Rng(seed * 31 + cap), order = rng.shuffle(CORE.teams.map((t) => t.short));
+    let st = { rosters: {} as Rosters, round: 0, pick: 0 }, k = 0;
+    while (st.round < FANTASY_ROUNDS) {
+      const who = whoPicks(order, st.round, st.pick)!;
+      let id: string | undefined;
+      if (st.round === 0 && k < f50.length) { id = f50[k++]; assert.equal(lockReason(CARDS[id], who, st.rosters, cap), undefined, `Faker 50 first pick at ${cap}`); }
+      else { id = aiPick(who, st.rosters, cap, rng); assert(id, `AI dead end after Faker 50 picks: cap ${cap} seed ${seed} ${who}`); }
+      st = applyPick(id, order, st.rosters, st.round, st.pick);
+    }
+    for (const [t, roster] of Object.entries(st.rosters)) { assert.equal(roster.length, 5, `${t} filled`); assert(roster.reduce((n, id) => n + fantasyPrice(CARDS[id]), 0) <= cap + 1e-9, `${t} within cap`); }
+  }
+}
 // AI는 능력치 위주: 평균 능력치가 가성비 저가 카드(2012~15 위주)보다 확실히 높아야 함
 const r = run(7, BUDGETS.normal, "random");
 const avg = Object.values(r).flat().reduce((n, id) => n + fantasyRatingOf(CARDS[id]), 0) / 50;

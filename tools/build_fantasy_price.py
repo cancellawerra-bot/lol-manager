@@ -5,7 +5,9 @@
 - 가산 add(R): 73→0 … 80→0.7 선형, 80 이상은 앵커 사이 로그-선형 (85→3, 88→7, 90→12, 95→30, 99→48). R = 판타지 능력치(정수).
 - 성적 보너스(그 시즌만, 이월 제외): 월즈 우승 3 · 준우승 1.5 · 4강 0.75, MSI 우승 2 · 준우승 1 · 4강 0.5, LCK 포지션 1위(그 시즌·포지션 판타지 능력치 최고, 10경기 이상) 1.
   단, 능력치 단조성이 우선: 보너스를 더해도 능력치 1 높은 카드의 기본 가격보다 한 칸 낮게 제한.
-- 연도 할인 없음. 예외: 2026 페이커 50억(교수님 지정) 유지, 2026은 다른 카드가 페이커보다 낮게(49.5억 이하). 다른 연도는 가산 방식 그대로.
+- 연도 할인 없음. 예외(교수님 지정): 2026 페이커 50억, v2.22.1부터 페이커 월즈 우승 시즌 카드도 전부 50억
+  ("페이커 레전드 능력치가 있었을때를 50억으로" → 위젯 답 "페이커 월즈 우승 시즌을 전부 50억으로"). 우승 연도는 카드 honors(tools/international_results.json에서 옴)의 "YYYY 월즈 우승"으로 정함.
+  2026은 다른 카드가 페이커보다 낮게(49.5억 이하). 다른 연도는 가산 방식 그대로(50억 이상 카드가 있으면 meta에 보고만).
 - 다른 교수님 지정 연봉(제우스·구마유시·케리아·스카웃·페이커 2022–25 등)은 새 방식 값으로 바꾸고 meta.fantasyPrice.ownerChanges에 원래 값과 새 값을 남김.
 스토리·창단 모드 salary는 건드리지 않습니다.
 """
@@ -55,6 +57,10 @@ def main() -> None:
     data = json.loads(CARDS.read_text("utf-8"))
     cards = data["cards"]
     old = {c["id"]: c.get("fantasySalary") for c in cards}
+    worlds = sorted({c["year"] for c in cards if c["pkey"] == "faker" and f"{c['year']} 월즈 우승" in (c.get("honors") or [])})
+
+    def is_faker50(c: dict) -> bool:
+        return c["pkey"] == "faker" and (c["year"] == 2026 or c["year"] in worlds)
     top = defaultdict(int)
     for c in cards:
         if (c.get("games") or 0) >= 10:
@@ -71,14 +77,15 @@ def main() -> None:
         c["fantasyBonus"] = round(v - base_price(r), 2) or None
         if c["fantasyBonus"] is None:
             c.pop("fantasyBonus")
-        if c["year"] == 2026:
-            v = FAKER_2026 if c["pkey"] == "faker" else min(v, FAKER_2026 - 0.5)
-        c["fantasySalary"] = v
+        if c["year"] == 2026 and c["pkey"] != "faker":
+            v = min(v, FAKER_2026 - 0.5)
         c.pop("market", None)
         c.pop("marketNote", None)
-        if c["year"] == 2026 and c["pkey"] == "faker":
+        if is_faker50(c):
+            v = FAKER_2026
             c["market"] = True
-            c["marketNote"] = "교수님 지정 50억"
+            c["marketNote"] = "교수님 지정 50억" + (" (월즈 우승 시즌)" if c["year"] != 2026 else "")
+        c["fantasySalary"] = round(v, 2)
     owner_changes = []
     for o in M["overrides"]:
         if o["kind"] != "owner":
@@ -88,7 +95,7 @@ def main() -> None:
             if c and c["fantasySalary"] != o["value"]:
                 owner_changes.append({"id": c["id"], "rating": c["fantasyRating"], "owner": o["value"], "new": c["fantasySalary"]})
     # 단조성 검사 (2026 페이커 지정값 제외)
-    rest = [c for c in cards if not (c["year"] == 2026 and c["pkey"] == "faker")]
+    rest = [c for c in cards if not is_faker50(c)]
     byr = defaultdict(list)
     for c in rest:
         byr[c["fantasyRating"]].append(c["fantasySalary"])
@@ -103,8 +110,10 @@ def main() -> None:
         "note": "판타지 드래프트 연봉 = 기본 5억 + 그 시즌 능력치 가산 + 작은 성적 보너스(게임용 가상 금액). 교수님 결정(2026-11-22)으로 실제 시장 추정 공식 폐기. 연도 할인 없음. 2026 페이커 50억만 지정값. 스토리·창단 모드는 salary를 씁니다.",
         "base": BASE, "addAnchors": ANCH, "honorBonus": HONOR, "lckPositionTop": LCK_TOP,
         "table": table, "ownerChanges": owner_changes,
+        "faker50": {"years": worlds + [2026], "why": "교수님 지정(2026-11-22): 2026 + 페이커 월즈 우승 시즌 전부 50억", "sameSeasonAtOrAbove50": [(c["id"], c["fantasySalary"]) for c in cards if c["pkey"] != "faker" and c["year"] in worlds + [2026] and c["fantasySalary"] >= FAKER_2026]},
     }
     CARDS.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print("faker50 years", worlds + [2026], "same-season >=50:", data["meta"]["fantasySalary"]["faker50"]["sameSeasonAtOrAbove50"])
     print("table", table)
     print("owner changes", owner_changes)
     ch = sorted(cards, key=lambda c: -c["fantasySalary"])[:12]

@@ -20,7 +20,7 @@ for (const c of cards.filter((c) => YEARS.includes(c.year) && c.ownerRating == n
 const mean = (y: number) => { const r = cards.filter((c) => c.year === y && c.ownerRating == null).map((c) => c.fantasyRating); return r.reduce((a, b) => a + b, 0) / r.length; };
 assert(Math.abs(mean(2024) - mean(2026)) < 1.2 && Math.abs(mean(2025) - mean(2026)) < 1.2, `연도별 평균 ${mean(2024)} ${mean(2025)} ${mean(2026)}`);
 const inv = audit(cards);
-const ownerCard = (id: string) => by[id].ownerRating != null || id === "faker-2026";
+const ownerCard = (id: string) => by[id].ownerRating != null || (by[id].pkey === "faker" && by[id].fantasySalary === 50);
 // 능력치·연봉 역전은 교수님 평가(2026 owner_ratings)·2026 페이커 지정 연봉 카드가 낀 경우만 허용
 for (const i of inv.filter((i) => i.kind !== "judge")) assert(ownerCard(i.better) || ownerCard(i.worse), `기록 기반 ${i.kind} 역전 ${i.better} < ${i.worse}`);
 // 판단 역전은 평가 카드이거나, 더 좋은 시즌의 킬 관여가 3%p 이상 낮은 경우(판단 재료)만, 차이 2점 이내
