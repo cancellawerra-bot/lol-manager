@@ -15,6 +15,7 @@
 - **요청:** 오너 "그냥 능력치만 써놔 그리고 서폿은 머냐 서포터라고 해야지".
 - **변경:** `Market.tsx` CardTile의 「시장 추정치」 태그·`marketNote`(교수님 지정/보도 날짜) 표시와 `market` prop 제거, `Setup.tsx` 드래프트 안내 문구에서 표시 언급 제거. 카드에는 능력치·연봉 금액만(전역 '게임용 가상 금액' 고지는 유지). `fantasySalary`·`market`·`marketNote` 데이터와 `tools/market_salaries.json` 출처는 그대로 둠(화면 미표시). 포지션 표기 `POS_KO`(`src/data.ts`)와 `story.ts`의 포지션 배열 2곳, `Method.tsx` 설명의 「서폿」 → 「서포터」. src·public 전체에 「서폿」 0건(과거 패치 노트 제외 없음).
 - **확인함:** 아래 배포 줄 참고. 스크린샷 `/workspace/qa/fd6-*.png`.
+- **배포:** main@`27f95a2` → gh-pages@`3d6aa3e`, 라이브 번들 `assets/index-D77K4lev.js`(2.17.2). 로컬·공개 사이트 1280×800·390×844: 팀 선택·드래프트·홈·구단 화면에 「서폿」 0건·「서포터」 표시, 연봉 근거 표시 0건, 가로 넘침 없음(scrollWidth=뷰포트), 드래프트 → 시즌 시작, 콘솔 오류 0. 스크린샷 `/workspace/qa/fd6-*.png`, `fd6-live-*.png`.
 
 ### 2026-11-22 · Grok · v2.17.1 교수님 지정 판타지 연봉
 
