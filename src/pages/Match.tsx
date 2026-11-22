@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
 import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
-import { STAGE_KO } from "../game/season";
+import { STAGE_KO, standings } from "../game/season";
 import type { GameResult, GEvent } from "../game/sim";
 import { sigmoid } from "../game/rng";
-import { ChampIcon, TeamChip, Ovr } from "../ui";
+import { ChampIcon, TeamChip, Ovr, form5 } from "../ui";
+import { ratingOf } from "../rating";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
 import { TacticsControls, TacticsReview } from "./Tactics";
@@ -29,13 +30,14 @@ export default function Match() {
         <div className="mt-score"><TeamChip t={s.team} size="lg" /><b>{myScore}</b><span>:</span><b>{opScore}</b><TeamChip t={op} size="lg" /></div>
         <div className="mt-r">{sr.games.length > 0 && <span className="muted sm">피어리스 잠금 {sr.games.length * 10}개</span>}<button className="btn ghost sm" onClick={() => go("#/home")}>나가기(저장됨)</button></div>
       </div>
-      {ss.stage === "press" && <Press />}
+      <Steps stage={ss.stage} />
+      {ss.stage === "press" && <WithOpponent><Press /></WithOpponent>}
       {ss.stage === "lineup" && <Lineup />}
-      {ss.stage === "select" && <Select />}
+      {ss.stage === "select" && <WithOpponent><Select /></WithOpponent>}
       {ss.stage === "draft" && ss.draft && <Draft d={ss.draft} />}
-      {ss.stage === "meet" && <Meet />}
+      {ss.stage === "meet" && <WithOpponent><Meet /></WithOpponent>}
       {ss.stage === "sim" && ss.result && <Sim d={ss.draft!} r={ss.result} step={ss.simStep} />}
-      {ss.stage === "pog" && ss.result && <Pog r={ss.result} />}
+      {ss.stage === "pog" && ss.result && <Pog d={ss.draft!} r={ss.result} />}
       {ss.stage === "result" && ss.result && <Result d={ss.draft!} r={ss.result} />}
       {ss.stage === "locker" && <Locker />}
       {ss.stage === "end" && <End />}
@@ -43,6 +45,46 @@ export default function Match() {
   );
 }
 
+// 경기 진행 단계 표시 (화면만 — 단계 순서·동작은 그대로)
+const STEPS: [string, string][] = [["press", "기자회견"], ["lineup", "라인업"], ["select", "선택권"], ["draft", "밴픽"], ["meet", "작전"], ["sim", "경기"], ["pog", "MVP"], ["result", "결과"]];
+function Steps({ stage }: { stage: string }) {
+  const idx = STEPS.findIndex(([k]) => k === stage);
+  const cur = idx < 0 ? STEPS.length : idx; // 라커룸·시리즈 종료는 모두 지난 상태
+  return (
+    <ol className="m-steps" aria-label="경기 진행 단계" data-testid="match-steps">
+      {STEPS.map(([k, ko], i) => <li key={k} className={i < cur ? "done" : i === cur ? "now" : ""} aria-current={i === cur ? "step" : undefined}><i>{i < cur ? "✓" : i + 1}</i><span>{ko}</span></li>)}
+    </ol>
+  );
+}
+
+// 경기 전 화면(기자회견·선택권·미팅) 오른쪽에 상대 팀 정보를 보여 줍니다. 이미 있는 순위·전적·선발 능력치만 씁니다.
+function OpponentCard() {
+  const s = useSave()!; const sr = sessionSeries(s);
+  const op = sr.a === s.team ? sr.b : sr.a;
+  const rows = standings(s);
+  const idx = rows.findIndex((r) => r.t === op), row = idx >= 0 ? rows[idx] : undefined;
+  const mine = s.starters[s.team] ?? [], theirs = s.starters[op] ?? [];
+  const avg = (ks: string[]): number | null => { const v = ks.map((k) => ratingOf(PL[k])).filter((x): x is number => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const a1 = avg(mine), a2 = avg(theirs);
+  return (
+    <aside className="opp-card" data-testid="opp-card">
+      <small className="opp-k">상대</small>
+      <div className="opp-h"><TeamChip t={op} size="lg" /><b>{TM[op]?.ko ?? op}</b></div>
+      <p className="muted sm">{row && row.w + row.l > 0 ? `정규 시즌 ${idx + 1}위 · ${row.w}승 ${row.l}패` : "아직 기록 없음"}{row && row.last.length > 0 && <span className="opp-form"> {form5(row.last)}</span>}</p>
+      {a1 != null && a2 != null && (
+        <div className="opp-vs" aria-label="선발 5명 평균 능력치">
+          <span><small>우리 평균</small><b>{a1.toFixed(1)}</b></span>
+          <span className="opp-bar"><i style={{ width: `${Math.max(10, Math.min(90, 50 + (a1 - a2) * 6))}%` }} /></span>
+          <span><small>상대 평균</small><b>{a2.toFixed(1)}</b></span>
+        </div>
+      )}
+      <ul className="opp-five">{theirs.map((k, i) => <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.name ?? k}</span><Ovr p={PL[k]} /></li>)}</ul>
+    </aside>
+  );
+}
+function WithOpponent({ children }: { children: React.ReactNode }) {
+  return <div className="mt-cols"><div className="mt-main">{children}</div><OpponentCard /></div>;
+}
 
 function Press() {
   const s = useSave()!; const sr = sessionSeries(s); const op = sr.a === s.team ? sr.b : sr.a;
@@ -105,16 +147,22 @@ function Meet() {
     </div>
   );
 }
-function Pog({ r }: { r: GameResult }) {
+function Pog({ d, r }: { d: DraftState; r: GameResult }) {
   const p = PL[r.mvp];
   const perf = r.perf.find((x) => x.key === r.mvp);
   return (
-    <div className="panel pog-wrap">
-      <h2>Player Of the Game</h2>
-      <div className="pog-card">
-        <div><b className="big">{p?.label ?? p?.name ?? r.mvp}</b><div className="muted">{p ? POS_KO[p.pos] : ""} · {CH[perf?.c ?? ""]?.ko ?? ""}</div></div>
-        <div>KDA {perf ? `${perf.k}/${perf.d}/${perf.a}` : "–"} · 평점 {perf?.rating.toFixed(1)}</div>
-      </div>
+    <div className="pog2" data-testid="pog-screen">
+      <small className="pog2-k">Player Of the Game</small>
+      {perf && <ChampIcon id={perf.c} size={112} ring="#E9C46A" />}
+      <b className="pog2-name">{p?.label ?? p?.name ?? r.mvp}</b>
+      <span className="pog2-sub">{p ? POS_KO[p.pos] : ""}{perf ? ` · ${CH[perf.c]?.ko ?? ""} · ` : ""}{perf && <TeamChip t={d.teams[perf.side]} />}</span>
+      {perf && (
+        <div className="pog2-stats">
+          <span><small>K / D / A</small><b>{perf.k} / {perf.d} / {perf.a}</b></span>
+          <span><small>KDA</small><b>{((perf.k + perf.a) / Math.max(1, perf.d)).toFixed(1)}</b></span>
+          <span><small>평점</small><b>{perf.rating.toFixed(1)}</b></span>
+        </div>
+      )}
       <button className="btn primary lg" data-testid="pog-next" onClick={afterPog}>세트 결과 · 왜 이겼나/졌나 ▶</button>
     </div>
   );
@@ -456,13 +504,41 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
   if (top.length) lines.push(`가장 크게 작용한 요인: ${top.map((c) => `${c.label}(${c.pp >= 0 ? "+" : ""}${c.pp.toFixed(1)}%p)`).join(", ")}.`);
   lines.push(`14분 골드 ${r.gold15 * sign >= 0 ? "우세" : "열세"} ${fmt(Math.abs(r.gold15))}, 가장 큰 차이는 ${POS_KO[big[1]]}(${big[0] >= 0 ? "+" : "−"}${fmt(Math.abs(big[0]))}).`);
   if (upset) lines.push(won ? "데이터상 불리한 경기를 경기 중 흐름(오브젝트·한타)으로 뒤집었습니다." : "데이터상 유리했지만 경기 중 흐름(오브젝트·한타)에서 밀렸습니다.");
+  const mvpPerf = r.perf.find((p) => p.key === r.mvp);
+  const opShort = sr.a === s.team ? sr.b : sr.a;
+  const myNum = sr.a === s.team ? sr.sa : sr.sb, opNum = sr.a === s.team ? sr.sb : sr.sa;
+  const goldMe = r.gold15 * sign;
   return (
     <div className="result">
-      <div className={"res-banner " + (won ? "win" : "lose")}>
-        <b>{won ? "승리" : "패배"}</b><span>{d.teams[r.winner]} 승 · {r.dur}분 · 킬 {r.kills.B}:{r.kills.R} · 시리즈 {sr.a === s.team ? sr.sa : sr.sb}:{sr.a === s.team ? sr.sb : sr.sa}</span>
-      </div>
-      <TacticsReview record={r.tactics} side={me} />
-      <AppearanceReview record={sessionSeries(s).games[s.session!.gameIdx]?.appearances} side={me} />
+      <section className={"res-hero " + (won ? "win" : "lose")} data-testid="res-hero">
+        <div className="rh-main">
+          <span className="rh-stage">{STAGE_KO[sr.stage]} · {s.session!.gameIdx + 1}세트</span>
+          <b className="rh-title">{won ? "승리" : "패배"}</b>
+          <div className="rh-score"><TeamChip t={s.team} size="lg" /><b>{myNum}</b><span>:</span><b>{opNum}</b><TeamChip t={opShort} size="lg" /></div>
+          <span className="rh-sub">{r.dur}분 · 킬 {r.kills[me]}:{r.kills[other(me)]}{upset && <em className="rh-tag">{won ? "이변의 승리" : "예상 밖 패배"}</em>}</span>
+          <button className="btn primary lg" onClick={afterResult} data-testid="next-game">{sr.winner ? "시리즈 결과 보기 ▶" : "라커룸으로 ▶"}</button>
+        </div>
+        {mvpPerf && (
+          <div className="rh-mvp" data-testid="res-mvp">
+            <span className="rh-mvp-k">MVP</span>
+            <ChampIcon id={mvpPerf.c} size={72} ring="#E9C46A" />
+            <b>{PL[mvpPerf.key]?.name ?? mvpPerf.key}</b>
+            <small>{POS_KO[mvpPerf.pos]} · {CH[mvpPerf.c]?.ko ?? ""} · {d.teams[mvpPerf.side]}</small>
+            <span>{mvpPerf.k}/{mvpPerf.d}/{mvpPerf.a} · 평점 {mvpPerf.rating.toFixed(1)}</span>
+          </div>
+        )}
+      </section>
+      <ul className="res-chips" data-testid="res-chips">
+        <li><small>14분 가장 큰 격차</small><b className={big[0] >= 0 ? "up" : "down"}>{POS_KO[big[1]]} {big[0] >= 0 ? "+" : "−"}{fmt(Math.abs(big[0]))}</b></li>
+        <li><small>14분 골드</small><b className={goldMe >= 0 ? "up" : "down"}>{goldMe >= 0 ? "우세" : "열세"} {fmt(Math.abs(goldMe))}</b></li>
+        <li><small>오브젝트</small><b>드래곤 {r.obj[me].drake}:{r.obj[other(me)].drake} · 바론 {r.obj[me].baron}:{r.obj[other(me)].baron}</b></li>
+        <li><small>경기 전 예상 승률</small><b>{(pMe * 100).toFixed(0)}%</b></li>
+      </ul>
+      <details className="res-fold" data-testid="res-fold-review">
+        <summary>작전·출전 복기 자세히 보기</summary>
+        <TacticsReview record={r.tactics} side={me} />
+        <AppearanceReview record={sessionSeries(s).games[s.session!.gameIdx]?.appearances} side={me} />
+      </details>
       <div className="grid">
         <section className="card span2">
           <div className="card-h"><h2>왜 {won ? "이겼나" : "졌나"}</h2><span className="muted sm">경기 전 우리 승리 확률 {(pMe * 100).toFixed(0)}%</span></div>
@@ -500,14 +576,16 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
             <tbody>{opPerf.map((p) => <tr key={p.key}><td><ChampIcon id={p.c} size={22} /> {PL[p.key].name}{p.key === r.mvp && <span className="tag good xs">MVP</span>}</td><td className="r">{p.k}/{p.d}/{p.a}</td><td className="r">{p.rating.toFixed(1)}</td></tr>)}</tbody></table>
         </section>
         <section className="card span2">
-          <div className="card-h"><h2>밴픽 기록</h2></div>
-          <ol className="dlog">{d.log.map((l, i) => (
-            <li key={i} className={l.side}><span className="muted">{i + 1}</span><ChampIcon id={l.c} size={24} dim={l.kind === "ban"} /><b>{d.teams[l.side]} {l.kind === "ban" ? "밴" : "픽"} {CH[l.c].ko}</b>{l.pos != null && l.kind === "pick" && <small>{POS_KO[l.pos]}</small>}<small className="muted">{l.why.join(" · ")}</small></li>
-          ))}</ol>
+          <details className="res-fold in">
+            <summary>밴픽 기록 ({d.log.length}단계) 보기</summary>
+            <ol className="dlog">{d.log.map((l, i) => (
+              <li key={i} className={l.side}><span className="muted">{i + 1}</span><ChampIcon id={l.c} size={24} dim={l.kind === "ban"} /><b>{d.teams[l.side]} {l.kind === "ban" ? "밴" : "픽"} {CH[l.c].ko}</b>{l.pos != null && l.kind === "pick" && <small>{POS_KO[l.pos]}</small>}<small className="muted">{l.why.join(" · ")}</small></li>
+            ))}</ol>
+          </details>
         </section>
       </div>
       <div className="row gap center-row">
-        <button className="btn primary lg" onClick={afterResult} data-testid="next-game">{sr.winner ? "시리즈 결과 보기 ▶" : "라커룸으로 ▶"}</button>
+        <button className="btn primary lg" onClick={afterResult}>{sr.winner ? "시리즈 결과 보기 ▶" : "라커룸으로 ▶"}</button>
       </div>
     </div>
   );
@@ -516,11 +594,30 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
 function End() {
   const s = useSave()!; const sr = sessionSeries(s);
   const won = sr.winner === s.team;
+  const op = sr.a === s.team ? sr.b : sr.a;
+  const myNum = sr.a === s.team ? sr.sa : sr.sb, opNum = sr.a === s.team ? sr.sb : sr.sa;
+  const final = won && sr.stage === "F"; // 결승 시리즈 승리 = 그 대회 우승
+  const bits = Array.from({ length: final ? 30 : 16 }, (_, i) => i);
   return (
-    <div className="panel center">
-      <h2 className={won ? "up" : "down"}>{won ? "시리즈 승리" : "시리즈 패배"}</h2>
-      <p className="big">{sr.a} {sr.sa} : {sr.sb} {sr.b}</p>
-      <ul className="plist">{sr.games.map((g, i) => <li key={i}>{i + 1}세트 {g.winner} 승 · {g.dur}분 · MVP {PL[g.mvp].name}</li>)}</ul>
+    <div className={"end-hero " + (won ? "win" : "lose") + (final ? " final" : "")} data-testid="end-hero">
+      {won && <div className="confetti" aria-hidden="true">{bits.map((i) => <i key={i} style={{ left: `${(i * 37 + 11) % 100}%`, animationDelay: `${(i % 8) * 0.28}s`, animationDuration: `${3.2 + (i % 5) * 0.5}s` }} />)}</div>}
+      <small className="end-stage">{STAGE_KO[sr.stage]} · Bo{sr.bo}</small>
+      <b className="end-title">{final ? "결승 승리 · 우승" : won ? "시리즈 승리" : "시리즈 패배"}</b>
+      <div className="end-score"><TeamChip t={s.team} size="lg" /><b>{myNum}</b><span>:</span><b>{opNum}</b><TeamChip t={op} size="lg" /></div>
+      <ol className="end-sets">
+        {sr.games.map((g, i) => {
+          const mp = g.res?.perf.find((p) => p.key === g.mvp);
+          const mine = g.winner === s.team;
+          return (
+            <li key={i} className={mine ? "w" : "l"}>
+              <span className="es-n">{i + 1}세트</span>
+              <span className="es-r">{mine ? "승" : "패"}</span>
+              <span className="es-t">{g.dur}분</span>
+              <span className="es-m">{mp && <ChampIcon id={mp.c} size={26} />}<span>MVP {PL[g.mvp]?.name ?? g.mvp}</span></span>
+            </li>
+          );
+        })}
+      </ol>
       <button className="btn primary lg" onClick={() => { endSeries(); go("#/home"); }} data-testid="end-series">계속 (같은 날 다른 경기 진행) ▶</button>
     </div>
   );
