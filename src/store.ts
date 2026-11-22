@@ -14,6 +14,7 @@ import { practiceMap, setChampFocus, initializeTraining, prepareSeriesTraining, 
 import { prepareInSeason } from "./game/inSeason";
 import { matchTactics, normalizeTactic, recommendTactic, type TacticPlan } from "./game/tactics";
 import { prepareSeriesLineups, makePromise, cancelPromise, setRotationAutomatic } from "./game/rotation";
+import { orderGoods, holdMeet, type GoodsKind, type Qty, type Venue } from "./game/marketing";
 import { talkTo, delegateTalks, lockerTalk, lockerAuto, type Topic, type Tone, type TalkResult, type LockerTarget, type LockerTone } from "./game/talks";
 import { CARDS, PL } from "./data";
 
@@ -224,6 +225,8 @@ export function afterResult(): void {
   });
 }
 export function afterLocker(): void { nextGame(); }
+export function orderGoodsNow(kind: GoodsKind, qty: Qty, models: string[]): string { let out = ""; mutate(s => { out = orderGoods(s, kind, qty, models); }); return out; }
+export function holdFanMeet(venue: Venue): string { let out = ""; mutate(s => { out = holdMeet(s, venue); }); return out; }
 export function lockerSay(target: LockerTarget, tone: LockerTone, key?: string): string { let out = ""; mutate((s) => { out = lockerTalk(s, target, tone, key); }); return out; }
 export function lockerDelegate(): void { mutate((s) => { if (!s.session?.locker) lockerAuto(s); }); nextGame(); }
 /** 이번 세트를 수석코치에게 통째로 맡깁니다. 지금 단계부터 경기가 끝나 MVP 화면 앞까지 순서대로 진행하고 거기서 멈춥니다.

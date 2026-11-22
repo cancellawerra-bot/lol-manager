@@ -8,6 +8,7 @@ import ClubTimeline from "./ClubTimeline";
 import GoalTable from "./GoalTable";
 import Ledger from "./Ledger";
 import { challengeLog } from "../game/achievements";
+import { MarketingCard } from "./Marketing";
 
 export default function Club() {
   const s = useSave()!;
@@ -39,6 +40,7 @@ export default function Club() {
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       {s.story && <Ledger s={s} />}
+      <MarketingCard />
       {s.story && (() => {
         const log = challengeLog(s); if (!log) return null;
         return <Card title="도전 성과" right={<span className="muted sm">{log.filter((x) => x.done).length} / {log.length}</span>}>

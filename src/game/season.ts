@@ -63,6 +63,7 @@ export interface Save {
   tactics?: Record<string, TacticPlan>;
   rotation?: RotationState;
   talks?: import("./talks").TalkState;
+  marketing?: import("./marketing").MarketingState;
   scouting?: ScoutingState;
   clubTimeline?: ClubTimelineState;
 }
