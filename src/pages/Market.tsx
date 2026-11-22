@@ -5,19 +5,28 @@ import { personUsed } from "../game/cards";
 import { getSave, useSave } from "../store";
 import { Card } from "../ui";
 import { cardRating, ratingColor } from "../rating";
+import { HonorChips, MiniFour } from "../pcard";
 import { go } from "../nav";
 import { fmtMoney, moneyRound } from "../game/money";
 import { franchisePlayers } from "../game/story";
 import InSeasonMarket from "./InSeasonMarket";
 import { OpeningScouting } from "./Scouting";
 
-export function CardTile({ c, on, disabled, reason, onClick, price, personView, ratingOf }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean; ratingOf?: (c: SeasonCard) => number }) {
+export function CardTile({ c, on, disabled, reason, onClick, price, personView, ratingOf, showFour = true }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean; ratingOf?: (c: SeasonCard) => number; showFour?: boolean }) {
   const rt = ratingOf ? ratingOf(c) : cardRating(c);
   return (
-    <button type="button" className={"card-tile" + (on ? " on" : "") + (disabled ? " dim" : "")} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
-      <div className="row between"><b>{personView ? c.name : cardLabel(c)}</b><span className="gold">{fmtMoney(price ?? c.salary)}</span></div>
-      <div className="muted sm">{personView && `${c.year} 기록 · `}{POS_KO[c.posIdx]} · {c.team} · {c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""}</div>
-      <div className="sm">{c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`} · 능력치 <b style={{ color: ratingColor(rt) }}>{rt}</b>{c.honors?.length ? <span className="muted"> · {c.honors.join(", ")}</span> : null}</div>
+    <button type="button" className={"card-tile pc" + (rt >= 92 ? " top" : "") + (on ? " on" : "") + (disabled ? " dim" : "")} style={{ "--tc": ratingColor(rt) } as React.CSSProperties} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
+      <div className="pc-head">
+        <div className="pc-ovr" aria-label={`능력치 ${rt}`}><b>{rt}</b><small>능력치</small></div>
+        <div className="pc-id">
+          <b className="pc-name">{personView ? c.name : cardLabel(c)}</b>
+          <span className="pc-sub">{personView && `${c.year} 기록 · `}{POS_KO[c.posIdx]} · {c.team}</span>
+          <HonorChips c={c} />
+        </div>
+        <span className="gold pc-price">{fmtMoney(price ?? c.salary)}</span>
+      </div>
+      {showFour && <MiniFour c={c} />}
+      <div className="muted xs pc-note">{c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""} · {c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`}</div>
       <div className="tile-metrics xs muted">
         <span>KDA {recTxt(c.kda, (n) => n.toFixed(2))}</span>
         <span>승률 {recTxt(c.wr, (n) => `${(n * 100).toFixed(1)}%`)}</span>

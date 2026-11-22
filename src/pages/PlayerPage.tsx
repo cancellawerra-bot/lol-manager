@@ -17,7 +17,7 @@ export default function PlayerPage({ k }: { k: string }) {
     const career = s.pstats[k];
     return <div className="grid" data-testid="season-player-profile">
       <Card className="span2" title={`${card.name} · ${card.year} 시즌 기록`}><div className="row wrap gap"><span className="tag">{POS_KO[card.posIdx]}</span><span className="tag">당시 {card.team}</span>{s.story?.contracts.some(c => c.person === card.pkey) && <span className="tag good">우리 구단 보유</span>}{card.small && <span className="tag warn">표본 부족</span>}{card.limited && <span className="tag">지표 제한</span>}{p.label?.includes("추정") && <span className="tag warn">과거 기록 기반 추정</span>}</div>
-        <p>근거 {card.year}년 · {card.games > 0 ? `${card.games}경기` : "경기 기록 없음"}. 현재 게임 능력치 <Ovr p={p} />.{card.honors?.length ? <> 국제대회: {card.honors.join(", ")}.</> : null}{(card.ownerRating ?? p.ownerRating) != null ? <> 교수님 평가 반영.</> : null}</p><p className="muted sm">아래는 확인된 시즌 기록입니다. 없는 지표는 기록 없음으로 표시합니다. 게임 종합에는 현재 커리어의 기존 추정 규칙이 적용될 수 있습니다.</p>
+        <p>근거 {card.year}년 · {card.games > 0 ? `${card.games}경기` : "경기 기록 없음"}. 현재 게임 능력치 <Ovr p={p} />.{card.honors?.length ? <> 국제대회: {card.honors.join(", ")}.</> : null}</p><p className="muted sm">아래는 확인된 시즌 기록입니다. 없는 지표는 기록 없음으로 표시합니다. 게임 종합에는 현재 커리어의 기존 추정 규칙이 적용될 수 있습니다.</p>
         <div className="facts">{stats.map(([label, value]) => <li key={label}><b>{value}</b><span>{label}</span></li>)}</div><p className="muted sm">챔피언별 사용 기록은 이 시즌 카드에 포함되어 있지 않습니다.</p>
       </Card>
       <Card title="이번 커리어 경기 기록">{career?.g ? <p>{career.g}경기 {career.w}승 · 평균 평점 {(career.rsum / career.g).toFixed(2)} · MVP {career.mvp}회</p> : <p className="muted">이번 커리어 출전 기록 없음</p>}<p className="muted xs">실제 시즌 통계와 게임 안 경기 기록을 구분합니다.</p></Card>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CARDS, POS_KO, cardLabel, fmt } from "../data";
 import type { SeasonCard } from "../types";
 import { ratingColor } from "../rating";
+import { HonorChips } from "../pcard";
 import { fmtMoney } from "../game/money";
 import { TEAM_LINEAGE, LINEAGE_TEAMS, teamMatch } from "../game/teamLineage";
 import { CardTile, type DraftRules, type MarketView, type MarketSort } from "./Market";
@@ -70,20 +71,25 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
           <section key={c.n} className={"db-col" + (tab === c.i ? " active" : "") + (c.pickedId ? " filled" : "")} data-testid={`pos-col-${c.i}`}>
             <header className="db-colhead"><b>{c.n}</b><span className="muted xs">{c.pickedId ? "선택 완료 · 잠김" : `지명 가능 ${c.avail} / ${c.shown.length}`}</span></header>
             {c.pickedId ? (
-              <div className="db-mine" data-testid={`mine-${c.i}`}>
+              <div className="db-mine" data-testid={`mine-${c.i}`} style={{ "--tc": ratingColor(ratingOf(CARDS[c.pickedId])) } as React.CSSProperties}>
+                <span className="db-mine-ovr" aria-label={`능력치 ${ratingOf(CARDS[c.pickedId])}`}><b>{ratingOf(CARDS[c.pickedId])}</b><small>능력치</small></span>
                 <b>{cardLabel(CARDS[c.pickedId])}</b>
                 <span className="xs muted">{CARDS[c.pickedId].team}</span>
-                <span className="sm">능력치 <b style={{ color: ratingColor(ratingOf(CARDS[c.pickedId])) }}>{ratingOf(CARDS[c.pickedId])}</b> · <span className="gold">{fmtMoney(priceOf(CARDS[c.pickedId]))}</span></span>
+                <HonorChips c={CARDS[c.pickedId]} />
+                <span className="gold">{fmtMoney(priceOf(CARDS[c.pickedId]))}</span>
               </div>
             ) : (
               <div className="db-list">
                 {c.shown.slice(0, 400).map((x) => {
                   const r = rules.lock(x), rt = ratingOf(x);
                   return (
-                    <button key={x.id} type="button" className={"db-row" + (r ? " dim" : "") + (detail === x.id ? " cur" : "")} onClick={() => setDetail(x.id)} title={r ?? ""} data-testid={`card-${x.id}`} data-person={x.pkey} data-locked={r ? "1" : "0"}>
-                      <span className="db-r1"><b>{cardLabel(x)}</b><span className="gold">{fmtMoney(priceOf(x))}</span></span>
-                      <span className="db-r2"><span className="db-team">{x.team}</span><span className="db-rt">능력치 <b style={{ color: ratingColor(rt) }}>{rt}</b></span></span>
-                      {r && <span className="db-lock xs">{r}</span>}
+                    <button key={x.id} type="button" className={"db-row" + (rt >= 92 ? " top" : "") + (r ? " dim" : "") + (detail === x.id ? " cur" : "")} style={{ "--tc": ratingColor(rt) } as React.CSSProperties} onClick={() => setDetail(x.id)} title={r ?? ""} data-testid={`card-${x.id}`} data-person={x.pkey} data-locked={r ? "1" : "0"}>
+                      <span className="db-ovr" aria-label={`능력치 ${rt}`}><b>{rt}</b></span>
+                      <span className="db-main">
+                        <span className="db-r1"><b>{cardLabel(x)}</b><span className="gold">{fmtMoney(priceOf(x))}</span></span>
+                        <span className="db-r2"><span className="db-team">{x.team}</span><HonorChips c={x} /></span>
+                        {r && <span className="db-lock xs">{r}</span>}
+                      </span>
                     </button>
                   );
                 })}
@@ -96,7 +102,7 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
       {dc && (
         <div className="db-modal" role="dialog" aria-label="카드 상세" onClick={() => setDetail(null)} data-testid="card-detail">
           <div className="db-panel" onClick={(e) => e.stopPropagation()}>
-            <CardTile c={dc} price={priceOf(dc)} ratingOf={ratingOf} reason={dReason} />
+            <CardTile c={dc} price={priceOf(dc)} ratingOf={ratingOf} reason={dReason} showFour={false} />
             <FourStats c={dc} />
             <div className="row gap" style={{ marginTop: 10, justifyContent: "flex-end" }}>
               <button type="button" className="btn" onClick={() => setDetail(null)}>닫기</button>
