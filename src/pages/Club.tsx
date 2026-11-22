@@ -5,6 +5,8 @@ import { fmtMoney } from "../game/money";
 import { Card, PName, Ovr, TeamChip } from "../ui";
 import { standings } from "../game/season";
 import ClubTimeline from "./ClubTimeline";
+import GoalTable from "./GoalTable";
+import Ledger from "./Ledger";
 
 export default function Club() {
   const s = useSave()!;
@@ -35,6 +37,7 @@ export default function Club() {
         {s.eco.sponsor && <p className="sm">스폰서 {s.eco.sponsor.name} 연 {fmtMoney(s.eco.sponsor.amount)} · 목표 {s.eco.sponsor.goal}</p>}
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
+      {s.story && <Ledger s={s} />}
       {s.story && <ClubTimeline />}
       <Card title="선수 기록">
         <div className="tbl-wrap">
@@ -63,10 +66,10 @@ export default function Club() {
         </div>
         <p className="muted sm">연봉 합 {fmtMoney(sal)}. 없는 지표는 기록 없음이며 0으로 채우지 않았습니다.</p>
       </Card>
+      <GoalTable s={s} />
       <Card title="예산">
         <ul className="sm">
           <li>한도 {fmtMoney(s.eco.cap)} ({({ easy: "쉬움", normal: "보통", hard: "어려움" } as const)[s.eco.difficulty]})</li>
-          <li>목표 추가 지원 {fmtMoney(s.eco.grant)} · 달성 보너스 {fmtMoney(s.eco.bonus)} · 실패 시 신뢰 −{s.eco.trustHit}</li>
           <li>선수 연봉 {fmtMoney(sal)} · 보유 자금 {fmtMoney(s.eco.cash)}</li>
         </ul>
       </Card>

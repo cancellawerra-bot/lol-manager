@@ -8,6 +8,7 @@ import { CardTile } from "./Market";
 import { fmtMoney } from "../game/money";
 import { seasonCandidates, seasonMarketClosed, seasonMarketWeek, prepareInSeason, seasonSalaryDue, seasonReserve, startSeasonNegotiation, seasonClubReply, seasonPlayerReply, answerSeasonIncoming, setSeasonAutomatic } from "../game/inSeason";
 import { ScoutingPanel } from "./Scouting";
+import Ledger from "./Ledger";
 import { scoutPreferences, scoutWatch, toggleScoutWatch } from "../game/scouting";
 
 export default function InSeasonMarket({ s }: { s: Save }) {
@@ -42,6 +43,11 @@ export default function InSeasonMarket({ s }: { s: Save }) {
             <label>계약 <select data-testid="season-years" value={years} onChange={(e) => setYears(Number(e.target.value))}>{[1, 2, 3].map((n) => <option key={n} value={n}>{n}시즌</option>)}</select></label>
             <label><input type="checkbox" data-testid="season-starter" checked={starter} onChange={(e) => setStarter(e.target.checked)} />선발 약속</label>
           </div>
+          <Ledger s={s} title="이 계약을 하면 (예상 장부)" extras={[
+            { label: `${target.card.name} 이적료`, amount: tr.fee },
+            { label: "남은 시즌 연봉", amount: seasonSalaryDue(s, Number(salary) || 0) },
+            ...(years >= 2 ? [{ label: "다음 시즌 연봉(이 계약)", amount: Number(salary) || 0 }] : []),
+          ]} />
           <p>이번 지급: 이적료 {fmtMoney(tr.fee)} + 남은 연봉 {fmtMoney(seasonSalaryDue(s, Number(salary) || 0))} = <b>{fmtMoney(tr.fee + seasonSalaryDue(s, Number(salary) || 0))}</b></p>
           <p className="muted sm">1시즌 계약은 올해 말 만료입니다. 2시즌 이상은 다음 해 연봉도 남겨 둡니다. 기존 선수의 이미 지급한 연봉은 환급되지 않습니다. 선발로 영입하면 기존 주전은 벤치로 남습니다.</p>
           <button className="btn" disabled={!!closed} data-testid="season-player-reply" onClick={() => mutate((x) => setMessage(seasonPlayerReply(x, Number(salary), years, starter).message))}>선수 답변 받기</button>

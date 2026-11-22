@@ -3,6 +3,7 @@ import { useSave } from "../store";
 import { formVal } from "../game/season";
 import { Bar, Card, ChampIcon, Ovr, Pct, Sample, TeamChip } from "../ui";
 import { ratingOf } from "../rating";
+import { TIERS, masteryOf, masterySummary } from "../game/mastery";
 
 const GROUP_KO: Record<string, string> = { lane: "라인전", fight: "교전", farm: "성장", vision: "시야", pool: "챔피언 폭" };
 const sign = (v: number | null, d = 0): string => (v == null ? "–" : `${v >= 0 ? "+" : ""}${fmt(v, d)}`);
@@ -60,9 +61,13 @@ export default function PlayerPage({ k }: { k: string }) {
         <p className="muted sm">백분위는 2026 LCK 같은 포지션 선수 {CORE.players.filter((x) => x.pos === p.pos).length}명과 비교한 값입니다(0 = 가장 낮음, 100 = 가장 높음). 경기 수가 적으면 포지션 평균 쪽으로 {CORE.meta.shrinkK}경기만큼 당겨 계산합니다. <a href="#/method">계산 방법 ›</a></p>
       </Card>
       <Card title={`챔피언 폭 · ${POS_KO[p.pos]} (2026 LCK)`} className="span2">
+        <div className="mst-sum" data-testid="mastery-summary">
+          {TIERS.slice().reverse().map((t) => <span key={t.id} className={"mst t-" + t.id} title={t.desc}>{t.ko} {masterySummary(p.pool)[t.id]}</span>)}
+          <small className="muted">2026 LCK 경기 수 기준 · 장인 12+ · 전문 7+ · 숙련 3+ · 입문 1+</small>
+        </div>
         <div className="pool">
           {p.pool.map(([c, n, wv]) => (
-            <div key={c} className="pool-i"><ChampIcon id={c} size={40} /><div><b>{CH[c]?.ko ?? c}</b><small>{n}경기 {wv}승 · {pctTxt(wv, n, 0)}</small></div>{n < 5 && <span className="tag warn xs">표본 부족</span>}</div>
+            <div key={c} className="pool-i"><ChampIcon id={c} size={40} /><div><b>{CH[c]?.ko ?? c}</b><small>{n}경기 {wv}승 · {pctTxt(wv, n, 0)}</small><span className="pool-tags"><span className={"mst t-" + masteryOf(n).id}>{masteryOf(n).ko}</span>{n < 5 && <span className="tag warn xs">표본 부족</span>}</span></div></div>
           ))}
         </div>
       </Card>

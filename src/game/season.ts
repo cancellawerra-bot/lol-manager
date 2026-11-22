@@ -117,7 +117,7 @@ export function newCareer(team: string, manager: string, slot: number, seed: num
     goal: "top8", grant: 1.5, bonus: 5, trustHit: 10, trustWin: 9,
     ...(opt.eco ?? {}),
   };
-  eco.cash = eco.cap;
+  eco.cash = Math.round((eco.cap + (eco.grant ?? 0)) * 100) / 100;   // 목표 추가 지원금은 시즌 시작 자금에 실제로 더합니다
   const teamName = opt.club?.name ?? TM[team]?.ko ?? team;
   const s: Save = {
     v: SAVE_V, slot, seed, rng: rng.s, team, manager: info.name, created: now, updated: now,

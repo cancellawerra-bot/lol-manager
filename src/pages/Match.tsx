@@ -9,6 +9,7 @@ import { ChampIcon, TeamChip, Ovr, form5 } from "../ui";
 import { ratingOf, ratingColor } from "../rating";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
+import { masteryOf } from "../game/mastery";
 import { SPEED_KO, SPEED_MS, setPrefs, usePrefs, type Prefs } from "../prefs";
 import { TacticsControls, TacticsReview } from "./Tactics";
 import { AppearanceReview } from "./Rotation";
@@ -370,7 +371,7 @@ function Draft({ d }: { d: DraftState }) {
                   const st = banned.has(c.id) ? "밴" : locked.has(c.id) ? "피어리스" : u.has(c.id) ? "픽" : "";
                   return (
                     <button key={c.id} className={"cg" + (st ? " off" : "") + (sel === c.id ? " sel" : "")} disabled={!!st || !myTurn} onClick={() => setSel(c.id)} onDoubleClick={() => confirm(c.id)} title={c.ko}>
-                      <ChampIcon id={c.id} size={50} dim={!!st} /><span>{c.ko}</span>{st && <em>{st}</em>}{owners.get(c.id)?.mine && <i className="cg-own mine" title={`우리 ${owners.get(c.id)!.mine!.name} · ${owners.get(c.id)!.mine!.n}경기 ${owners.get(c.id)!.mine!.w}승`}>{owners.get(c.id)!.mine!.name}</i>}{owners.get(c.id)?.theirs && <i className="cg-own theirs" title={`상대 ${owners.get(c.id)!.theirs!.name} · ${owners.get(c.id)!.theirs!.n}경기 ${owners.get(c.id)!.theirs!.w}승`}>{owners.get(c.id)!.theirs!.name}</i>}
+                      <ChampIcon id={c.id} size={50} dim={!!st} /><span>{c.ko}</span>{st && <em>{st}</em>}{owners.get(c.id)?.mine && <i className="cg-own mine" title={`우리 ${owners.get(c.id)!.mine!.name} · ${owners.get(c.id)!.mine!.n}경기 ${owners.get(c.id)!.mine!.w}승 · ${masteryOf(owners.get(c.id)!.mine!.n).ko}`}>{owners.get(c.id)!.mine!.name}</i>}{owners.get(c.id)?.theirs && <i className="cg-own theirs" title={`상대 ${owners.get(c.id)!.theirs!.name} · ${owners.get(c.id)!.theirs!.n}경기 ${owners.get(c.id)!.theirs!.w}승 · ${masteryOf(owners.get(c.id)!.theirs!.n).ko}`}>{owners.get(c.id)!.theirs!.name}</i>}
                     </button>
                   );
                 })}

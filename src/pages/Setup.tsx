@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { CARDS, CORE, PL, TM, POS_KO, cardLabel, fmt } from "../data";
+import { CARDS, CORE, PL, TM, POS_KO, cardLabel } from "../data";
 import { BUDGETS, FANTASY_BUDGETS, fantasyPrice, fantasyRatingOf, rosterSalary, weakestTeam, type Diff } from "../game/cards";
 import { STORY_BUDGETS, storySalary, newStoryCareer, lckTeamsOf, CK_POOL, fmtMoney, franchisePlayers } from "../game/story";
 import { newCareer, type CareerBg, type ClubInfo, type Economy, type Manager, type Mode } from "../game/season";
@@ -10,6 +10,7 @@ import { FANTASY_ROUNDS, aiPick, applyPick, ctxLockReason, ctxPickMax, draftCtx,
 import { Rng } from "../game/rng";
 import { FanNotice, Ovr, TeamChip } from "../ui";
 import { go } from "../nav";
+import { GOALS, STORY_GOALS } from "../game/goals";
 import type { SeasonCard } from "../types";
 import { moneyRound } from "../game/money";
 
@@ -20,13 +21,6 @@ const CAREERS: { id: CareerBg; t: string; d: string }[] = [
   { id: "academy", t: "전 프로 2군 출신", d: "육성과 2군 경험을 조금 더 살립니다." },
   { id: "pro", t: "전 프로 1군 출신", d: "선수 생활의 감각이 있어 시작 신뢰가 조금 높습니다." },
   { id: "worlds", t: "전 월드 우승자 출신", d: "큰 무대 경험이 있어 팬심과 시작 신뢰가 높습니다." },
-];
-const GOALS: { id: Economy["goal"]; t: string; grant: number; bonus: number; hit: number; win: number }[] = [
-  { id: "win", t: "우승", grant: 8, bonus: 10, hit: 20, win: 15 },
-  { id: "final", t: "결승 진출", grant: 5, bonus: 8, hit: 16, win: 12 },
-  { id: "sf", t: "4강", grant: 3, bonus: 6, hit: 12, win: 10 },
-  { id: "po", t: "플레이오프 진출", grant: 2, bonus: 5, hit: 10, win: 9 },
-  { id: "top8", t: "8위 이내", grant: 1.5, bonus: 5, hit: 10, win: 9 },
 ];
 const SPONSORS = [
   { name: "한빛통신", amount: 2.4, goal: "플레이오프 진출", years: 3 },
@@ -40,13 +34,6 @@ const STORY_SPONSORS = [
   { name: "청람은행", amount: 0.6, goal: "승강전 진출", years: 3 },
   { name: "남산음료", amount: 0.35, goal: "중위권 이상", years: 2 },
   { name: "북악스포츠", amount: 0.75, goal: "2부 우승", years: 3 },
-];
-const STORY_GOALS: typeof GOALS = [
-  { id: "win", t: "2부 우승·승격", grant: 0.5, bonus: 0.6, hit: 16, win: 12 },
-  { id: "final", t: "승강전 진출", grant: 0.35, bonus: 0.45, hit: 14, win: 10 },
-  { id: "sf", t: "상위 2위", grant: 0.25, bonus: 0.35, hit: 12, win: 9 },
-  { id: "po", t: "상위 4위", grant: 0.2, bonus: 0.3, hit: 10, win: 8 },
-  { id: "top8", t: "잔류", grant: 0.1, bonus: 0.2, hit: 8, win: 6 },
 ];
 function startersFrom(ids: string[]): string[] {
   const out: string[] = [];
@@ -317,7 +304,7 @@ export default function Setup() {
           <ContractForm mgr={mgr} setMgr={setMgr} sig={sig} setSig={setSig} onBack={() => goStep(mode === "roster" ? "roster" : mode === "fantasy" ? "fantasy" : "market")} onNext={() => { if (!mgr.name.trim()) { setErr("이름을 입력해 주세요."); return; } if (!sig) { setErr("계약서에 서명해 주세요."); return; } goStep("goal"); }} />
         )}
         {step === "goal" && (
-          <GoalForm goal={goal} setGoal={setGoal} cap={cap} salary={mode === "roster" ? 0 : rosterPay} sponsorAmt={sponsor != null ? sponsors[sponsor].amount : 0} trust={mgr.career === "worlds" ? 68 : mgr.career === "pro" ? 62 : 55} options={goals}
+          <GoalForm goal={goal} setGoal={setGoal} cap={cap} salary={mode === "roster" ? 0 : rosterPay} story={mode === "story"} trust={mgr.career === "worlds" ? 68 : mgr.career === "pro" ? 62 : 55} options={goals}
             onBack={() => goStep("contract")} onNext={() => goStep("sponsor")} />
         )}
         {step === "sponsor" && (
@@ -444,9 +431,9 @@ function ContractForm({ mgr, setMgr, sig: _sig, setSig, onBack, onNext }: { mgr:
   );
 }
 
-function GoalForm({ goal, setGoal, cap, salary, sponsorAmt, trust, options, onBack, onNext }: { goal: Economy["goal"]; setGoal: (g: Economy["goal"]) => void; cap: number; salary: number; sponsorAmt: number; trust: number; options: typeof GOALS; onBack: () => void; onNext: () => void }) {
+function GoalForm({ goal, setGoal, cap, salary, story, trust, options, onBack, onNext }: { goal: Economy["goal"]; setGoal: (g: Economy["goal"]) => void; cap: number; salary: number; story: boolean; trust: number; options: typeof GOALS; onBack: () => void; onNext: () => void }) {
   const g = options.find((x) => x.id === goal)!;
-  const rec = cap + g.grant + sponsorAmt - salary;
+  const rec = cap + g.grant - (story ? salary : 0);   // 스토리 모드는 시작할 때 선수 연봉을 먼저 냅니다
   return (
     <div>
       <h2>시즌 목표 및 예산</h2>
@@ -460,9 +447,9 @@ function GoalForm({ goal, setGoal, cap, salary, sponsorAmt, trust, options, onBa
         ))}
       </div>
       <div className="card" style={{ marginTop: 16 }}>
-        <h3>시즌 장부 (예상)</h3>
-        <p className="sm">예산 한도 {fmtMoney(cap)} · 목표 추가 {fmtMoney(g.grant)} · 스폰서(다음 화면에서 확정) {fmtMoney(sponsorAmt)} · 선수 연봉 {fmtMoney(salary)}</p>
-        <p>시즌 초 사용 가능 예상 <b>{fmt(rec, 1)}억</b></p>
+        <h3>시작 자금</h3>
+        <p className="sm">예산 한도 {fmtMoney(cap)} + 목표 추가 지원 {fmtMoney(g.grant)}{story ? <> − 시작 선수 연봉 {fmtMoney(salary)}</> : null}</p>
+        <p>시즌을 시작할 때 자금 <b>{fmtMoney(rec)}</b></p>
         <p className="muted xs">연봉은 게임용 가상 금액입니다. 실제 LCK 계약과 무관합니다.</p>
       </div>
       <div className="setup-foot"><button className="btn" onClick={onBack}>뒤로</button><button className="btn primary lg" data-testid="goal-next" onClick={onNext}>확정하고 다음</button></div>

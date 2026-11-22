@@ -1380,7 +1380,7 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
     ...(opt.eco ?? {}),
   };
   const openPay = opt.cards.reduce((n, id) => n + (CARDS[id] ? storySalary(CARDS[id], "CK") : 0), 0);
-  eco.cash = moneyRound(eco.cap - openPay);
+  eco.cash = moneyRound(eco.cap + (eco.grant ?? 0) - openPay);   // 목표 추가 지원금을 시작 자금에 더합니다
   const now = new Date().toISOString();
   const info = opt.managerInfo;
   const story: StoryState = {
