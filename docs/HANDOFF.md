@@ -10,6 +10,15 @@
 
 ## 변경 기록
 
+### 2026-11-22 · Claude(집 PC) · v2.25.0 시즌 여정 지도 + 글 많은 화면 정리
+
+- **요청:** 디자인 제안 ③ 여정 지도. 표시만 바꿈 — 경기 계산·연봉·저장·난이도 변경 없음(**난이도 재측정 안 함**).
+- **여정 지도(`src/pages/SeasonJourney.tsx`, `ManagerDashboard.tsx`에서 `mh-main-grid`와 `mh-pulse` 사이):** 2018–2027 연도 10칸, 지금 연도는 금색 점, 이정표 4칸(창단·LCK 승격·프랜차이즈·월즈 우승: 완료/지금/예정/미확보), LCK·MSI·월즈 우승 횟수(`story.trophies`). 읽는 자료: `story.year·split·tier·phase·franchised·ended·trophies` + `readClubTimeline(s).splits`(연도별 가장 높은 리그, 없으면 "·"로 비움). `s.mode!=="story"`면 렌더 안 함. 스타일 `src/styles.css` 끝 `.sj-*`(휴대폰 이정표 2×2, prefers-reduced-motion이면 맥박 정지). testid: `season-journey`·`journey-now`·`journey-found/promo/fran/goal`·`journey-trophies`.
+- **정리:** `Rotation.tsx` 약속 규칙 2문단 → `<details className="note-fold" data-testid="rotation-rules">`, `Scouting.tsx` 추천 기준 문단 → `data-testid="scout-rules"`. `game/stove.ts` `recNote`의 "퍼센타일 N" → "능력치 N"(`ratingOf`), `Stove.tsx` FA 선택창 옵션도 `cardRating`. Help·Method 설명의 "퍼센타일"은 규칙 설명이라 그대로.
+- **주의(다른 작업자용):** 위 접힌 문단 글자를 화면 텍스트로 찾는 QA는 `details`를 먼저 열어야 합니다. 스토브 시상식 문구가 "퍼센타일 N"에서 "능력치 N"으로 바뀌었습니다.
+- **확인함:** tsc·`npm run build`, 로컬 PC1280 새 커리어·2022년·클리어(시험용으로 값을 바꾼 상태) 홈, 휴대폰390 홈(가로 넘침 0), 선수단·영입 접힌 설명, 스토브 시상식 "능력치" 표기, 콘솔 오류 0.
+- **확인 안 함:** 실제로 2027 클리어까지 플레이해 본 것은 아님(클리어·프랜차이즈 미확보 모양은 시험용 값으로 확인), 공개 사이트 검수(배포 전), 구단 화면의 긴 글 정리.
+
 ### 2026-11-22 · Claude(집 PC) · v2.24.0 선수 카드 디자인 (등급색 능력치·국제대회 뱃지·4대 능력치)
 
 - **요청:** 디자인 제안 ① 선수 카드. 이어서 오너 "선수카드에서 교수추천 이런건 빼주세요", "월즈랑 msi 색을 다르게 해줘". 표시만 바꿈 — 경기 계산·연봉·저장·난이도 변경 없음(**난이도 재측정 안 함**).

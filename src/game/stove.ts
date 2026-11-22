@@ -14,6 +14,7 @@ import {
   type Contract, type Tier,
 } from "./story";
 import { moneyRound } from "./money";
+import { ratingOf } from "../rating";
 import { initializeInSeason } from "./inSeason";
 
 export type { Bonus, Bid, BidResult } from "./negotiation";
@@ -87,7 +88,7 @@ function recNote(key: string): string {
   if (!p) return "기록 없음";
   const bits: string[] = [];
   if (p.games) bits.push(`${p.games}경기`);
-  if (p.pct?.ovr) bits.push(`퍼센타일 ${p.pct.ovr}`);
+  if (p.pct?.ovr) bits.push(`능력치 ${ratingOf(p)}`);
   if (p.small) bits.push("표본 부족");
   return bits.join(" · ") || "기록 없음";
 }

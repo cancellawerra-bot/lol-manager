@@ -174,7 +174,7 @@ function Weeks() {
           <h3>FA 밀봉 입찰</h3>
           <div className="row gap wrap">
             <select data-testid="fa-pick" value={pick} onChange={(e) => { setPick(e.target.value); const x = CARDS[e.target.value]; if (x) setSalary(storySalary(x, s.story!.tier)); }} style={{ maxWidth: "100%" }}>
-              {[...new Set([...(stove.faPool.includes(pick) ? [pick] : []), ...stove.faPool.slice(0, 80)])].map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))} · {CARDS[id].year} · 퍼센타일 {CARDS[id].percentile}</option>)}
+              {[...new Set([...(stove.faPool.includes(pick) ? [pick] : []), ...stove.faPool.slice(0, 80)])].map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))} · {CARDS[id].year} · 능력치 {cardRating(CARDS[id])}</option>)}
             </select>
             <label>연봉 <input type="number" step={0.1} min={0.3} value={salary} onChange={(e) => setSalary(Number(e.target.value))} style={{ width: 80 }} />억</label>
             <label>기간 <input type="number" min={1} max={4} value={years} onChange={(e) => setYears(Number(e.target.value))} style={{ width: 56 }} />년</label>

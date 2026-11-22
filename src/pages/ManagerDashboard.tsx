@@ -7,6 +7,7 @@ import { trainingPerson } from "../game/trainingRuntime";
 import { fmtMoney } from "../game/money";
 import { ChampIcon } from "../ui";
 import { ratingOf } from "../rating";
+import SeasonJourney from "./SeasonJourney";
 
 const ROLES = ["TOP", "JGL", "MID", "ADC", "SUP"];
 const goalLabel = { win: "우승", final: "결승 진출", sf: "4강 진출", po: "플레이오프 진출", top8: "8위 이내" };
@@ -68,6 +69,7 @@ export default function ManagerDashboard({ s, onAdvance }: { s: Save; onAdvance?
         <div className="mh-goal"><span>이번 시즌 목표</span><b>{goalLabel[s.eco.goal]}</b><a href="#/club">구단 현황 →</a></div>
       </aside>
     </div>
+    <SeasonJourney s={s} />
     <div className="mh-pulse" data-testid="home-season-pulse"><div><span>정규 시즌</span><b>{leagueActive ? played ? `${row!.w}승 ${row!.l}패` : "개막 전" : "대회 진행 중"}</b><small>{leagueActive && played ? `${rows.findIndex(r => r.t === s.team) + 1}위 · 세트 ${row!.gw}–${row!.gl}` : phase}</small></div><div><span>구단 자금</span><b className={s.eco.cash < 0 ? "neg" : ""}>{fmtMoney(s.eco.cash)}</b><small>게임용 가상 금액</small></div><div><span>구단주 신뢰</span><b>{s.eco.trust}<em>/ 100</em></b><small>현재 커리어의 운영 지표</small></div><div><span>최근 경기</span><b>{recent ? `${recent.winner === s.team ? "승" : "패"} ${recent.a === s.team ? recent.sa : recent.sb}–${recent.a === s.team ? recent.sb : recent.sa}` : "기록 없음"}</b><small>{recent ? `vs ${TM[opp(s, recent)]?.ko ?? opp(s, recent)}` : "첫 경기를 기다리고 있습니다"}</small></div></div>
     {!finished && <section className="mh-squad" aria-label="현재 선발 구성"><div className="mh-section-heading"><div><small>THE STARTING FIVE</small><h2>우리의 다음 승부를 맡길 5명</h2></div><a href="#/squad">선발·로테이션 관리 ↗</a></div>
       <div className="mh-five">{[0, 1, 2, 3, 4].map(pos => {

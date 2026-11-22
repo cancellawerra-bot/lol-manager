@@ -13,7 +13,9 @@ export function ScoutingPanel({ context, onSelect }: { context: ScoutContext; on
   const change = (next: Partial<typeof pref>) => mutate(x => setScoutPreferences(x, { ...scoutPreferences(x), ...next }));
   return <Card title="스카우팅 추천" right={<span className="muted sm">{s.story?.year}년 확인 기록 기준</span>}>
     <p className="sm">보유 벤치를 먼저 비교하고, 현재 확인된 시즌 기록과 예산으로 후보를 추립니다. 전력 보강·가성비는 같은 포지션 보유 최고 선수보다 나은 후보, 육성 검토는 생년이 확인된 만 21세 이하 선수입니다.</p>
+    <details className="note-fold" data-testid="scout-rules"><summary>추천 기준 자세히 보기</summary>
     <p className="muted sm">추천은 영입·성장·승리를 보장하지 않습니다. 현재 기록이 없는 미래 신인의 능력은 추정하지 않습니다. 금액은 게임용 가상 금액이며, 조건 선택은 기존 협상 폼을 엽니다.</p>
+    </details>
     <div className="row wrap gap">
       <input aria-label="스카우팅 선수 검색" data-testid="scout-query" placeholder="추천 안에서 선수 검색" value={query} onChange={e => setQuery(e.target.value)} />
       <select aria-label="스카우팅 목적" data-testid="scout-goal" value={pref.goal} onChange={e => change({ goal: e.target.value as ScoutGoal })}>{Object.entries(SCOUT_GOALS).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select>

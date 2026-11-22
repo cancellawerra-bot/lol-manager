@@ -12,8 +12,10 @@ export function RotationControls() {
   return <Card title="출전 약속 · 로테이션">
     <p className="sm">수석코치는 현재 종합·피로와 출전 약속 기한을 비교해 시리즈 첫 선발을 정합니다. 수동으로 바꿀 수 있고, 다음 세트 기용은 감독의 선택을 유지합니다.</p>
     <button className={"btn " + (automatic ? "primary" : "")} data-testid="rotation-auto" aria-pressed={automatic} disabled={locked} onClick={() => manageRotation(!automatic)}>자동 로테이션 {automatic ? "켜짐" : "꺼짐"}</button>
+    <details className="note-fold" data-testid="rotation-rules"><summary>약속 규칙 자세히 보기</summary>
     <p className="muted sm">약속은 소속 중 앞으로 치르는 정규 시리즈 4회의 <b>첫 세트 선발</b> 기준입니다. 주전 3회·로테이션 2회·육성 1회이며 플레이오프·국제대회는 기회에 세지 않습니다. 시즌이 바뀌어도 남은 약속은 이어집니다.</p>
     <p className="muted sm">4회 평가에서 이행하면 구단 신뢰 +1, 미이행·중도 철회는 −2입니다. 소속 종료는 평가 없이 닫습니다. 실제 선수의 성격이 아닌 게임 내 운영 약속입니다. 진행 중인 경기는 약속·자동 관리 설정을 잠급니다.</p>
+    </details>
     {message && <p className="sm" role="status">{message}</p>}
     <div className="card-grid" data-testid="rotation-roster">{s.story.contracts.map(c => {
       const person = c.person, p = state?.promises[person], stats = state?.players[person], fatigue = playerTraining(s, c.key)?.fatigue ?? 0;
