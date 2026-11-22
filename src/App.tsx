@@ -11,6 +11,7 @@ import { usePrefs } from "./prefs";
 
 const Title = lazy(() => import("./pages/Title"));
 const Setup = lazy(() => import("./pages/Setup"));
+const HistorySetup = lazy(() => import("./pages/HistorySetup"));
 const Home = lazy(() => import("./pages/Home"));
 const NewsPage = lazy(() => import("./pages/News"));
 const Schedule = lazy(() => import("./pages/Schedule"));
@@ -71,7 +72,8 @@ export default function App() {
 
   const route = hash.replace(/^#\/?/, "").split("/");
   const page = route[0] || "";
-  const publicPages = ["help", "patch", "method", "settings", "setup", "new"];
+  const publicPages = ["help", "patch", "method", "settings", "setup", "new", "history"];
+  if (!save && page === "history") return <Suspense fallback={<Loading />}><HistorySetup /></Suspense>;
   if (!save && (page === "setup" || page === "new")) return <Suspense fallback={<Loading />}><Setup /></Suspense>;
   if (!save && !publicPages.includes(page)) return <Suspense fallback={<Loading />}><Title /></Suspense>;
   if (!save) return (

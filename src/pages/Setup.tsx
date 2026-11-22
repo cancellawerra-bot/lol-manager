@@ -236,6 +236,10 @@ export default function Setup() {
                 <small>추천 · 기본 모드</small><b>프랜차이즈 스토리</b>
                 <p>2018년 2부에서 구단을 창단해 승강전으로 LCK에 오르고, 2021 프랜차이즈를 지켜 2027 월즈 우승을 노립니다.</p>
               </button>
+              <button className="mode-card" onClick={() => go("#/history")} data-testid="mode-history">
+                <small>새로 추가</small><b>역사 모드 (2021~2026)</b>
+                <p>원하는 해의 실제 LCK 팀을 골라, 그해 실제 선발 5명으로 시작해 2027 월즈 우승을 노립니다. 2부·승강전이 없습니다.</p>
+              </button>
               <button className={"mode-card" + (mode === "roster" ? " on" : "")} onClick={() => setMode("roster")} data-testid="mode-roster">
                 <b>실제 로스터 2026</b>
                 <p>2026 LCK 10개 팀 중 하나를 맡아, 그해 실제 명단으로 한 시즌을 운영합니다.</p>

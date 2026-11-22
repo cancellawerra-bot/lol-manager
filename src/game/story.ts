@@ -114,6 +114,8 @@ export interface StoryState {
   financeWarn?: "low" | "deficit";
   /** AI 로스터를 마지막으로 짠 시즌 연도. 같은 해에 다시 호출하면 유지합니다. */
   worldBuiltYear?: number;
+  /** v2.35.0 역사 모드: 그해 실제 LCK 팀으로 시작. 구단 규모 등급(grade)과 매 시즌 말 받는 모기업 지원(support, 억). */
+  history?: { startYear: number; grade: "S" | "A" | "B" | "C"; support: number };
 }
 
 export const STORY_BUDGET_NOTE = "기본 자금(창단 한도)은 쉬움 5억, 보통 3.2억, 어려움 2억입니다. 개막 로스터 연봉은 시작할 때 차감합니다. 모두 게임용 가상 금액입니다.";
@@ -357,6 +359,48 @@ function cardsForOrg(short: string, year: number): SeasonCard[] {
   return marketCards(year).filter((c) => names.has(c.team.toLowerCase()) || c.team.toLowerCase().includes(short.toLowerCase()));
 }
 
+/** 역사 모드: 그해(해당 시즌)에 실제로 그 팀 소속이던 카드만. 은퇴한 옛 스타가 섞이지 않습니다(2026 이후는 2026 카드). */
+export function cardsForOrgYear(short: string, year: number): SeasonCard[] {
+  const y = Math.min(year, 2026);
+  const names = new Set((TEAM_ALIAS[short] ?? [short]).map((x) => x.toLowerCase()));
+  const best = new Map<string, SeasonCard>();
+  for (const id of Object.keys(CARDS).sort(cmpStr)) {
+    const c = CARDS[id];
+    if (c.year !== y) continue;
+    const t = c.team.toLowerCase();
+    if (!(names.has(t) || t.includes(short.toLowerCase()))) continue;
+    const k = c.pkey + "#" + c.posIdx, cur = best.get(k);
+    if (!cur || c.games > cur.games) best.set(k, c);
+  }
+  return [...best.values()].sort(cmpCard);
+}
+/** 그해 실제 선발 5명(포지션마다 능력 1위)과 벤치(남은 카드 능력순 최대 3명). 포지션이 비면 시장에서 가장 싼 선수로 채웁니다. */
+export function exactRosterIds(short: string, year: number, used: Set<string> = new Set()): { starters: string[]; bench: string[] } {
+  const own = cardsForOrgYear(short, year).filter((c) => !used.has(c.pkey));
+  const starters: string[] = new Array(5).fill("");
+  const taken = new Set<string>();
+  for (let pos = 0; pos < 5; pos++) {
+    const c = own.filter((x) => x.posIdx === pos && !taken.has(x.pkey)).sort((a, b) => b.percentile - a.percentile || cmpCard(a, b))[0];
+    if (c) { starters[pos] = c.id; taken.add(c.pkey); }
+  }
+  for (let pos = 0; pos < 5; pos++) {
+    if (starters[pos]) continue;
+    const c = marketCards(year).filter((x) => x.posIdx === pos && !used.has(x.pkey) && !taken.has(x.pkey)).sort((a, b) => a.salary - b.salary || a.percentile - b.percentile || cmpCard(a, b))[0];
+    if (c) { starters[pos] = c.id; taken.add(c.pkey); }
+  }
+  const bench = own.filter((c) => !taken.has(c.pkey)).sort((a, b) => b.percentile - a.percentile || cmpCard(a, b)).slice(0, 3).map((c) => c.id);
+  return { starters, bench };
+}
+/** 구단 규모 등급: 실제 선발 연봉 합이 게임의 평균 수입(권고 총액 115)을 얼마나 넘는지로 정합니다. */
+export function historyGrade(payroll: number): "S" | "A" | "B" | "C" {
+  return payroll >= 200 ? "S" : payroll >= 150 ? "A" : payroll >= 115 ? "B" : "C";
+}
+/** 모기업 지원(억/년): 권고 총액을 넘는 연봉의 85%. 시작 때 정해 고정이므로 선수를 더 사도 늘지 않습니다. */
+export function historySupport(payroll: number): number {
+  return moneyRound(Math.max(0, payroll - LCK_PAYROLL_SOFT) * 0.85);
+}
+export const HISTORY_RESERVE = { easy: 30, normal: 20, hard: 10 } as const;
+
 export function fillTeamRoster(short: string, year: number, used: Set<string>, rng: Rng): string[] {
   const starters: string[] = new Array(5).fill("");
   const own = cardsForOrg(short, year);
@@ -437,7 +481,7 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
       injectEraTeam(t, keys, s.inSeason?.year === year ? s.inSeason.rosters[short]?.map((c) => c.key) : undefined);
       continue;
     }
-    const roster = fillTeamRoster(short, year, used, rng);
+    const roster = st.history ? historyAiRoster(short, year, used, rng) : fillTeamRoster(short, year, used, rng);
     s.starters[short] = roster;
     injectEraTeam(t, roster);
   }
@@ -446,6 +490,15 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
   for (const tag of Object.keys(s.starters).filter((t) => /^[A-Z]+-\d+$/.test(t))) ensureIntlRoster(s, tag);
 }
 
+
+function historyAiRoster(short: string, year: number, used: Set<string>, rng: Rng): string[] {
+  const { starters } = exactRosterIds(short, year, used);
+  const keys = starters.map((id) => { const c = CARDS[id]; return c ? ensurePlayer(c, year, c.year < Math.min(year, 2026)) : ""; });
+  for (const id of starters) { const c = CARDS[id]; if (c) used.add(c.pkey); }
+  if (keys.every(Boolean)) return keys;
+  const filled = fillTeamRoster(short, year, used, rng);   // 카드가 모자라는 포지션만 기존 보충 규칙으로
+  return keys.map((k, i) => k || filled[i]);
+}
 
 function eraTeamFor(short: string, year: number, user?: EraTeam): EraTeam {
   if (user && (user.short === short)) return user;
@@ -1399,6 +1452,45 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
   initializeClubTimeline(s, false);
   beginSplit(s, year, "spring");
   addNews(s, "welcome", `${info.name} 감독, ${club.name} 창단`, `${club.name}이(가) 2018 챌린저스에서 출발합니다. 목표는 2027 월즈 우승입니다. ${STORY_BUDGET_NOTE}`, teamShort);
+  return s;
+}
+
+/** 역사 모드: startYear(2021~2026)의 실제 LCK 팀 하나를 맡아 2027 월즈 우승을 노립니다. 프랜차이즈 이후라 2부·승강전이 없습니다. */
+export function newHistoryCareer(teamShort: string, slot: number, seed: number, opt: {
+  startYear: number; managerInfo: import("./season").Manager; difficulty: StoryDiff;
+}): Save {
+  const rng = new Rng(seed);
+  const year = opt.startYear;
+  const era = lckTeamsOf(year).find((t) => t.short === teamShort);
+  if (!era) throw new Error(`역사 모드: ${year}년 LCK에 ${teamShort}가 없습니다.`);
+  const club = { name: era.ko, short: era.short, color: era.color };
+  const roster = exactRosterIds(teamShort, year);
+  const cardIds = [...roster.starters, ...roster.bench].filter(Boolean);
+  const contracts = makeContracts(cardIds, 2, "LCK");
+  const payroll = moneyRound(roster.starters.reduce((n, id) => n + (CARDS[id]?.salary ?? 0), 0));
+  const grade = historyGrade(payroll), support = historySupport(payroll);
+  const cap = HISTORY_RESERVE[opt.difficulty];
+  const eco: Economy = { difficulty: opt.difficulty, cap, cash: cap, trust: 55, fans: 50, goal: "po", grant: 0, bonus: 2, trustHit: 6, trustWin: 8 };
+  const now = new Date().toISOString();
+  const info = opt.managerInfo;
+  const lck = lckTeamsOf(year).map((t) => t.short);
+  const story: StoryState = {
+    year, split: "spring", tier: "LCK", phase: "regular",
+    lck, ck: ckTeamsOf(year, undefined).map((t) => t.short).filter((t) => t !== teamShort), franchised: true, buyInOffered: true, buyInPaid: false,
+    trophies: { lck: 0, msi: 0, worlds: 0 },
+    contracts, history: { startYear: year, grade, support },
+  };
+  const starters = roster.starters.map((id) => (CARDS[id] ? contracts.find((c) => c.cardId === id)?.key ?? id : ""));
+  const s: Save = {
+    v: 2, slot, seed, rng: rng.s, team: teamShort, manager: info.name, created: now, updated: now,
+    mode: "story", managerInfo: info, club, eco, cards: cardIds,
+    day: 0, days: [], series: [], news: [], newsSeq: 0, form: {}, starters: { [teamShort]: starters },
+    pstats: {}, sched: {}, schedOk: false, phase: "regular", seen: "", story,
+  };
+  applyStoryWorld(s);
+  initializeClubTimeline(s, false);
+  beginSplit(s, year, "spring");
+  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.`, teamShort);
   return s;
 }
 

@@ -40,6 +40,7 @@ export function projectLedger(s: Save, extras: LedgerExtra[] = []): Ledger | nul
     if (share) lines.push({ label: st.franchised ? "프랜차이즈 배분" : "LCK 중계 배분", amount: share });
     lines.push({ label: "스폰서", amount: sp });
     lines.push({ label: "운영비", amount: -ops });
+    if (st.history?.support) lines.push({ label: "모기업 지원", amount: st.history.support, note: `구단 규모 ${st.history.grade}등급` });
   }
   // 다음 시즌까지 이어지는 계약의 연봉(이번 시즌 끝에 계약 햇수가 1 줄어듭니다)
   const keep = st.contracts.filter((c) => c.years >= (incomeLeft ? 2 : 1) && c.salary > 0);

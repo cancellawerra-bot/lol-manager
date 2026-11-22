@@ -151,8 +151,9 @@ export function payIncome(s: Save): void {
   const share = st.tier === "LCK" ? (st.franchised ? LCK_SHARE : LCK_SHARE_PRE) : 0;
   const sp = s.eco.sponsor?.amount ?? (st.tier === "LCK" ? LCK_SPONSOR : 0.5);
   const ops = st.tier === "CK" ? CK_OPS : LCK_OPS;
-  s.eco.cash = moneyRound(s.eco.cash + prize + share + sp - ops);
-  const opsTxt = `, 운영비 −${fmtMoney(ops)}`;
+  const parent = st.history?.support ?? 0;   // 역사 모드: 구단 규모 등급에 따른 모기업 지원
+  s.eco.cash = moneyRound(s.eco.cash + prize + share + sp - ops + parent);
+  const opsTxt = `, 운영비 −${fmtMoney(ops)}${parent > 0 ? `, 모기업 지원 +${fmtMoney(parent)}` : ""}`;
   addNews(s, "season", `${st.year} 시즌 수입`,
     `성적 ${fmtMoney(prize)}(${rank || "?"}위), 스폰서 ${fmtMoney(sp)}${share ? `, ${st.franchised ? "프랜차이즈" : "LCK 중계"} 배분 ${fmtMoney(share)}` : ""}${opsTxt}. 잔고 ${fmtMoney(s.eco.cash)}(게임용 가상 금액).`, s.team);
 }
