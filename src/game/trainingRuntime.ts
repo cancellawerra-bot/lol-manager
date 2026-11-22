@@ -1,6 +1,7 @@
 import { PL, CARDS, CARDS_BY_PERSON } from "../data";
 import { ratingOf, cardRating } from "../rating";
 import type { Save, SeriesRec, DayAct } from "./season";
+import { moraleEdge } from "./talks";
 import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, talentSpeed, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
@@ -155,7 +156,7 @@ export function matchTraining(s: Save, keys: string[]): MatchTraining | undefine
   const result: MatchTraining = {};
   for (const key of keys) {
     const p = playerTraining(s, key); if (!p) continue;
-    result[key] = { ...trainingBonuses(p), fatigue: fatiguePenalty(p.fatigue) };
+    result[key] = { ...trainingBonuses(p), fatigue: fatiguePenalty(p.fatigue) - moraleEdge(s, key) };   // 사기가 높으면 피로 보정이 줄어듭니다(최대 ±1%)
   }
   return result;
 }

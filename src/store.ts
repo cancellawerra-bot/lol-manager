@@ -14,6 +14,7 @@ import { practiceMap, setChampFocus, initializeTraining, prepareSeriesTraining, 
 import { prepareInSeason } from "./game/inSeason";
 import { matchTactics, normalizeTactic, recommendTactic, type TacticPlan } from "./game/tactics";
 import { prepareSeriesLineups, makePromise, cancelPromise, setRotationAutomatic } from "./game/rotation";
+import { talkTo, delegateTalks, lockerTalk, lockerAuto, type Topic, type Tone, type TalkResult, type LockerTarget, type LockerTone } from "./game/talks";
 import { CARDS, PL } from "./data";
 
 const KEY = (slot: number): string => `lolm.slot.${slot}`;
@@ -196,6 +197,10 @@ export function promisePlayingTime(key: string, target: number): string | undefi
 }
 export function withdrawPlayingTime(person: string): void { mutate(s => cancelPromise(s, person)); }
 export function manageRotation(automatic: boolean): void { mutate(s => setRotationAutomatic(s, automatic)); }
+export function talkToPlayer(key: string, topic: Topic, tone: Tone): TalkResult | string {
+  let out: TalkResult | string = "면담할 수 없습니다."; mutate(s => { out = talkTo(s, key, topic, tone); }); return out;
+}
+export function delegateTalksToCoach(): number { let n = 0; mutate(s => { n = delegateTalks(s); }); return n; }
 
 export function setPress(tone: string): void { mutate((s) => { if (s.session) s.session.pressTone = tone; }); }
 export function afterPress(): void { mutate((s) => { if (s.session) s.session.stage = "lineup"; }); }
@@ -219,6 +224,8 @@ export function afterResult(): void {
   });
 }
 export function afterLocker(): void { nextGame(); }
+export function lockerSay(target: LockerTarget, tone: LockerTone, key?: string): string { let out = ""; mutate((s) => { out = lockerTalk(s, target, tone, key); }); return out; }
+export function lockerDelegate(): void { mutate((s) => { if (!s.session?.locker) lockerAuto(s); }); nextGame(); }
 /** 이번 세트를 수석코치에게 통째로 맡깁니다. 지금 단계부터 경기가 끝나 MVP 화면 앞까지 순서대로 진행하고 거기서 멈춥니다.
  *  이미 정해 둔 기자회견 말투와 이번 경기 작전은 그대로 쓰고, 정하지 않은 것만 코치가 고릅니다(말투 신중, 선발 유지, 선택권은 블루/선픽, 밴픽은 AI, 작전은 코치 추천).
  *  경기 결과는 평소와 같은 시뮬레이션이며 승패를 조작하지 않습니다. */

@@ -32,7 +32,7 @@ export interface Session {
   stage: "press" | "lineup" | "select" | "draft" | "meet" | "sim" | "pog" | "result" | "locker" | "end";
   blue?: string; red?: string; firstSide?: Side; choiceNote?: string; aiTook?: "first" | "blue";
   draft?: DraftState; result?: GameResult; simStep: number;
-  pressTone?: string; meetPlan?: "atk" | "bal" | "safe"; locker?: { target: "team" | "one"; tone: "calm" | "firm" | "harsh"; key?: string };
+  pressTone?: string; meetPlan?: "atk" | "bal" | "safe"; locker?: { target: "team" | "one"; tone: "calm" | "firm" | "harsh"; key?: string }; lockerNote?: string;
   meetFocus?: Focus;
   lineup?: Record<string, string[]>;
 }
@@ -62,6 +62,7 @@ export interface Save {
   inSeason?: InSeasonState;
   tactics?: Record<string, TacticPlan>;
   rotation?: RotationState;
+  talks?: import("./talks").TalkState;
   scouting?: ScoutingState;
   clubTimeline?: ClubTimelineState;
 }

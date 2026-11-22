@@ -7,6 +7,7 @@ import { trainingProfile, trainingBonuses, fatiguePenalty, WEEKLY_POINTS } from 
 import { ratingColor } from "../rating";
 import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
 import { RotationControls } from "./Rotation";
+import { TalkControls } from "./Talks";
 import ScheduleGrid from "./ScheduleGrid";
 
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
@@ -30,6 +31,7 @@ export default function Squad() {
   return (
     <div className="col gap">
       <RotationControls />
+      <TalkControls />
       {story && <ScheduleGrid />}
       {!story && <Card title="선수단 일정" right={<button className="btn sm" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button>}>
         <p className="muted sm">한 주에 하루는 휴식으로 두세요. {story ? "피지컬 훈련·전략 스크림·휴식을 현재 날짜에 맞춰 처리합니다. 수석코치에게 맡기면 나이에 맞춘 계획을 자동 배정합니다." : "빈 칸이 있거나 휴식이 없으면 경기를 진행할 수 없습니다. 한 번 정하면 매주 같은 패턴이 이어집니다."}</p>

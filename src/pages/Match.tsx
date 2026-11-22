@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
-import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog, autoGame } from "../store";
+import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, lockerSay, lockerDelegate, setStarter, toMeet, toPog, autoGame } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
 import { STAGE_KO, standings } from "../game/season";
 import type { GameResult, GEvent } from "../game/sim";
@@ -14,6 +14,7 @@ import { SPEED_KO, SPEED_MS, setPrefs, usePrefs, type Prefs } from "../prefs";
 import { TacticsControls, TacticsReview } from "./Tactics";
 import { AppearanceReview } from "./Rotation";
 import { playerTraining } from "../game/trainingRuntime";
+import { lockerMinds, lockerEffect, MIND_LABEL, TRAIT_LABEL, LOCKER_TONE_LABEL, LOCKER_LINES, type LockerTone } from "../game/talks";
 
 export default function Match() {
   const s = useSave()!;
@@ -238,19 +239,45 @@ function Pog({ d, r }: { d: DraftState; r: GameResult }) {
   );
 }
 function Locker() {
-  const [tone, setTone] = useState<"calm" | "firm" | "harsh">("firm");
+  const s = useSave()!, ss = s.session!;
+  const [target, setTarget] = useState<"team" | "one">("team"), [key, setKey] = useState(""), [tone, setTone] = useState<LockerTone>("firm");
+  const story = !!s.story, minds = story ? lockerMinds(s) : [], done = !!ss.locker;
+  const pickKey = key && minds.some((m) => m.key === key) ? key : minds[0]?.key ?? "";
+  const sel = target === "one" ? minds.filter((m) => m.key === pickKey) : minds;
+  const hint = (t: LockerTone): string => { const v = sel.reduce((n, m) => n + lockerEffect(m.mind, t, m.trait)[0], 0) * (target === "one" ? 2 : 0.5); return v >= 6 ? "▲▲ 크게 도움" : v > 0 ? "▲ 도움" : v === 0 ? "– 변화 적음" : "▼ 흔들릴 수 있음"; };
   return (
-    <div className="panel">
+    <div className="panel" data-testid="locker">
       <h2>라커룸</h2>
-      <p className="muted">다음 세트 전에 한 마디 합니다. 말투만 고르면 됩니다.</p>
-      <div className="row gap wrap">
-        {([["calm", "침착"], ["firm", "단호"], ["harsh", "강하게"]] as const).map(([id, t]) => (
-          <button key={id} className={"btn" + (tone === id ? " primary" : "")} onClick={() => setTone(id)}>{t}</button>
-        ))}
-      </div>
+      <p className="muted">다음 세트 전에 한마디 합니다. 직전 세트 활약으로 선수들의 심리 상태가 보이고, 말투에 따라 <b>바로 다음 세트</b> 집중(최대 ±0.6%)과 사기가 달라집니다.</p>
+      {story && !!minds.length && <>
+        <div className="card-grid" data-testid="locker-minds">{minds.map((m) => (
+          <div key={m.key} className={"card-tile" + (target === "one" && m.key === pickKey ? " on" : "")} data-testid={`locker-mind-${m.person}`}>
+            <b>{m.name}</b><span className={"tag mind-" + m.mind}>{MIND_LABEL[m.mind]}</span>
+            <p className="sm">{m.k}/{m.d}/{m.a} · 평점 {m.rating.toFixed(1)}<br />사기 {m.morale} · {TRAIT_LABEL[m.trait]}</p>
+          </div>))}
+        </div>
+        {!done && <>
+          <p className="muted xs">누구에게?</p>
+          <div className="row gap wrap">
+            <button className={"btn sm" + (target === "team" ? " primary" : "")} data-testid="locker-team" onClick={() => setTarget("team")}>팀 전체 (효과 절반)</button>
+            <button className={"btn sm" + (target === "one" ? " primary" : "")} data-testid="locker-one" onClick={() => setTarget("one")}>한 명 (효과 두 배)</button>
+            {target === "one" && <select aria-label="대상 선수" value={pickKey} onChange={(e) => setKey(e.target.value)}>{minds.map((m) => <option key={m.key} value={m.key}>{m.name} · {MIND_LABEL[m.mind]}</option>)}</select>}
+          </div>
+          <p className="muted xs">어떻게 말할까?</p>
+          <div className="row gap wrap">{(Object.keys(LOCKER_TONE_LABEL) as LockerTone[]).map((t) => (
+            <button key={t} className={"btn" + (tone === t ? " primary" : "")} data-testid={`locker-tone-${t}`} onClick={() => setTone(t)}>{LOCKER_TONE_LABEL[t]} <small>{hint(t)}</small></button>))}
+          </div>
+          <p className="sm">“{LOCKER_LINES[tone]}”</p>
+          <button className="btn primary" data-testid="locker-say" onClick={() => lockerSay(target, tone, target === "one" ? pickKey : undefined)}>한마디 한다</button>
+        </>}
+        {ss.lockerNote && <p className="sm talk-res" data-testid="locker-note">{ss.lockerNote}</p>}
+      </>}
+      {story && !minds.length && <p className="muted sm">선수 상태를 읽을 수 없습니다.</p>}
+      {!story && <p className="muted sm">스토리·역사 모드에서는 선수 심리 상태와 한마디가 다음 세트에 반영됩니다.</p>}
       <div className="setup-foot" style={{ marginTop: 16 }}>
         <button className="btn primary lg" data-testid="locker-next" onClick={afterLocker}>다음 세트 ▶</button>
-        <button className="btn" onClick={afterLocker}>수석코치에게 맡긴다</button>
+        {story && !done && <button className="btn" data-testid="locker-delegate" onClick={lockerDelegate}>수석코치에게 맡긴다</button>}
+        {!story && <button className="btn" onClick={afterLocker}>수석코치에게 맡긴다</button>}
       </div>
     </div>
   );

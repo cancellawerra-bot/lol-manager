@@ -3,6 +3,7 @@ import { addNews, type Save, type SeriesRec } from "./season";
 import { initializeTraining, playerTraining, trainingDate, trainingPerson, growthCtx } from "./trainingRuntime";
 import { trainingProfile, matchExperience } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
+import { promiseMood } from "./talks";
 
 export const ROLE_LABEL = { 3: "주전", 2: "로테이션", 1: "육성" };
 export interface PlayingPromise { person: string; name: string; pos: number; target: 1 | 2 | 3; starts: number; opportunities: number; since: string }
@@ -29,6 +30,7 @@ export function rotationLocked(s: Save): boolean { return !!s.session || !!s.sto
 function close(s: Save, p: PlayingPromise, outcome: PromiseOutcome["outcome"]): void {
   const state = initializeRotation(s)!;
   const requested = outcome === "fulfilled" ? 1 : outcome === "departed" ? 0 : -2;
+  if (outcome !== "departed") promiseMood(s, p.person, outcome);
   const before = s.eco.trust; s.eco.trust = Math.max(0, Math.min(100, before + requested));
   state.history.unshift({ ...p, date: trainingDate(s), outcome, trust: s.eco.trust - before });
   state.history.length = Math.min(80, state.history.length); delete state.promises[p.person];

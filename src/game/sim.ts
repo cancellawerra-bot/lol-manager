@@ -109,7 +109,7 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
     const summary = summarizeTraining(d, training);
     const total = (s: Side): number => summary[s].mechanics + summary[s].strategy - summary[s].fatigue;
     F.push({ key: "training", label: "훈련 성장·피로 (게임 효과)", v: TRAINING_COEF.readiness * (total("B") - total("R")),
-      lines: (["B", "R"] as Side[]).map((s) => `${d.teams[s]} 피지컬 +${(summary[s].mechanics * 100).toFixed(2)}% · 전략 +${(summary[s].strategy * 100).toFixed(2)}% · 피로 −${(summary[s].fatigue * 100).toFixed(2)}% (승률이 아닌 훈련 보정)`) });
+      lines: (["B", "R"] as Side[]).map((s) => `${d.teams[s]} 피지컬 +${(summary[s].mechanics * 100).toFixed(2)}% · 전략 +${(summary[s].strategy * 100).toFixed(2)}% · 피로·사기 ${summary[s].fatigue <= 0 ? "+" : "−"}${(Math.abs(summary[s].fatigue) * 100).toFixed(2)}% (승률이 아닌 훈련 보정)`) });
   }
   return F;
 }
