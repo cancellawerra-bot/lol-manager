@@ -57,7 +57,7 @@ export default function Method() {
           <li>조합: 앞라인 없음 {COEF.noFront}, 한 피해 유형 4명 이상 {COEF.oneDmg}</li>
           <li>진영: ln(블루 승 {m.blueWins} ÷ 레드 승 {m.redWins}) = {Math.log(m.blueWins / m.redWins).toFixed(3)}</li>
           <li>폼: {COEF.form} × (최근 3경기 평점 기반 폼 평균 차)</li>
-          <li>프랜차이즈 훈련: {TRAINING_COEF.readiness} × 양 팀 평균(피지컬 보정 + 전략 보정 − 피로 보정)의 차. 피지컬·전략은 각각 최대 3%, 피로 차감은 최대 2%의 게임 값입니다. 피지컬 보정 × {TRAINING_COEF.mechanicsLane}를 라인전 z에 별도 합성합니다. 원본 카드 수치는 수정하지 않고, 보정값을 승률로 표시하지 않습니다.</li>
+          <li>프랜차이즈 훈련: {TRAINING_COEF.readiness} × 양 팀 평균(피지컬 보정 + 스크림(전략) 보정 − 피로 보정)의 차. 피지컬·스크림은 각각 최대 3%, 피로 차감은 최대 2%의 게임 값입니다. 피지컬 보정 × {TRAINING_COEF.mechanicsLane}를 라인전 z에 별도 합성합니다. 원본 카드 수치는 수정하지 않고, 보정값을 승률로 표시하지 않습니다.</li>
         </ul>
         <p>경기 중에는 포지션별 라인전 골드 차(선수 라인전 z 차 + 랭크 맞상대 + 경기 전 확률 반영 + 정규분포 난수), 오브젝트·한타 결과(현재 골드 차와 경기 전 확률로 정한 확률), 승자(시그모이드({COEF.endL0} × 요인 합 + 골드 차 ÷ {fmtN(COEF.endGold)}))를 차례로 뽑습니다. 킬 배분과 평점은 결과에 맞춰 나눈 게임 값이며 실제 기록이 아닙니다.</p>
         <h3>6. 한계</h3>
