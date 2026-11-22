@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
-import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog } from "../store";
+import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, setStarter, toMeet, toPog, autoGame } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
 import { STAGE_KO, standings } from "../game/season";
 import type { GameResult, GEvent } from "../game/sim";
@@ -33,6 +33,7 @@ export default function Match() {
         <div className="mt-r">{sr.games.length > 0 && <span className="muted sm">피어리스 잠금 {sr.games.length * 10}개</span>}<button className="btn ghost sm" onClick={() => go("#/home")}>나가기(저장됨)</button></div>
       </div>
       <Steps stage={ss.stage} />
+      {["press", "lineup", "select", "draft", "meet"].includes(ss.stage) && <AutoGameBar />}
       {ss.stage === "press" && <WithOpponent><Press /></WithOpponent>}
       {ss.stage === "lineup" && <Lineup />}
       {ss.stage === "select" && <WithOpponent><Select /></WithOpponent>}
@@ -43,6 +44,20 @@ export default function Match() {
       {ss.stage === "result" && ss.result && <Result d={ss.draft!} r={ss.result} />}
       {ss.stage === "locker" && <Locker />}
       {ss.stage === "end" && <End />}
+    </div>
+  );
+}
+
+// 이번 세트 통째로 맡기기: 한 번 더 눌러 확인한 뒤 수석코치가 지금 단계부터 경기 결과(MVP 화면) 앞까지 진행합니다.
+function AutoGameBar() {
+  const [ask, setAsk] = useState(false);
+  return (
+    <div className="autobar" data-testid="autogame-bar">
+      {!ask ? <button className="btn ghost sm" data-testid="autogame" onClick={() => setAsk(true)}>수석코치에게 이번 세트 전부 맡기기</button> : <>
+        <span className="sm">기자회견 → 라인업 → 선택권 → 밴픽 → 작전을 정하고 경기 결과 앞까지 진행합니다. 이미 정한 말투·작전은 그대로 씁니다.</span>
+        <button className="btn primary sm" data-testid="autogame-yes" onClick={() => { autoGame(); setAsk(false); }}>맡기기</button>
+        <button className="btn ghost sm" onClick={() => setAsk(false)}>취소</button>
+      </>}
     </div>
   );
 }

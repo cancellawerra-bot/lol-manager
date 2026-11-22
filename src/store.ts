@@ -12,7 +12,7 @@ import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
 import { initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
 import { prepareInSeason } from "./game/inSeason";
-import { matchTactics, normalizeTactic, type TacticPlan } from "./game/tactics";
+import { matchTactics, normalizeTactic, recommendTactic, type TacticPlan } from "./game/tactics";
 import { prepareSeriesLineups, makePromise, cancelPromise, setRotationAutomatic } from "./game/rotation";
 import { CARDS, PL } from "./data";
 
@@ -218,6 +218,34 @@ export function afterResult(): void {
   });
 }
 export function afterLocker(): void { nextGame(); }
+/** 이번 세트를 수석코치에게 통째로 맡깁니다. 지금 단계부터 경기가 끝나 MVP 화면 앞까지 순서대로 진행하고 거기서 멈춥니다.
+ *  이미 정해 둔 기자회견 말투와 이번 경기 작전은 그대로 쓰고, 정하지 않은 것만 코치가 고릅니다(말투 신중, 선발 유지, 선택권은 블루/선픽, 밴픽은 AI, 작전은 코치 추천).
+ *  경기 결과는 평소와 같은 시뮬레이션이며 승패를 조작하지 않습니다. */
+export function autoGame(): void {
+  for (let guard = 0; guard < 16; guard++) {
+    const s = cur; const ss = s?.session;
+    if (!s || !ss) return;
+    switch (ss.stage) {
+      case "press": if (!ss.pressTone) setPress("신중"); afterPress(); break;
+      case "lineup": confirmLineup(); break;
+      case "select": choose(ss.holder === s.team || ss.aiTook === "first" ? "blue" : "first"); break;
+      case "draft": {
+        autoRest();
+        if (turn(cur!.session!.draft!)) return;   // 밴픽이 아직 안 끝났으면 멈춥니다(안전장치)
+        toMeet(); break;
+      }
+      case "meet": {
+        if (ss.meetPlan == null) {
+          const adv = recommendTactic(ss.draft as DraftState, mySide(s));
+          mutate((x) => { if (x.session) { x.session.meetPlan = adv.plan.tempo; x.session.meetFocus = adv.plan.focus; } });
+        }
+        afterMeet(); break;
+      }
+      case "sim": simNext(true); toPog(); return;
+      default: return;
+    }
+  }
+}
 export function markSchedOk(ok: boolean): void { mutate((s) => { s.schedOk = ok; }); }
 export function fillSchedule(): void {
   mutate((s) => {
