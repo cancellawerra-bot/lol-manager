@@ -1,5 +1,8 @@
-export const PATCH_VERSION = "2.28.2";
+export const PATCH_VERSION = "2.28.3";
 export const PATCH_NOTES: { v: string; date: string; items: string[] }[] = [
+  { v: "2.28.3", date: "2026-11-22", items: [
+    "선수 캐릭터의 피부색을 한국 선수에 어울리는 밝은 톤으로, 머리색은 검정·짙은 갈색 계열로 바꿨습니다. 표시만 바꾼 것입니다.",
+  ] },
   { v: "2.28.2", date: "2026-11-22", items: [
     "새 게임 팀 선택 화면의 구단 카드를 더 크게 키우고 글자도 키웠습니다. 승패 기록은 뺐습니다. 구단 이름과 선수 이름은 잘리지 않고 전부 보이며, 10개 구단은 여전히 한 화면에 보입니다. 표시만 바꾼 것입니다.",
   ] },

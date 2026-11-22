@@ -81,8 +81,8 @@ export const form5 = (last: string[]) => (
 
 /** 선수 프로필용 가상의 남자 캐릭터 (v2.28.0). 실제 선수 얼굴·챔피언 그림이 아니라 직접 그린 일러스트이며,
  *  선수 키로 정해져서 같은 선수는 늘 같은 얼굴입니다. */
-const AV_SKIN = ["#f6d5b8", "#eebf96", "#d9a273", "#b97d52"];
-const AV_HAIR = ["#1f1a17", "#3a2a20", "#5b3b25", "#2b3342", "#8a5a2b"];
+const AV_SKIN = ["#f8dcc4", "#f5d3b8", "#f2cbac", "#efc5a3"];
+const AV_HAIR = ["#1c1815", "#26201b", "#2b3342", "#33271f", "#1f2937"];
 const AV_SHIRT = ["#2dd4bf", "#60a5fa", "#f59e0b", "#a78bfa", "#f472b6", "#4ade80", "#fb7185", "#94a3b8"];
 const AV_BG = [["#27425f", "#16233a"], ["#2f3f66", "#1a2142"], ["#2a4b4f", "#16292f"], ["#4a3a5e", "#251c33"], ["#4f4330", "#2b2318"]];
 function avHash(s: string): number { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
