@@ -2,10 +2,10 @@ import { PL, TM, POS_KO } from "../data";
 import { rankedMu, shrink, type DraftState, type Side } from "./draft";
 
 export type Tempo = "atk" | "bal" | "safe";
-export type Focus = "balanced" | "top" | "mid" | "bot";
+export type Focus = "balanced" | "top" | "jungle" | "mid" | "bot";
 export interface TacticPlan { tempo: Tempo; focus: Focus }
 export const TEMPO_LABEL: Record<Tempo, string> = { atk: "초반 압박", bal: "균형 운영", safe: "후반 준비" };
-export const FOCUS_LABEL: Record<Focus, string> = { balanced: "고른 지원", top: "탑 지원", mid: "미드 지원", bot: "바텀 지원" };
+export const FOCUS_LABEL: Record<Focus, string> = { balanced: "고른 지원", top: "탑 지원", jungle: "정글 성장 우선", mid: "미드 지원", bot: "바텀 지원" };
 export const TEMPO_NOTE: Record<Tempo, string> = {
   atk: "초반 교전·오브젝트에 힘을 싣고 후반 판정에는 부담을 감수합니다.",
   bal: "초반과 후반에 추가 부담을 주지 않는 기본 운영입니다.",
@@ -13,7 +13,7 @@ export const TEMPO_NOTE: Record<Tempo, string> = {
 };
 // 게임용 자원 배분입니다. 실제 선수의 성격·실기록·숨은 능력치를 만들지 않습니다.
 export const FOCUS_GOLD: Record<Focus, readonly number[]> = {
-  balanced: [0, 0, 0, 0, 0], top: [120, 0, -40, -50, -30],
+  balanced: [0, 0, 0, 0, 0], top: [120, 0, -40, -50, -30], jungle: [-30, 120, -30, -30, -30],
   mid: [-40, 0, 120, -50, -30], bot: [-50, 0, -50, 75, 25],
 };
 export const TEMPO_EFFECT: Record<Tempo, { early: number; late: number }> = {
@@ -24,7 +24,7 @@ export function normalizeTactic(p?: Partial<TacticPlan>): TacticPlan {
   return { tempo: validTempo(p?.tempo), focus: validFocus(p?.focus) };
 }
 const validTempo = (x: unknown): Tempo => x === "atk" || x === "safe" ? x : "bal";
-const validFocus = (x: unknown): Focus => x === "top" || x === "mid" || x === "bot" ? x : "balanced";
+const validFocus = (x: unknown): Focus => x === "top" || x === "jungle" || x === "mid" || x === "bot" ? x : "balanced";
 export function matchTactics(d: DraftState, preferences?: Record<string, TacticPlan>): Record<Side, TacticPlan> {
   return { B: normalizeTactic(preferences?.[d.teams.B]), R: normalizeTactic(preferences?.[d.teams.R]) };
 }
@@ -51,8 +51,9 @@ export function tacticExecution(plans: Record<Side, TacticPlan>, lanes15: number
   const one = (side: Side): TacticExecution => {
     const focus = plans[side].focus;
     if (focus === "balanced") return { target: "별도 집중 목표 없음", success: true, modifier: 0 };
-    const success = focus === "top" ? river === side : focus === "bot" ? dragon === side : lanes15[2] * (side === "B" ? 1 : -1) > 0;
-    return { target: focus === "top" ? "첫 유충 우세" : focus === "bot" ? "첫 드래곤 확보" : "14분 미드 골드 우세", success, modifier: success ? .04 : -.04 };
+    const dir = side === "B" ? 1 : -1;
+    const success = focus === "top" ? river === side : focus === "bot" ? dragon === side : focus === "jungle" ? lanes15[1] * dir > 0 : lanes15[2] * dir > 0;
+    return { target: focus === "top" ? "첫 유충 우세" : focus === "bot" ? "첫 드래곤 확보" : focus === "jungle" ? "14분 정글 골드 우세" : "14분 미드 골드 우세", success, modifier: success ? .04 : -.04 };
   };
   return { B: one("B"), R: one("R") };
 }
@@ -79,7 +80,7 @@ export function recommendTactic(d: DraftState, side: Side): { plan: TacticPlan; 
     reasons.push(`${POS_KO[pos]}: ${mine?.m.gd != null && theirs?.m.gd != null ? "선수 라인 지표 확인" : "선수 라인 지표 기록 없음"} · ${a && b && rankedMu(pos, a.c, b.c) ? "랭크 상성 30판 이상" : "랭크 상성 표본 부족"}`);
   }
   const mean = (ns: number[]): number => ns.reduce((n, x) => n + x, 0) / ns.length;
-  const candidates = ([['top', [0]], ['mid', [2]], ['bot', [3, 4]]] as [Focus, number[]][]).map(([focus, positions]) => {
+  const candidates = ([['top', [0]], ['jungle', [1]], ['mid', [2]], ['bot', [3, 4]]] as [Focus, number[]][]).map(([focus, positions]) => {
     const known = positions.map((i) => scores[i]).filter((x): x is number => x != null);
     return { focus, score: known.length === positions.length ? mean(known) : -Infinity };
   }).sort((a, b) => b.score - a.score);

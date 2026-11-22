@@ -5,7 +5,7 @@ import { PHASE_STORY_KO, SPLIT_KO, TIER_KO } from "../game/story";
 import { seasonMarketWeek } from "../game/inSeason";
 import { trainingPerson } from "../game/trainingRuntime";
 import { fmtMoney } from "../game/money";
-import { ChampIcon } from "../ui";
+import { PlayerAvatar } from "../ui";
 import { ratingOf } from "../rating";
 import SeasonJourney from "./SeasonJourney";
 
@@ -75,7 +75,7 @@ export default function ManagerDashboard({ s, onAdvance }: { s: Save; onAdvance?
       <div className="mh-five">{[0, 1, 2, 3, 4].map(pos => {
         const key = s.starters[s.team]?.[pos], p = key ? PL[key] : undefined, person = key ? trainingPerson(s, key) : undefined, training = person ? s.training?.players[person] : undefined, promise = person ? s.rotation?.promises[person] : undefined, champion = key ? homeChampion(s, key) : undefined;
         return <article className="mh-player" key={pos} data-testid={`home-player-${pos}`}><div className="mh-player-top"><span>{ROLES[pos]}</span><span>{p ? ratingOf(p) : "–"}<small>OVR</small></span></div>
-          <div className="mh-player-identity">{champion ? <ChampIcon id={champion.id} size={48} title={champion.source} /> : <span className="mh-role-icon" aria-hidden="true">{ROLES[pos]}</span>}<div>{p ? <a href={`#/player/${key}`}>{p.name}</a> : <b>선발 공백</b>}<span>{POS_KO[pos]} · {p?.cardYear ? `${p.cardYear} 기록` : p ? "시즌 기록 없음" : "선수단에서 구성"}</span></div></div>
+          <div className="mh-player-identity">{key ? <PlayerAvatar seed={key} size={48} /> : <span className="mh-role-icon" aria-hidden="true">{ROLES[pos]}</span>}<div>{p ? <a href={`#/player/${key}`}>{p.name}</a> : <b>선발 공백</b>}<span>{POS_KO[pos]} · {p?.cardYear ? `${p.cardYear} 기록` : p ? "시즌 기록 없음" : "선수단에서 구성"}</span></div></div>
           <div className="mh-fatigue"><span>피로</span><b className={training && training.fatigue >= 45 ? "mh-warning" : ""}>{training ? `${training.fatigue.toFixed(1)} / 100` : "기록 없음"}</b></div><div className="mh-fatigue-track" aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, training?.fatigue ?? 0))}%`, background: training && training.fatigue >= 45 ? "var(--gold)" : undefined }} /></div>
           <p className="mh-player-note">{promise ? `첫 선발 약속 ${promise.starts}/${promise.target} · 기회 ${promise.opportunities}/4` : "개별 출전 약속 없음"}</p><p className="mh-player-evidence">{p?.small ? "표본 부족 · " : ""}{champion ? champion.source : "챔피언 기록 없음"}</p>
         </article>;
