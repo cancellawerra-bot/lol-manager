@@ -291,7 +291,7 @@ export default function Setup() {
         {step === "roster" && (
           <div>
             <h2>어느 팀을 맡으시겠습니까</h2>
-            <TeamGrid value={team} onChange={setTeam} compact />
+            <TeamGrid value={team} onChange={setTeam} compact big />
             <div className="setup-foot sticky"><button className="btn" onClick={() => goStep("mode")}>뒤로</button><button className="btn primary lg" disabled={!team} data-testid="roster-next" onClick={() => goStep("contract")}>다음 · 감독 계약서</button></div>
           </div>
         )}
@@ -351,13 +351,13 @@ export default function Setup() {
   );
 }
 
-function TeamGrid({ value, onChange, compact }: { value: string; onChange: (t: string) => void; compact?: boolean }) {
+function TeamGrid({ value, onChange, compact, big }: { value: string; onChange: (t: string) => void; compact?: boolean; big?: boolean }) {
   const teams = useMemo(() => [...CORE.teams].sort((a, b) => b.gw / (b.gw + b.gl) - a.gw / (a.gw + a.gl)), []);
   if (compact) return (
-    <div className="team-grid compact">
+    <div className={"team-grid compact" + (big ? " big" : "")}>
       {teams.map((t) => (
         <button key={t.short} className={"team-card" + (value === t.short ? " on" : "")} onClick={() => onChange(t.short)} data-testid={`team-${t.short}`} style={{ ["--tc" as string]: t.color }} aria-pressed={value === t.short}>
-          <div className="tc-head"><TeamChip t={t.short} size="sm" /><b className="tc-name">{t.ko}</b><span className="muted xs tc-rec">{t.gw}승 {t.gl}패</span></div>
+          <div className="tc-head"><TeamChip t={t.short} size={big ? "md" : "sm"} /><b className="tc-name">{t.ko}</b>{!big && <span className="muted xs tc-rec">{t.gw}승 {t.gl}패</span>}</div>
           <div className="tc-roster">
             {t.starters.map((k, i) => <span key={k}><small>{POS_KO[i]}</small><span className="tc-pl">{PL[k].name}</span><Ovr p={PL[k]} /></span>)}
           </div>
