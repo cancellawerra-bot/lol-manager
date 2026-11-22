@@ -18,20 +18,16 @@ export default function GoalTable({ s }: { s: Save }) {
   const tone = { ok: "good", risk: "warn", fail: "bad", wait: "" }[st.state];
   return (
     <Card title="시즌 목표" right={<span className="muted sm">구단주 신뢰 {s.eco.trust}</span>}>
-      <div className="tbl-wrap">
-        <table className="tbl goal-tbl" data-testid="goal-table">
-          <thead><tr><th>목표</th><th>달성 조건</th><th>달성하면</th><th>못 하면</th></tr></thead>
-          <tbody>
-            {GOALS.map((g) => (
-              <tr key={g.id} className={g.id === mine ? "me" : ""}>
-                <td><b>{g.t}</b>{g.id === mine && <span className="tag good"> 우리 목표</span>}</td>
-                <td>{GOAL_RULE[g.id]}</td>
-                <td>보너스 +{fmtMoney(g.bonus)} · 신뢰 +{g.win}</td>
-                <td>신뢰 −{g.hit}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="goal-list" data-testid="goal-table">
+        <div className="goal-row head"><span>목표</span><span>달성 조건</span><span>달성하면</span><span>못 하면</span></div>
+        {GOALS.map((g) => (
+          <div key={g.id} className={"goal-row" + (g.id === mine ? " me" : "")}>
+            <b>{g.t}{g.id === mine && <span className="tag good"> 우리 목표</span>}</b>
+            <span data-l="조건">{GOAL_RULE[g.id]}</span>
+            <span data-l="달성하면">보너스 +{fmtMoney(g.bonus)} · 신뢰 +{g.win}</span>
+            <span data-l="못 하면">신뢰 −{g.hit}</span>
+          </div>
+        ))}
       </div>
       <p className={"goal-now " + tone} data-testid="goal-status"><b>지금 상태</b> · {st.text}</p>
       <p className="muted xs">보너스는 시즌이 끝날 때 한 번 자금에 더해지고, 신뢰는 그때 함께 바뀝니다. 목표를 중간에 바꿀 수는 없습니다.</p>
