@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TM } from "../data";
 import { setPrefs, usePrefs } from "../prefs";
+import { teamMotto } from "../game/motto";
 
 export interface IntroInfo { team: string; manager: string; season: string; goal: string; cash: string; tier: string }
 
@@ -36,10 +37,19 @@ const SYM_FALLBACK = [
 ];
 // 팀별 엠블럼 그림(public/emblems/<약칭>.svg, AI로 새로 만든 벡터 그림). 파일이 없는 구단은 아래 선 그림 상징을 씁니다.
 const EMBLEMS = new Set(["T1", "GEN", "HLE", "KT", "BFX", "NS", "DK", "DNS", "BRO", "KRX"]);
-const MOTTOS = [
-  "첫 경기가 시즌의 방향을 정합니다", "이 팀의 새 이야기가 시작됩니다", "모두가 당신의 첫 선택을 지켜봅니다", "결과로 증명할 시간입니다",
-  "한 시즌, 한 번의 도전", "우승은 준비한 팀의 몫입니다", "여기서부터 시작입니다", "팬들이 이 순간을 기다려 왔습니다",
-];
+// 팀마다 하나씩 정한 한 줄 문구(엠블럼의 상징에 맞춤). 여기 없는 구단은 팀 이름으로 자동 생성합니다(game/motto.ts).
+const TEAM_MOTTOS: Record<string, string> = {
+  GEN: "발톱을 숨긴 호랑이, 때를 기다립니다",
+  T1: "날개를 펴고, 정상을 향해",
+  HLE: "높이 날아올라 먼저 내려다봅니다",
+  DK: "함께 맞물려, 쓰러져도 다시 도전합니다",
+  KT: "목표를 향해, 발사 준비 완료",
+  BFX: "영리하게 파고들어 기회를 낚아챕니다",
+  NS: "가장 든든한 방패로 시작합니다",
+  DNS: "D와 N이 하나로, 새로운 시작",
+  BRO: "검을 뽑을 시간입니다",
+  KRX: "다듬을수록 빛나는 원석처럼",
+};
 const hashOf = (s: string): number => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 
 function sound(): void {
@@ -116,8 +126,8 @@ export default function Intro({ info, onDone }: { info: IntroInfo; onDone: () =>
   const color = TM[info.team]?.color ?? "#2DD4BF";
   const h = hashOf(info.team);
   const v = h % 4;                         // 빛 연출 + 문장 모양
-  const symbol = SYMBOLS[info.team] ?? SYM_FALLBACK[(h >> 5) % SYM_FALLBACK.length];
-  const motto = MOTTOS[(h >> 3) % MOTTOS.length];
+  const symbol = SYMBOLS[info.team] ?? SYM_FALLBACK[(h >>> 5) % SYM_FALLBACK.length];
+  const motto = TEAM_MOTTOS[info.team] ?? teamMotto(`${TM[info.team]?.ko ?? ""} ${TM[info.team]?.name ?? ""}`, TM[info.team]?.ko ?? info.team);
   const chars = Array.from(`${info.manager} 감독`);
   return (
     <div className={`intro v${v}`} style={{ ["--tc" as string]: color }} role="dialog" aria-label="부임 발표" onClick={onDone} data-testid="intro">
