@@ -226,6 +226,7 @@ export default function Setup() {
       mode, managerInfo: info, club: optClub, eco, cards, replace: optClub?.replaced, starters,
     });
     save.seen = tut ? "tut1" : "done";
+    save.intro = true;
     setSave(save);
     go("#/home");
   };

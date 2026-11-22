@@ -56,6 +56,7 @@ export interface Save {
   sched: Record<string, DayAct[]>; schedOk: boolean;
   session?: Session; phase: "regular" | "playoffs" | "done"; champion?: string; seen: string; seeds?: string[];
   ownerNote?: string;
+  intro?: boolean; // 새 커리어 부임 발표를 아직 안 본 상태
   story?: StoryState;
   training?: TrainingState;
   inSeason?: InSeasonState;

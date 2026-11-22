@@ -9,6 +9,7 @@ import { ChampIcon, TeamChip, Ovr, form5 } from "../ui";
 import { ratingOf, ratingColor } from "../rating";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
+import { SPEED_KO, SPEED_MS, setPrefs, usePrefs, type Prefs } from "../prefs";
 import { TacticsControls, TacticsReview } from "./Tactics";
 import { AppearanceReview } from "./Rotation";
 import { playerTraining } from "../game/trainingRuntime";
@@ -489,8 +490,9 @@ function Minimap({ d, r, step }: { d: DraftState; r: GameResult; step: number })
 function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
   const s = useSave()!; const me = mySide(s);
   const [auto, setAuto] = useState(false);
+  const pf = usePrefs();
   const end = step >= r.events.length;
-  useEffect(() => { if (auto && !end) { const id = setTimeout(() => simNext(), 1100); return () => clearTimeout(id); } }, [auto, step, end]);
+  useEffect(() => { if (auto && !end) { const id = setTimeout(() => simNext(), SPEED_MS[pf.speed]); return () => clearTimeout(id); } }, [auto, step, end, pf.speed]);
   const ev = r.events.slice(0, step);
   const now = ev[ev.length - 1];
   const clock = now ? now.t : 0;
@@ -525,7 +527,7 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
 
       <div className="bc-body">
         <div className="bc-map">
-          <Minimap d={d} r={r} step={step} />
+          {pf.map ? <Minimap d={d} r={r} step={step} /> : <div className="mm-off">미니맵 연출 꺼짐 (설정에서 켤 수 있어요)</div>}
           <LeadChart d={d} r={r} upto={step} />
         </div>
         <div className="bc-main">
@@ -539,6 +541,7 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
             {!end && <button className="btn primary lg" onClick={() => simNext()} data-testid="sim-next">다음 장면 ▶</button>}
             {!end && <button className={"btn" + (auto ? " on" : "")} onClick={() => setAuto(!auto)}>{auto ? "❚❚ 자동 진행 멈춤" : "▶▶ 자동 진행"}</button>}
             {!end && <button className="btn ghost rc-insta" onClick={() => simNext(true)} data-testid="sim-all">즉시 결과</button>}
+            {!end && <label className="sm muted">속도 <select value={pf.speed} onChange={(e) => setPrefs({ speed: e.target.value as Prefs["speed"] })} data-testid="sim-speed">{(Object.keys(SPEED_KO) as Prefs["speed"][]).map((k) => <option key={k} value={k}>{SPEED_KO[k]}</option>)}</select></label>}
             {end && <button className="btn primary lg" onClick={toPog} data-testid="to-result">Player Of the Game ▶</button>}
           </div>
           <div className="feed bc-feed">

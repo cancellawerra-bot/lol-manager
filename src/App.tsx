@@ -1,12 +1,13 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { fmtMoney } from "./game/money";
 import { CORE, CARDS_FILE, loadCore, loadRanked, TM } from "./data";
-import { useSave, advance, loadSlot, lastSlot } from "./store";
+import { useSave, advance, loadSlot, lastSlot, mutate } from "./store";
 import { standings, nextMySeries, dateKo, STAGE_KO } from "./game/season";
 import { FanNotice, TeamChip, form5 } from "./ui";
 import { PATCH_VERSION } from "./pages/patchdata";
 import { go } from "./nav";
 import { swissRows } from "./game/swiss";
+import { usePrefs } from "./prefs";
 
 const Title = lazy(() => import("./pages/Title"));
 const Setup = lazy(() => import("./pages/Setup"));
@@ -25,6 +26,9 @@ const Patch = lazy(() => import("./pages/Patch"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Match = lazy(() => import("./pages/Match"));
 const Stove = lazy(() => import("./pages/Stove"));
+const Intro = lazy(() => import("./pages/Intro"));
+import type { IntroInfo } from "./pages/Intro";
+import type { Save } from "./game/season";
 
 function useHash(): string {
   const [h, setH] = useState(location.hash || "#/");
@@ -39,6 +43,13 @@ const NAV: [string, string, string][] = [
   ["#/help", "기록·도움말", "ⓘ"], ["#/settings", "설정", "⚙"],
 ];
 
+function introInfo(s: Save): IntroInfo {
+  const goal = ({ win: "우승", final: "결승 진출", sf: "4강 진출", po: "플레이오프 진출", top8: "8위 이내" } as Record<string, string>)[s.eco.goal ?? "top8"];
+  return { team: s.team, manager: s.manager, season: s.story ? `${s.story.year}` : "2026", goal, cash: fmtMoney(s.eco.cash), tier: s.story ? (s.story.tier === "LCK" ? "LCK" : "챌린저스 코리아") : "LCK" };
+}
+// 부임 연출을 끈 사람은 연출 없이 바로 표시를 지웁니다.
+function Skip() { useEffect(() => { mutate((x) => { x.intro = false; }); }, []); return null; }
+
 function Loading({ text = "불러오는 중…" }: { text?: string }) { return <div className="loading"><span className="spin" />{text}</div>; }
 
 export default function App() {
@@ -48,6 +59,7 @@ export default function App() {
   const [note, setNote] = useState("");
   const hash = useHash();
   const save = useSave();
+  const prefs = usePrefs();
   useEffect(() => {
     loadCore().then(() => loadRanked()).then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market|stove)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
   }, []);
@@ -126,6 +138,9 @@ export default function App() {
           {!inMatch && <FanNotice />}
         </main>
       </div>
+      {save.intro && (page === "home" || page === "") && (prefs.intro
+        ? <Suspense fallback={null}><Intro info={introInfo(save)} onDone={() => mutate((x) => { x.intro = false; })} /></Suspense>
+        : <Skip />)}
       <nav className="bnav">
         {NAV.slice(0, 5).map(([h, label, ic]) => <a key={h} href={h} className={hash.startsWith(h) ? "on" : ""}><i>{ic}</i>{label}</a>)}
         <button onClick={() => setMenu(true)}><i>☰</i>더보기</button>

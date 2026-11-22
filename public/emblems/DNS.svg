@@ -1,0 +1,42 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+  <title>Angular fused DN esports monogram</title>
+  <defs>
+    <linearGradient id="blue-grad" x1="268" y1="218" x2="732" y2="819" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0734ff" />
+      <stop offset=".48" stop-color="#0065ff" />
+      <stop offset="1" stop-color="#0630d2" />
+    </linearGradient>
+    <linearGradient id="navy-grad" x1="177" y1="251" x2="691" y2="853" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#092598" />
+      <stop offset=".45" stop-color="#001345" />
+      <stop offset="1" stop-color="#020a45" />
+    </linearGradient>
+    <linearGradient id="side-grad" x1="744" y1="398" x2="969" y2="521" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#001548" />
+      <stop offset="1" stop-color="#0633b9" />
+    </linearGradient>
+    <linearGradient id="white-grad" x1="445" y1="376" x2="694" y2="772" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" />
+      <stop offset=".65" stop-color="#fdfdff" />
+      <stop offset="1" stop-color="#e6ebf6" />
+    </linearGradient>
+  </defs>
+  <g id="monogram">
+    <path fill="#00e1ef" d="M8 190H403C562 190 667 266 730 435L768 288 1016 126 891 895 757 867 591 627C565 749 499 802 372 825L16 894 141 544 72 515 145 330Z" />
+    <path fill="url(#navy-grad)" d="M8 190 43 210H400C553 210 665 288 719 490L787 300 995 165 891 895 757 867 591 627C565 749 499 802 372 825L16 894 123 756 202 424 72 515 145 330Z" />
+    <path fill="url(#blue-grad)" d="M43 210H400C557 210 668 290 719 490L624 394C566 334 491 301 400 301H166Z" />
+    <path fill="url(#side-grad)" d="m719 490 15 3 53-193 208-135-104 730-28-67 91-598-135 88-44 247 4 15Z" />
+    <path fill="#072bab" d="m202 424-69 10-61 81Z" />
+    <path fill="#001c70" d="m72 515 130-91-25 92Z" />
+    <path fill="#0633c7" d="m312 462 23 15-31 151-35 22Z" />
+    <path fill="#00e3ed" d="M269 650 304 628H340C401 628 438 595 455 536L451 582C430 627 393 650 340 650Z" />
+    <path fill="url(#blue-grad)" d="M123 756H339C458 756 551 689 584 570L604 575C596 691 548 769 436 790L49 864Z" />
+    <path fill="#001968" d="m16 894 33-30 387-74c112-21 160-99 168-215l-13 52c-26 122-92 175-219 198Z" />
+    <path fill="url(#blue-grad)" d="m604 575 158 153 101 100 15 34-103-25Z" />
+    <path fill="#061878" d="m604 575 171 262 103 25 13 33-134-28-166-240Z" />
+    <path fill="url(#white-grad)" d="M164 325H398C501 325 566 364 632 431L779 580 775 565 819 318 954 230 863 828 592 566C544 519 487 463 445 441 425 430 404 424 376 424H246L312 462 269 650H340C405 650 454 615 467 542L477 481 584 570C551 689 458 756 339 756H123L202 424 133 434Z" />
+    <path fill="#e7ecf6" d="m477 481 107 89-7 23-104-89Z" />
+    <path fill="#e7ecf6" d="m762 728 132-131-31 231Z" />
+    <path fill="#e9edf7" d="m123 756 146-106-20 106Z" />
+  </g>
+</svg>
