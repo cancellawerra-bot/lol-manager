@@ -5354,20 +5354,6 @@
       "additionalSources": []
     },
     {
-      "person": "yaharong",
-      "name": "Yaharong",
-      "realName": "Lee Chan-ju",
-      "profile": "Yaharong",
-      "cardPlayer": true,
-      "sourceUrl": "https://lol.fandom.com/wiki/Yaharong",
-      "apiSource": "https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=OverviewPage%2CID%2CName%2CBirthdate&where=OverviewPage%3D%22Yaharong%22&limit=1&format=json",
-      "checkedAt": "2026-11-18",
-      "mappingMethod": "unique-profile",
-      "date": "2000-06-12",
-      "precision": "day",
-      "additionalSources": []
-    },
-    {
       "person": "yellowpete",
       "name": "Yellowpete",
       "realName": "Peter Wüppen",

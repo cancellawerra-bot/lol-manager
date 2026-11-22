@@ -431,7 +431,7 @@ export function applyStoryWorld(s: Save, yearOverride?: number): void {
       injectEraTeam(t, stt.length === 5 ? stt : fillAndKeep(s, year), s.cards);
       continue;
     }
-    if (s.starters[short]?.length === 5 && st.worldBuiltYear === year) {
+    if (s.starters[short]?.length === 5 && st.worldBuiltYear === year && s.starters[short].every((k) => !/-\d{4}$/.test(k) || !!CARDS[k])) { // 명단에서 뺀 선수가 남은 저장이면 이 구단만 다시 짭니다
       const keys = s.starters[short];
       keys.forEach((k) => { const p = PL[k]; if (p?.personKey) used.add(p.personKey); });
       injectEraTeam(t, keys, s.inSeason?.year === year ? s.inSeason.rosters[short]?.map((c) => c.key) : undefined);

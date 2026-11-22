@@ -10,6 +10,16 @@
 
 ## 변경 기록
 
+### 2026-11-22 · Claude(집 PC) · v2.26.0 오너 요청으로 선수 1명 카드 제외
+
+- **요청:** 오너 "(선수 이름) 빼, 범죄자잖아". 사유는 오너 판단이며 이 문서는 사실로 단정하지 않습니다. 이름은 공개 화면·패치 노트에 쓰지 않았고 제외 목록은 `tools/excluded_players.json`(pkey)에만 있습니다.
+- **제외:** `public/data/cards.json`에서 카드 3장(2018·2019·2021) 삭제 → 1,011 → **1,008장**(`meta.cards`·`meta.eligible`, 제목 화면 "1,008장"은 meta를 읽음). 같은 해·포지션 묶음(2018·2019·2021 미드)의 `pool`(15→14)·`rank`만 다시 셌고 남은 선수의 기록·퍼센타일·능력치·연봉은 그대로. 생년 자료(`src/game/playerBirthdates.ts`, `docs/research/PLAYER_BIRTHDATES.md`, `player_birthdates_verified.json`)에서도 항목 삭제. `core.json`(2026)에는 없었음.
+- **도구:** `tools/apply_exclusions.py`(이미 만든 cards.json에서 빼고 묶음 순위 재계산, 여러 번 실행해도 안전, 원본 CSV가 없는 PC용), `tools/build_cards.py`는 처음부터 만들 때 같은 목록을 건너뜀. **카드 파이프라인을 다시 돌린 뒤에는 `py -3 -X utf8 tools/apply_exclusions.py`를 마지막에 한 번 더 실행하세요(원본 CSV가 바뀌는 경우 대비).**
+- **예전 저장 안전 장치:** `store.ts` `hasRemovedCard` — 내 명단(스토리: 보유 카드·내 선발·계약, 판타지: 모든 구단 지명)에 사라진 카드(`name-YYYY` 형식이면서 `CARDS`에 없음)가 있으면 `loadSlot`·`importJson`이 열지 않고 "명단에서 뺀 선수가 들어 있어 열 수 없습니다"를 `getLoadProblem()`으로 알림(제목 화면 표시). `game/story.ts` `applyStoryWorld`는 AI 구단 저장 명단에 사라진 카드가 있으면 그 구단만 다시 짭니다. 이 선수를 내 선발로 쓰는 예전 저장을 그대로 열면 밴픽 화면(`Match.tsx TeamBar`)에서 `PL[...]` undefined로 멈추던 것을 시험으로 확인했습니다.
+- **밸런스:** 카드 3장 삭제와 AI 명단 재구성 외 경기 계산·경제 변경 없음. **난이도 재측정 안 함(오너 지시 유지)** — 2018·2019·2021 AI 로스터가 한 명 달라질 수 있어 개별 시드 결과가 바뀔 수 있습니다.
+- **확인함:** tsc·`npm run build`, `tools/test/story.test.ts` 통과(`NO_CLEAR_SEED`는 실패 아님), 로컬 제목 화면 1,008장, 카드 파일에 이름 0건, 사라진 카드가 내 선발/AI 선발에 있는 저장 각각 시험(안내 문구 표시 / AI 팀만 다시 짜서 경기 끝까지 진행), 콘솔 새 오류 없음.
+- **확인 안 함:** 공개 사이트 검수(배포 전), 판타지 모드 저장 열기 시험, 시즌 중 이적 명단(`inSeason.rosters`)에 사라진 카드가 남은 저장.
+
 ### 2026-11-22 · Claude(집 PC) · v2.23.0–2.25.0 배포 (경기 결과·선수 카드·시즌 여정 지도)
 
 - **배포:** main `aab0b3a` → `tools/deploy.sh` → gh-pages `0e2832a`, 라이브 번들 `assets/index-pWwu1Tdq.js`(2.25.0). 올리기 전 `git fetch`로 origin 변경 없음(마지막 `5db3727`)을 확인했습니다.

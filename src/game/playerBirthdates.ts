@@ -384,7 +384,6 @@ export const PLAYER_BIRTHDATES: Readonly<Record<string, VerifiedBirth>> = {
   "wolf (lee jae-wan)": lp("1996-09-09", "Wolf (Lee Jae-wan)"),
   "woong (jang gun-woong)": lp("1990-02-27", "Woong (Jang Gun-woong)"),
   "wraith": lp("1995-09-28", "Wraith"),
-  "yaharong": lp("2000-06-12", "Yaharong"),
   "yellowpete": lp("1989-10-05", "Yellowpete"),
   "yohan": lp("1999-12-17", "Yohan"),
   "youngjae": lp("2002-11-16", "YoungJae"),

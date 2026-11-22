@@ -403,7 +403,6 @@ v2.6.1에서 전체 게임 명단을 조사했습니다. 시즌 카드 **392개 
 | Wolf (Lee Jae-wan) | Lee Jae-wan | 1996-09-09 | [프로필·기사](https://lol.fandom.com/wiki/Wolf_(Lee_Jae-wan)) |
 | Woong (Jang Gun-woong) | Jang Gun-woong | 1990-02-27 | [프로필·기사](https://lol.fandom.com/wiki/Woong_(Jang_Gun-woong)) |
 | Wraith | Kwon Ji-min | 1995-09-28 | [프로필·기사](https://lol.fandom.com/wiki/Wraith) |
-| Yaharong | Lee Chan-ju | 2000-06-12 | [프로필·기사](https://lol.fandom.com/wiki/Yaharong) |
 | Yellowpete | Peter Wüppen | 1989-10-05 | [프로필·기사](https://lol.fandom.com/wiki/Yellowpete) |
 | Yohan | Kim Yo-han | 1999-12-17 | [프로필·기사](https://lol.fandom.com/wiki/Yohan) |
 | YoungJae | Ko Yeong-jae | 2002-11-16 | [프로필·기사](https://lol.fandom.com/wiki/YoungJae) |

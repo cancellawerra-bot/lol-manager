@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { CARDS_FILE, fmt } from "../data";
-import { slots, loadSlot, deleteSlot, importJson } from "../store";
+import { slots, loadSlot, deleteSlot, importJson, getLoadProblem } from "../store";
 import { dateKo } from "../game/season";
 import { FanNotice, TeamChip } from "../ui";
 import { PATCH_VERSION } from "./patchdata";
@@ -29,7 +29,7 @@ export default function Title() {
           <li>첫 번째 선택권 · 피어리스 밴픽 · 경기마다 승부 요인 설명</li>
         </ul>
         <div className="title-actions">
-          {cont && <button className="btn primary lg" data-testid="continue" onClick={() => { if (loadSlot(cont.slot)) go("#/home"); else setMsg("세이브 버전이 달라 불러올 수 없습니다. 새 게임을 시작해 주세요."); }}>이어하기 · {cont.team} {cont.label}</button>}
+          {cont && <button className="btn primary lg" data-testid="continue" onClick={() => { if (loadSlot(cont.slot)) go("#/home"); else setMsg(getLoadProblem() ?? "세이브 버전이 달라 불러올 수 없습니다. 새 게임을 시작해 주세요."); }}>이어하기 · {cont.team} {cont.label}</button>}
           <button className="btn primary lg" data-testid="new-career" onClick={() => go("#/setup")}>새 게임</button>
           <button className="btn lg" onClick={() => fileRef.current?.click()}>불러오기</button>
           <button className="btn ghost lg" onClick={() => go("#/settings")}>설정</button>
@@ -45,7 +45,7 @@ export default function Title() {
                 <div className="slot-main"><TeamChip t={s.team} full /><span className="muted">{s.manager} 감독</span></div>
                 <div className="muted sm">{s.label} · {dateKo(s.date)}</div>
                 <div className="row gap">
-                  <button className="btn sm" onClick={() => { if (loadSlot(s.slot)) go("#/home"); else setMsg("세이브 버전이 달라 불러올 수 없습니다."); }}>불러오기</button>
+                  <button className="btn sm" onClick={() => { if (loadSlot(s.slot)) go("#/home"); else setMsg(getLoadProblem() ?? "세이브 버전이 달라 불러올 수 없습니다."); }}>불러오기</button>
                   <button className="btn ghost sm" onClick={() => { if (confirm(`슬롯 ${i + 1}을 지울까요? 되돌릴 수 없습니다.`)) { deleteSlot(s.slot); setSl(slots()); } }}>지우기</button>
                 </div>
               </> : <div className="muted">비어 있음</div>}

@@ -32,6 +32,9 @@ def main() -> None:
     if not SRC.exists():
         raise SystemExit(f"missing source CSV: {SRC}")
     rows = list(csv.DictReader(SRC.open(encoding="utf-8")))
+    # 운영자(오너)가 제외한 선수는 카드를 만들지 않습니다 (tools/excluded_players.json, 2026-11-22)
+    _exc = set(json.loads((Path(__file__).resolve().parent / "excluded_players.json").read_text("utf-8"))["pkeys"])
+    rows = [r for r in rows if r["pkey"] not in _exc]
     cands = [r for r in rows if int(float(r["games"])) >= 10 and r["percentile"].strip()!=""]
     # ranks among 10+ game cards in the same year+pos
     pool: dict[tuple[int, str], list] = defaultdict(list)

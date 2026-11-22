@@ -1,0 +1,5 @@
+{
+  "note": "운영자(오너) 결정으로 게임 선수 카드에서 제외하는 선수 목록. pkey는 cards.json의 pkey와 같습니다. 사유는 오너 판단이며 이 저장소에서 사실로 단정하지 않습니다. build_cards.py가 처음부터 만들지 않고, apply_exclusions.py가 이미 만들어진 cards.json에서 뺍니다.",
+  "pkeys": ["yaharong"],
+  "decided": "2026-11-22"
+}
