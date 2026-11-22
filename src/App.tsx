@@ -27,6 +27,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Match = lazy(() => import("./pages/Match"));
 const Stove = lazy(() => import("./pages/Stove"));
 const Intro = lazy(() => import("./pages/Intro"));
+const Tour = lazy(() => import("./pages/Tour"));
 import type { IntroInfo } from "./pages/Intro";
 import type { Save } from "./game/season";
 
@@ -138,6 +139,8 @@ export default function App() {
           {!inMatch && <FanNotice />}
         </main>
       </div>
+      {(save.seen === "tut1" || save.seen === "tut2") && !save.intro && (page === "home" || page === "") && !endLabel
+        && <Suspense fallback={null}><Tour story={!!save.story} onDone={() => mutate((x) => { x.seen = "done"; })} /></Suspense>}
       {save.intro && (page === "home" || page === "") && (prefs.intro
         ? <Suspense fallback={null}><Intro info={introInfo(save)} onDone={() => mutate((x) => { x.intro = false; })} /></Suspense>
         : <Skip />)}

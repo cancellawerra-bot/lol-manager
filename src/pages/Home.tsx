@@ -1,5 +1,5 @@
 import { CORE, PL, POS_KO, TM, fmt } from "../data";
-import { useSave, fillSchedule, mutate, autoSimSplit, autoToOffseason, acceptFranchise } from "../store";
+import { useSave, fillSchedule, autoSimSplit, autoToOffseason, acceptFranchise } from "../store";
 import { standings, nextMySeries, dateKo, STAGE_KO, opp } from "../game/season";
 import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO, fmtMoney } from "../game/story";
 import { Card, Ovr, TeamChip, form5, PName } from "../ui";
@@ -24,19 +24,6 @@ export default function Home({ onAdvance }: { onAdvance?: () => void }) {
   return (
     <div className="manager-home">
       <ManagerDashboard s={s} onAdvance={onAdvance} />
-      {s.seen === "tut1" && (
-        <Card title="수석코치 안내 1/2" className="span2">
-          <p>상단의 <b>진행하기</b>로 일주일을 넘깁니다. 우리 경기가 있는 날에는 기자회견부터 밴픽, 경기, 결과 설명까지 이어집니다.</p>
-          <p className="muted sm">그 전에 선수단 주간 일정을 정해야 합니다. 수석코치에게 맡겨도 됩니다.</p>
-          <button className="btn primary" onClick={() => mutate((x) => { x.seen = "tut2"; })}>다음</button>
-        </Card>
-      )}
-      {s.seen === "tut2" && (
-        <Card title="수석코치 안내 2/2" className="span2">
-          <p><b>선수단 일정</b>에서 훈련·스크림·휴식을 정하고, <b>영입</b>에서 시즌 카드를 다시 살펴볼 수 있습니다. 예산·신뢰도는 위쪽 칩에 있습니다.</p>
-          <button className="btn primary" onClick={() => mutate((x) => { x.seen = "done"; })}>알겠습니다</button>
-        </Card>
-      )}
       {!s.schedOk && !s.story?.ended && s.phase !== "done" && (
         <Card title="주전 일정을 정해 주세요" className="span2">
           <p>한 주 일정의 빈 칸을 채워야 경기를 진행할 수 있습니다. 수석코치에게 맡기면 훈련·스크림과 휴식일이 채워집니다.</p>

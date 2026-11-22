@@ -325,7 +325,7 @@ export default function Setup() {
         {step === "tutor" && (
           <div>
             <h2>수석코치 안내</h2>
-            <p>부임 첫날입니다. 홈 화면과 진행하기, 선수단 일정까지 짧게 안내할까요?</p>
+            <p>부임 첫날입니다. 홈 화면의 다음 경기·선수단 일정·진행하기 같은 곳을 하나씩 짚어 가며 1분 정도 안내할까요? 나중에 설정에서 다시 볼 수도 있습니다.</p>
             <div className="row gap wrap">
               <button className={"btn" + (!tut ? " primary" : "")} onClick={() => setTut(false)}>아니요, 바로 시작</button>
               <button className={"btn" + (tut ? " primary" : "")} onClick={() => setTut(true)}>안내 받기</button>

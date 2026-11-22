@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { TM } from "../data";
-import { useSave, exportJson, importJson, persist, setSave, slots } from "../store";
+import { useSave, exportJson, importJson, persist, setSave, slots, mutate } from "../store";
 import { Card } from "../ui";
 import { go } from "../nav";
 import { SPEED_KO, setPrefs, usePrefs, type Prefs } from "../prefs";
@@ -34,6 +34,12 @@ export default function Settings() {
         </> : <p className="muted">진행 중인 커리어가 없습니다. 타이틀에서 새 게임을 시작하거나 세이브 파일을 불러 주세요.</p>}
         {msg && <p className="ok">{msg}</p>}
       </Card>
+      {s && (
+        <Card title="도움말">
+          <p className="muted sm">처음 하는 분을 위한 수석코치 안내를 다시 볼 수 있습니다. 홈 화면의 칸들을 하나씩 짚어 줍니다.</p>
+          <button className="btn" data-testid="replay-tour" onClick={() => { mutate((x) => { x.seen = "tut1"; }); go("#/home"); }}>첫 플레이 안내 다시 보기</button>
+        </Card>
+      )}
       <Card title="경기 연출">
         <p className="muted sm">표시와 속도만 바꿉니다. 경기 결과에는 영향이 없고, 이 브라우저에만 저장됩니다.</p>
         <div className="speedrow"><span>자동 진행 속도</span>
