@@ -1294,7 +1294,7 @@ function resetHistorySupport(s: Save): void {
   const h = s.story?.history; if (!h) return;
   const keys = s.starters[s.team] ?? [];
   const pay = moneyRound(s.story!.contracts.filter((c) => keys.includes(c.key)).reduce((n, c) => n + c.salary, 0));
-  h.grade = historyGrade(pay, 2021); h.support = historySupport(pay, 2021);
+  h.grade = historyGrade(pay, 2021); h.support = Math.max(historySupport(pay, 2021), historySupportFloor(h.rank ?? 1));
 }
 
 export function resolveFranchise(s: Save, accept: boolean): string | null {
@@ -1474,8 +1474,12 @@ export function historyPowerRank(team: string, year: number): number {
   const mine = pw(team);
   return 1 + lckTeamsOf(year).filter((t) => t.short !== team && pw(t.short) > mine).length;
 }
-/** 약팀 육성 지원: 전력 5~7위 +20%, 8~10위 +40% 훈련 성장 속도. 상위 4팀은 없음. 월즈 우승이 약팀에게 지나치게 멀지 않도록 한 보정입니다. */
-export function historyGrowthBoost(rank: number): number { return rank >= 8 ? 1.4 : rank >= 5 ? 1.2 : 1; }
+/** 약팀 지원: 전력 5~7위는 훈련 성장 속도 +40%·시작 자금 +5억·모기업 최소 지원 연 2억, 8~10위는 +80%·+10억·연 5억. 상위 4팀은 없음. 월즈 우승이 약팀에게 지나치게 멀지 않도록 한 보정입니다. */
+export function historyGrowthBoost(rank: number): number { return rank >= 8 ? 1.8 : rank >= 5 ? 1.4 : 1; }
+/** 약팀 시작 자금 보너스(억): 전력 8~10위 +10, 5~7위 +5 */
+export function historyStartBonus(rank: number): number { return rank >= 8 ? 10 : rank >= 5 ? 5 : 0; }
+/** 약팀 모기업 최소 지원(억/년, LCK 소속일 때): 전력 8~10위 5, 5~7위 2 */
+export function historySupportFloor(rank: number): number { return rank >= 8 ? 5 : rank >= 5 ? 2 : 0; }
 
 export function newHistoryCareer(teamShort: string, slot: number, seed: number, opt: {
   startYear: number; managerInfo: import("./season").Manager; difficulty: StoryDiff;
@@ -1491,8 +1495,9 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   const payroll = moneyRound(roster.starters.reduce((n, id) => n + (CARDS[id]?.salary ?? 0), 0));
   const grade = historyGrade(payroll, year), support = historySupport(payroll, year);
   const rank = historyPowerRank(teamShort, year), growth = historyGrowthBoost(rank);
+  const support2 = Math.max(support, historySupportFloor(rank));
   const cap = HISTORY_RESERVE[opt.difficulty];
-  const eco: Economy = { difficulty: opt.difficulty, cap, cash: cap, trust: 55, fans: 50, goal: "po", grant: 0, bonus: 2, trustHit: 6, trustWin: 8 };
+  const eco: Economy = { difficulty: opt.difficulty, cap, cash: cap + historyStartBonus(rank), trust: 55, fans: 50, goal: "po", grant: 0, bonus: 2, trustHit: 6, trustWin: 8 };
   const now = new Date().toISOString();
   const info = opt.managerInfo;
   const lck = lckTeamsOf(year).map((t) => t.short);
@@ -1500,7 +1505,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
     year, split: "spring", tier: "LCK", phase: "regular",
     lck, ck: ckTeamsOf(year, undefined).map((t) => t.short).filter((t) => t !== teamShort), franchised: year >= 2021, ...(year >= 2021 ? { buyInOffered: true, buyInPaid: false } : {}),
     trophies: { lck: 0, msi: 0, worlds: 0 },
-    contracts, history: { startYear: year, grade, support, rank, growth },
+    contracts, history: { startYear: year, grade, support: support2, rank, growth },
   };
   const starters = roster.starters.map((id) => (CARDS[id] ? contracts.find((c) => c.cardId === id)?.key ?? id : ""));
   const s: Save = {
@@ -1512,7 +1517,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   applyStoryWorld(s);
   initializeClubTimeline(s, false);
   beginSplit(s, year, "spring");
-  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.${growth > 1 ? ` 전력 ${rank}위 팀이라 육성 지원(선수 훈련 성장 속도 +${Math.round((growth - 1) * 100)}%)을 받습니다.` : ""}`, teamShort);
+  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support2 > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support2)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.${growth > 1 ? ` 전력 ${rank}위 팀이라 약팀 지원(선수 훈련 성장 속도 +${Math.round((growth - 1) * 100)}%, 시작 자금 +${fmtMoney(historyStartBonus(rank))})을 받습니다.` : ""}`, teamShort);
   return s;
 }
 

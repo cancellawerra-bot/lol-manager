@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CARDS } from "../data";
-import { historyGrowthBoost, lckTeamsOf, exactRosterIds, historyGrade, historySupport, newHistoryCareer, HISTORY_RESERVE, type StoryDiff } from "../game/story";
+import { historyGrowthBoost, historyStartBonus, historySupportFloor, lckTeamsOf, exactRosterIds, historyGrade, historySupport, newHistoryCareer, HISTORY_RESERVE, type StoryDiff } from "../game/story";
 import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
 import { cardRating } from "../rating";
 import { fmtMoney } from "../game/money";
@@ -64,13 +64,13 @@ export default function HistorySetup() {
               <td style={{ textAlign: "left", whiteSpace: "normal" }} className="sm">{r.names}</td>
             </tr>))}</tbody>
         </table></div>
-        <p className="muted xs">도전 난이도는 그해 10개 팀 중 전력 순위로 붙인 라벨입니다(1~2위 쉬움 · 3~4위 보통 · 5~7위 어려움 · 8~10위 매우 어려움). 월즈·MSI의 해외 팀은 실제 선수 데이터가 없는 가상 시드 팀이며, 아래 난이도 버튼(쉬움·보통·어려움)에 따라 강도가 달라집니다. 전력 5~7위 팀은 훈련 성장 속도 +20%, 8~10위 팀은 +40%의 육성 지원을 받습니다. 그래도 약한 팀은 월즈 우승이 매우 어려우니 「도전 성과」(플레이오프 진출·결승·LCK 우승 등)를 단계별 목표로 삼아 보세요.</p>
+        <p className="muted xs">도전 난이도는 그해 10개 팀 중 전력 순위로 붙인 라벨입니다(1~2위 쉬움 · 3~4위 보통 · 5~7위 어려움 · 8~10위 매우 어려움). 월즈·MSI의 해외 팀은 실제 선수 데이터가 없는 가상 시드 팀이며, 아래 난이도 버튼(쉬움·보통·어려움)에 따라 강도가 달라집니다. 전력 5~7위 팀은 훈련 성장 속도 +40%·시작 자금 +5억·모기업 최소 지원 연 2억, 8~10위 팀은 +80%·+10억·연 5억의 약팀 지원을 받습니다. 그래도 약한 팀은 월즈 우승이 매우 어려우니 「도전 성과」(플레이오프 진출·결승·LCK 우승 등)를 단계별 목표로 삼아 보세요.</p>
         <p className="muted xs">전력 = 선발 5명의 평균 능력치, 연봉 합 = 선발 5명 연봉(게임용 가상 금액, 억). 구단 규모는 연봉 합으로 정하며(2021 이후 S 200↑ · A 150↑ · B 115↑ · C 그 미만, 2018~2020은 수입이 작아 70/115 비율로 낮춘 S 122↑ · A 91↑ · B 70↑), S·A·B 등급은 게임의 평균 수입을 넘는 연봉만큼 매 시즌 말 모기업 지원을 받아 적자를 막습니다. 이 지원은 시작할 때 정해져 선수를 더 사도 늘지 않습니다.</p>
 
         {pick && <div className="card" data-testid="history-pick">
           <h3>{year} {pick.t.ko} · {pick.grade}등급</h3>
-          {historyGrowthBoost(rows.indexOf(pick) + 1) > 1 && <p className="sm">약팀 육성 지원: 선수 훈련 성장 속도 +{Math.round((historyGrowthBoost(rows.indexOf(pick) + 1) - 1) * 100)}%.</p>}
-          <p className="sm">{GRADE_NOTE[pick.grade]}. 시작 자금 {fmtMoney(HISTORY_RESERVE[diff])}{pick.support > 0 ? ` · 매 시즌 말 모기업 지원 +${fmtMoney(pick.support)}` : ""}.</p>
+          {historyGrowthBoost(rows.indexOf(pick) + 1) > 1 && <p className="sm">약팀 지원: 선수 훈련 성장 속도 +{Math.round((historyGrowthBoost(rows.indexOf(pick) + 1) - 1) * 100)}% · 시작 자금 +{fmtMoney(historyStartBonus(rows.indexOf(pick) + 1))} · 모기업 최소 지원 연 {fmtMoney(historySupportFloor(rows.indexOf(pick) + 1))}.</p>}
+          <p className="sm">{GRADE_NOTE[pick.grade]}. 시작 자금 {fmtMoney(HISTORY_RESERVE[diff] + historyStartBonus(rows.indexOf(pick) + 1))}{Math.max(pick.support, historySupportFloor(rows.indexOf(pick) + 1)) > 0 ? ` · 매 시즌 말 모기업 지원 +${fmtMoney(Math.max(pick.support, historySupportFloor(rows.indexOf(pick) + 1)))}` : ""}.</p>
         </div>}
 
         <h2>③ 감독과 난이도</h2>

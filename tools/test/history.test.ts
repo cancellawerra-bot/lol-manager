@@ -6,7 +6,7 @@ import { loadCore, loadRanked, CARDS, PL } from "../../src/data";
 import { newHistoryCareer, lckTeamsOf, exactRosterIds, historyGrade, historySupport, HISTORY_RESERVE, LCK_PAYROLL_SOFT, cardsForOrgYear } from "../../src/game/story";
 import { stepYear } from "../../src/game/stove";
 import { projectLedger } from "../../src/game/ledger";
-import { historyPowerRank, historyGrowthBoost, sponsorBonus, LCK_SPONSOR_BONUS } from "../../src/game/story";
+import { historyStartBonus, historySupportFloor, historyPowerRank, historyGrowthBoost, sponsorBonus, LCK_SPONSOR_BONUS } from "../../src/game/story";
 import { challengeLog } from "../../src/game/achievements";
 import { Rng } from "../../src/game/rng";
 await loadCore(); await loadRanked();
@@ -33,9 +33,9 @@ for (const year of [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]) {
     const own = ex.starters.map((id) => CARDS[id]).filter((c) => c.year === y).length;
     assert(own >= 4, `${year} ${t.short} 그해 카드 선발 ${own}명`);
     const pay = Math.round(ex.starters.reduce((n, id) => n + CARDS[id].salary, 0) * 100) / 100;
-    assert.equal(st.history!.grade, historyGrade(pay, year)); assert.equal(st.history!.support, historySupport(pay, year));
-    assert.equal(s.eco.cash, HISTORY_RESERVE.normal);
-    assert(st.history!.support === 0 || pay > (year <= 2020 ? 70 : LCK_PAYROLL_SOFT));
+    assert.equal(st.history!.grade, historyGrade(pay, year)); assert.equal(st.history!.support, Math.max(historySupport(pay, year), historySupportFloor(historyPowerRank(t.short, year))));
+    assert.equal(s.eco.cash, HISTORY_RESERVE.normal + historyStartBonus(historyPowerRank(t.short, year)));
+    assert(st.history!.support === 0 || pay > (year <= 2020 ? 70 : LCK_PAYROLL_SOFT) || st.history!.support === historySupportFloor(st.history!.rank!));
     // 은퇴한 옛 스타가 AI 선발에 섞이지 않음: 다른 팀 선발 대부분이 그해 카드
     for (const o of st.lck.filter((x) => x !== t.short)) {
       const ks = s.starters[o]; assert.equal(ks.length, 5);
