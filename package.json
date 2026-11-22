@@ -1,7 +1,7 @@
 {
   "name": "lol-manager",
   "private": true,
-  "version": "2.28.0",
+  "version": "2.28.1",
   "type": "module",
   "scripts": {
     "data": "python3 tools/build_data.py",

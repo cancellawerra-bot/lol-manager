@@ -291,9 +291,8 @@ export default function Setup() {
         {step === "roster" && (
           <div>
             <h2>어느 팀을 맡으시겠습니까</h2>
-            <p className="muted">2026 LCK 실제 명단입니다. 숫자는 그해 포지션 내 종합 지표 백분위입니다. 로고와 사진은 쓰지 않습니다.</p>
-            <TeamGrid value={team} onChange={setTeam} />
-            <div className="setup-foot"><button className="btn" onClick={() => goStep("mode")}>뒤로</button><button className="btn primary lg" disabled={!team} data-testid="roster-next" onClick={() => goStep("contract")}>다음 · 감독 계약서</button></div>
+            <TeamGrid value={team} onChange={setTeam} compact />
+            <div className="setup-foot sticky"><button className="btn" onClick={() => goStep("mode")}>뒤로</button><button className="btn primary lg" disabled={!team} data-testid="roster-next" onClick={() => goStep("contract")}>다음 · 감독 계약서</button></div>
           </div>
         )}
 
