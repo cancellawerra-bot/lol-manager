@@ -306,6 +306,37 @@ function Draft({ d }: { d: DraftState }) {
   useEffect(() => { setSel(null); if (t?.kind === "pick" && t.side === me) setPos(openPos(d, me)[0] ?? null); else if (t?.kind === "ban") setPos(null); }, [d.step]);
   useEffect(() => { if (t && t.side !== me) { const id = setTimeout(aiAct, 650); return () => clearTimeout(id); } }, [d.step]);
   const recs: Rec[] = useMemo(() => (myTurn ? recommend(d, me, t!.kind, t!.kind === "pick" ? pos : null).slice(0, 6) : []), [d.step, pos, myTurn]);
+  // 챔피언 칸 이름표: 그 챔피언을 가장 많이 해 본 선수(우리=파랑, 상대=빨강). 이번 경기 선발 5명 기준.
+  // 2026 선수는 시즌 기록(pool, 3경기 이상), 역대 시즌 카드 선수는 챔피언별 기록이 없으므로 이번 저장에서 실제로 쓴 경기(2경기 이상)로 셉니다.
+  const hist = useMemo(() => {
+    const m = new Map<string, Map<string, [number, number]>>();
+    for (const sr of s.series) for (const g of sr.games) for (const sd of ["B", "R"] as Side[]) {
+      const team = sd === "B" ? g.blue : g.red;
+      g.lineup[sd].forEach((k, pos) => {
+        const c = g.picks[sd].find((x) => x.pos === pos)?.c; if (!c) return;
+        const pm = m.get(k) ?? new Map<string, [number, number]>(); const cur = pm.get(c) ?? [0, 0];
+        pm.set(c, [cur[0] + 1, cur[1] + (g.winner === team ? 1 : 0)]); m.set(k, pm);
+      });
+    }
+    return m;
+  }, [s.series.length, s.session?.gameIdx]);
+  const owners = useMemo(() => {
+    const m = new Map<string, Partial<Record<"mine" | "theirs", { name: string; n: number; w: number }>>>();
+    (["B", "R"] as Side[]).forEach((sd) => {
+      const which = sd === me ? "mine" : "theirs";
+      for (const k of d.lineup[sd]) {
+        const p = PL[k]; if (!p) continue;
+        const rows: [string, number, number][] = Array.isArray(p.pool) && p.pool.length ? p.pool.filter((x) => x[1] >= 3) : [...(hist.get(k)?.entries() ?? [])].filter(([, v]) => v[0] >= 2).map(([c, v]) => [c, v[0], v[1]]);
+        for (const [c, n, w] of rows) {
+          const o = m.get(c) ?? {};
+          const cur = o[which];
+          if (!cur || n > cur.n) o[which] = { name: p.name, n, w };
+          m.set(c, o);
+        }
+      }
+    });
+    return m;
+  }, [d.lineup, me, hist]);
   const list = CHAMPS.filter((c) => (!q || c.ko.includes(q)) && (pos == null || posWeight(c)[pos] >= 0.15));
   const confirm = (c: string): void => {
     if (!t || !myTurn || u.has(c)) return;
@@ -330,7 +361,7 @@ function Draft({ d }: { d: DraftState }) {
             <div className="pool-panel">
               <div className="row gap wrap filters">
                 <div className="seg">{([null, 0, 1, 2, 3, 4] as (PosIdx | null)[]).map((p) => <button key={String(p)} className={pos === p ? "on" : ""} onClick={() => setPos(p)} disabled={p != null && t!.kind === "pick" && myTurn && !openPos(d, me).includes(p)}>{p == null ? "전체" : POS_KO[p]}</button>)}</div>
-                <input placeholder="챔피언 검색" value={q} onChange={(e) => setQ(e.target.value)} />
+                <input placeholder="챔피언 검색" value={q} onChange={(e) => setQ(e.target.value)} /><span className="draft-legend" title="선발 5명 중 그 챔피언을 3경기 이상 해 본 선수 중 가장 많이 한 선수"><i className="mine">우리 선수</i><i className="theirs">상대 선수</i></span>
                 {myTurn && <button className="btn ghost sm" onClick={autoRest} data-testid="auto-draft">남은 밴픽 AI에게 맡기기</button>}
               </div>
               <div className="cgrid">
@@ -338,7 +369,7 @@ function Draft({ d }: { d: DraftState }) {
                   const st = banned.has(c.id) ? "밴" : locked.has(c.id) ? "피어리스" : u.has(c.id) ? "픽" : "";
                   return (
                     <button key={c.id} className={"cg" + (st ? " off" : "") + (sel === c.id ? " sel" : "")} disabled={!!st || !myTurn} onClick={() => setSel(c.id)} onDoubleClick={() => confirm(c.id)} title={c.ko}>
-                      <ChampIcon id={c.id} size={50} dim={!!st} /><span>{c.ko}</span>{st && <em>{st}</em>}
+                      <ChampIcon id={c.id} size={50} dim={!!st} /><span>{c.ko}</span>{st && <em>{st}</em>}{owners.get(c.id)?.mine && <i className="cg-own mine" title={`우리 ${owners.get(c.id)!.mine!.name} · ${owners.get(c.id)!.mine!.n}경기 ${owners.get(c.id)!.mine!.w}승`}>{owners.get(c.id)!.mine!.name}</i>}{owners.get(c.id)?.theirs && <i className="cg-own theirs" title={`상대 ${owners.get(c.id)!.theirs!.name} · ${owners.get(c.id)!.theirs!.n}경기 ${owners.get(c.id)!.theirs!.w}승`}>{owners.get(c.id)!.theirs!.name}</i>}
                     </button>
                   );
                 })}

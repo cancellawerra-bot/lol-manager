@@ -763,3 +763,11 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 .team-grid.compact.big .tc-name{flex:1 1 100%;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25;order:2}
 .team-grid.compact.big .tc-roster{font-size:14px}
 .team-grid.compact.big .tc-pl{overflow:visible;text-overflow:clip}
+
+/* v2.29.0 밴픽: 챔피언 칸 이름표 (우리=파랑, 상대=빨강) */
+.cg .cg-own{display:block;max-width:100%;font-style:normal;font-size:10px;font-weight:700;line-height:1.35;padding:0 5px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg .cg-own.mine{background:rgba(59,130,246,.28);color:#bcd4ff}
+.cg .cg-own.theirs{background:rgba(239,68,68,.26);color:#ffc2c2}
+.draft-legend{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--sub)}
+.draft-legend i{font-style:normal;padding:0 6px;border-radius:4px;font-weight:700}
+.draft-legend .mine{background:rgba(59,130,246,.28);color:#bcd4ff}.draft-legend .theirs{background:rgba(239,68,68,.26);color:#ffc2c2}
