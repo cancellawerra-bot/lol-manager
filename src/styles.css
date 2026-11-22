@@ -759,3 +759,7 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 .team-grid.compact.big .tc-roster{gap:4px;font-size:15px;line-height:1.4}
 .team-grid.compact.big .tc-roster small{width:34px;font-size:12px}
 @media (max-width:640px){.team-grid.compact.big{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.team-grid.compact.big .team-card{padding:10px}.team-grid.compact.big .tc-name{font-size:14px}.team-grid.compact.big .tc-roster{font-size:13px}}
+.team-grid.compact.big .tc-head{flex-wrap:wrap;row-gap:6px}
+.team-grid.compact.big .tc-name{flex:1 1 100%;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25;order:2}
+.team-grid.compact.big .tc-roster{font-size:14px}
+.team-grid.compact.big .tc-pl{overflow:visible;text-overflow:clip}
