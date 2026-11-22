@@ -27,7 +27,30 @@ const SYMBOLS: Record<string, string> = {
   DNS: "M100 32 L120 84 L168 88 L131 119 L143 168 L100 141 L57 168 L69 119 L32 88 L80 84 Z M100 72 L108 94 L132 96 L113 111 L119 134 L100 121 L81 134 L87 111 L68 96 L92 94 Z",
   BRO: "M100 30 L116 52 L112 118 H88 L84 52 Z M100 58 V108 M62 118 H138 V130 H62 Z M94 130 H106 V156 H94 Z M91 165 A9 9 0 1 1 109 165 A9 9 0 1 1 91 165 Z",
   KRX: "M60 60 H140 L168 96 L100 170 L32 96 Z M32 96 H168 M60 60 L80 96 L100 60 L120 96 L140 60 M80 96 L100 170 L120 96",
+  // 옛 팀(지금 LCK에 없는 팀)의 상징: 팀 이름에서 떠올린 선 그림입니다. 같은 구단이 이름만 바뀐 경우는 아래 SYM_ALIAS로 같은 그림을 씁니다.
+  KDF: "M100 30 C112 62 148 78 148 118 C148 148 126 170 100 170 C74 170 52 148 52 118 C52 96 66 84 74 70 C78 86 86 92 92 90 C84 66 90 46 100 30 Z M100 110 C108 124 118 130 118 142 C118 154 110 160 100 160 C90 160 82 154 82 142 C82 130 94 124 100 110 Z",
+  LSB: "M100 34 L116 52 L138 42 L140 66 L162 74 L150 94 L162 114 L140 122 L134 146 L112 142 L100 166 L88 142 L66 146 L60 122 L38 114 L50 94 L38 74 L60 66 L62 42 L84 52 Z M76 96 L90 100 L76 106 Z M124 96 L110 100 L124 106 Z M92 122 H108 L100 134 Z",
+  APK: "M42 136 L52 70 L76 98 L100 56 L124 98 L148 70 L158 136 Z M42 150 H158 V162 H42 Z",
+  ASP: "M100 32 L112 88 L168 100 L112 112 L100 168 L88 112 L32 100 L88 88 Z",
+  BBQ: "M50 150 C50 80 100 40 156 44 C160 100 120 150 50 150 Z M50 150 L128 72",
+  BTC: "M112 30 L58 108 H94 L84 170 L142 88 H106 Z",
+  DYN: "M100 32 L158 66 V134 L100 168 L42 134 V66 Z M100 76 A24 24 0 1 1 100 124 A24 24 0 1 1 100 76 Z",
+  E8W: "M100 100 C84 72 40 72 40 100 C40 128 84 128 100 100 C116 72 160 72 160 100 C160 128 116 128 100 100 Z",
+  EEW: "M44 156 C70 150 92 110 96 40 C124 80 150 120 160 156 Z M36 168 H164",
+  ESS: "M70 48 H130 L166 88 L100 168 L34 88 Z M34 88 H166 M70 48 L88 88 L100 168 M130 48 L112 88 L100 168 M88 88 H112",
+  GCB: "M34 96 C58 66 86 76 100 106 C114 76 142 66 166 96 C142 90 118 102 100 134 C82 102 58 90 34 96 Z",
+  GRF: "M40 150 C40 90 80 50 160 44 C140 66 134 78 138 90 C122 86 112 92 106 104 C96 98 84 100 78 110 C70 110 64 118 62 128 C56 130 50 138 46 150 Z M146 62 L172 74 L150 82 Z",
+  JAG: "M100 30 L112 80 L168 112 V126 L112 108 L108 146 L130 158 V168 L100 160 L70 168 V158 L92 146 L88 108 L32 126 V112 L88 80 Z",
+  KDM: "M52 40 C50 70 60 84 72 92 C64 120 76 152 100 164 C124 152 136 120 128 92 C140 84 150 70 148 40 C128 56 114 62 100 62 C86 62 72 56 52 40 Z M78 104 L92 112 L78 116 Z M122 104 L108 112 L122 116 Z M84 140 L92 132 L100 140 L108 132 L116 140",
+  KZ: "M100 30 L164 66 V134 L100 170 L36 134 V66 Z M68 72 L132 128 M132 72 L68 128",
+  MVP: "M100 36 L112 70 L148 72 L120 94 L130 130 L100 110 L70 130 L80 94 L52 72 L88 70 Z M46 140 C70 170 130 170 154 140",
+  ROX: "M44 92 A12 16 0 1 1 68 92 A12 16 0 1 1 44 92 Z M72 66 A12 16 0 1 1 96 66 A12 16 0 1 1 72 66 Z M104 66 A12 16 0 1 1 128 66 A12 16 0 1 1 104 66 Z M132 92 A12 16 0 1 1 156 92 A12 16 0 1 1 132 92 Z M100 108 C124 108 138 128 134 146 C130 164 70 164 66 146 C62 128 76 108 100 108 Z",
+  RPL: "M36 76 C56 56 76 96 100 76 C124 56 144 96 164 76 M36 104 C56 84 76 124 100 104 C124 84 144 124 164 104 M36 132 C56 112 76 152 100 132 C124 112 144 152 164 132",
+  SP: "M100 34 V166 M43 67 L157 133 M43 133 L157 67 M88 44 L100 56 L112 44 M88 156 L100 144 L112 156",
+  VSG: "M36 48 H72 L100 118 L128 48 H164 L112 164 H88 Z",
 };
+// 이름만 바뀐 같은 구단 → 같은 상징·문구
+const SYM_ALIAS: Record<string, string> = { AF: "KDF", SB: "LSB", FOX: "BFX", DRX: "KRX", DWG: "DK", SKT: "T1" };
 const SYM_FALLBACK = [
   "M44 100 A56 56 0 1 1 156 100 A56 56 0 1 1 44 100 Z M76 100 A24 24 0 1 1 124 100 A24 24 0 1 1 76 100 Z M93 100 A7 7 0 1 1 107 100 A7 7 0 1 1 93 100 Z",
   "M100 40 L164 156 H36 Z M100 78 L134 138 H66 Z",
@@ -36,7 +59,7 @@ const SYM_FALLBACK = [
   "M50 40 H150 L112 100 L150 160 H50 L88 100 Z",
 ];
 // 팀별 엠블럼 그림(public/emblems/<약칭>.svg, AI로 새로 만든 벡터 그림). 파일이 없는 구단은 아래 선 그림 상징을 씁니다.
-const EMBLEMS = new Set(["T1", "GEN", "HLE", "KT", "BFX", "NS", "DK", "DNS", "BRO", "KRX"]);
+const EMBLEMS = new Set(["T1", "GEN", "HLE", "KT", "BFX", "NS", "DK", "DNS", "BRO", "KRX"]);   // 현재 LCK 10개 팀만 엠블럼이 있습니다. 옛 팀(AF·KDF·LSB·FOX·DRX 등)은 AI 그림 대신 선으로 그린 상징과 이름을 씁니다.
 // 팀마다 하나씩 정한 한 줄 문구(엠블럼의 상징에 맞춤). 여기 없는 구단은 팀 이름으로 자동 생성합니다(game/motto.ts).
 const TEAM_MOTTOS: Record<string, string> = {
   GEN: "발톱을 숨긴 호랑이, 때를 기다립니다",
@@ -49,7 +72,10 @@ const TEAM_MOTTOS: Record<string, string> = {
   DNS: "D와 N이 하나로, 새로운 시작",
   BRO: "검을 뽑을 시간입니다",
   KRX: "다듬을수록 빛나는 원석처럼",
+  KDF: "불꽃처럼, 쓰러져도 다시 일어납니다",
+  LSB: "황금빛 갈기를 세우고 달려 나갑니다",
 };
+// 이름이 바뀐 같은 구단(연도별 약칭이 다름)은 하나의 엠블럼·문구·상징을 씁니다: DRX → 키움 DRX(KRX), FOX(피어엑스) → BNK 피어엑스(BFX).
 const hashOf = (s: string): number => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 
 function sound(): void {
@@ -123,11 +149,14 @@ export default function Intro({ info, onDone }: { info: IntroInfo; onDone: () =>
     return () => { window.removeEventListener("keydown", k); clearTimeout(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onDone]);
+  const key = info.team;
+  const sk = SYM_ALIAS[key] ?? key;
+  const hasEmb = EMBLEMS.has(key);
   const color = TM[info.team]?.color ?? "#2DD4BF";
-  const h = hashOf(info.team);
+  const h = hashOf(sk);
   const v = h % 4;                         // 빛 연출 + 문장 모양
-  const symbol = SYMBOLS[info.team] ?? SYM_FALLBACK[(h >>> 5) % SYM_FALLBACK.length];
-  const motto = TEAM_MOTTOS[info.team] ?? teamMotto(`${TM[info.team]?.ko ?? ""} ${TM[info.team]?.name ?? ""}`, TM[info.team]?.ko ?? info.team);
+  const symbol = SYMBOLS[sk] ?? SYM_FALLBACK[(h >>> 5) % SYM_FALLBACK.length];
+  const motto = TEAM_MOTTOS[sk] ?? teamMotto(`${TM[info.team]?.ko ?? ""} ${TM[info.team]?.name ?? ""}`, TM[info.team]?.ko ?? info.team);
   const chars = Array.from(`${info.manager} 감독`);
   return (
     <div className={`intro v${v}`} style={{ ["--tc" as string]: color }} role="dialog" aria-label="부임 발표" onClick={onDone} data-testid="intro">
@@ -139,11 +168,11 @@ export default function Intro({ info, onDone }: { info: IntroInfo; onDone: () =>
         <div className="in-ring" />
         <div className="in-stage">
           <div className="in-kicker">OFFICIAL ANNOUNCEMENT</div>
-          <div className={"in-hero" + (EMBLEMS.has(info.team) ? " emb" : "")}>
+          <div className={"in-hero" + (hasEmb ? " emb" : "")}>
             <svg className="in-crest" viewBox="0 0 200 200" aria-hidden="true">
               <path d={CRESTS[v]} className="h1" pathLength="1" /><path d={CRESTS[v]} className="h2" pathLength="1" />
             </svg>
-            {EMBLEMS.has(info.team) ? <img className="in-emb" src={`./emblems/${info.team}.svg`} alt="" /> : <svg className="in-sym" viewBox="30 30 140 140" aria-hidden="true"><path d={symbol} pathLength="1" /></svg>}
+            {hasEmb ? <img className="in-emb" src={`./emblems/${key}.svg`} alt="" /> : <svg className="in-sym" viewBox="30 30 140 140" aria-hidden="true"><path d={symbol} pathLength="1" /></svg>}
             <div className="in-code" aria-label={info.team}>{info.team}</div>
           </div>
           <div className="in-club">{TM[info.team]?.ko ?? info.team}</div>

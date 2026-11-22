@@ -7,6 +7,7 @@ import { standings } from "../game/season";
 import ClubTimeline from "./ClubTimeline";
 import GoalTable from "./GoalTable";
 import Ledger from "./Ledger";
+import { challengeLog } from "../game/achievements";
 
 export default function Club() {
   const s = useSave()!;
@@ -38,6 +39,13 @@ export default function Club() {
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       {s.story && <Ledger s={s} />}
+      {s.story && (() => {
+        const log = challengeLog(s); if (!log) return null;
+        return <Card title="도전 성과" right={<span className="muted sm">{log.filter((x) => x.done).length} / {log.length}</span>}>
+          <p className="muted sm">월즈 우승만 목표가 아닙니다. 단계마다 이룬 성과가 기록됩니다. LCK 안의 성과는 실제 시즌 기록이고, MSI·월즈는 해외 가상 시드 팀과 겨루므로 우승 횟수만 셉니다.</p>
+          <ul className="achv" data-testid="achievements">{log.map((x) => <li key={x.id} className={x.done ? "done" : ""}><i>{x.done ? "✓" : "○"}</i><b>{x.label}</b><span className="muted sm">{x.detail}</span></li>)}</ul>
+        </Card>;
+      })()}
       {s.story && <ClubTimeline />}
       <Card title="선수 기록">
         <div className="tbl-wrap">

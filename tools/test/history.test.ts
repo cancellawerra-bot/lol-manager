@@ -6,6 +6,7 @@ import { loadCore, loadRanked, CARDS, PL } from "../../src/data";
 import { newHistoryCareer, lckTeamsOf, exactRosterIds, historyGrade, historySupport, HISTORY_RESERVE, LCK_PAYROLL_SOFT, cardsForOrgYear } from "../../src/game/story";
 import { stepYear } from "../../src/game/stove";
 import { projectLedger } from "../../src/game/ledger";
+import { challengeLog } from "../../src/game/achievements";
 import { Rng } from "../../src/game/rng";
 await loadCore(); await loadRanked();
 const original = JSON.stringify(CARDS);
@@ -61,6 +62,12 @@ for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, 
     if (s.story!.ended === "clear") clears++;
     if (s.story!.ended === "bankrupt") bankrupt++;
     worlds += s.story!.trophies.worlds;
+    // 도전 성과: 우승 기록과 모순되지 않아야 함(LCK 우승 → 결승·플레이오프 진출, 월즈 우승 → 최종 성과)
+    const log = challengeLog(s)!, by = Object.fromEntries(log.map((x) => [x.id, x.done]));
+    assert.equal(log.length, 6);
+    assert.equal(by.lck, s.story!.trophies.lck > 0); assert.equal(by.msi, s.story!.trophies.msi > 0); assert.equal(by.worlds, s.story!.trophies.worlds > 0);
+    if (by.lck) assert(by.final && by.top6, "LCK 우승이면 결승·플레이오프 진출도 기록");
+    if (by.final) assert(by.top6);
   }
   const g = historyGrade(exactRosterIds(short, year).starters.reduce((x, id) => x + CARDS[id].salary, 0));
   rows.push(`${year} ${short.padEnd(4)} 등급 ${g}  클리어 ${clears}/${n}  파산 ${bankrupt}/${n}  월즈 우승 합 ${worlds}  최저 잔고 ${Math.round(minCash)}`);

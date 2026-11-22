@@ -30,6 +30,7 @@ export default function HistorySetup() {
     return { t, names: cs.map((c) => c.name).join(" · "), strength, age, payroll, grade: historyGrade(payroll), support: historySupport(payroll) };
   }).sort((a, b) => b.strength - a.strength), [year]);
   const pick = rows.find((r) => r.t.short === team);
+  const label = (rank: number): { t: string; k: string } => rank <= 2 ? { t: "쉬움", k: "ok" } : rank <= 4 ? { t: "보통", k: "mid" } : rank <= 7 ? { t: "어려움", k: "warn" } : { t: "매우 어려움", k: "hard" };
   const start = (): void => {
     if (!name.trim()) { setErr("감독 이름을 입력해 주세요."); return; }
     if (!pick) { setErr("팀을 골라 주세요."); return; }
@@ -53,15 +54,17 @@ export default function HistorySetup() {
 
         <h2>② 팀 고르기</h2>
         <div className="tbl-wrap"><table className="tbl" data-testid="history-teams">
-          <thead><tr><th>팀</th><th>전력</th><th>평균 나이</th><th>선발 연봉 합</th><th>구단 규모</th><th>선발 5명</th></tr></thead>
-          <tbody>{rows.map((r) => (
+          <thead><tr><th>팀</th><th>전력</th><th>평균 나이</th><th>선발 연봉 합</th><th>구단 규모</th><th>도전 난이도</th><th>선발 5명</th></tr></thead>
+          <tbody>{rows.map((r, idx) => (
             <tr key={r.t.short} className={team === r.t.short ? "me" : ""}>
               <td><button className={"btn sm" + (team === r.t.short ? " primary" : "")} data-testid={`hteam-${r.t.short}`} onClick={() => setTeam(r.t.short)}><i className="tdot" style={{ background: r.t.color, display: "inline-block", width: 10, height: 10, borderRadius: 3, marginRight: 6 }} />{r.t.ko}</button></td>
               <td><b>{r.strength}</b></td><td>{r.age != null ? `${r.age}세` : "–"}</td><td>{r.payroll}</td>
               <td><b>{r.grade}</b>{r.support > 0 ? ` · 지원 연 +${fmtMoney(r.support)}` : ""}</td>
+              <td><span className={"tag " + label(idx + 1).k}>{label(idx + 1).t}</span></td>
               <td style={{ textAlign: "left", whiteSpace: "normal" }} className="sm">{r.names}</td>
             </tr>))}</tbody>
         </table></div>
+        <p className="muted xs">도전 난이도는 그해 10개 팀 중 전력 순위로 붙인 라벨입니다(1~2위 쉬움 · 3~4위 보통 · 5~7위 어려움 · 8~10위 매우 어려움). 월즈·MSI의 해외 팀은 실제 선수 데이터가 없는 가상 시드 팀이며, 아래 난이도 버튼(쉬움·보통·어려움)에 따라 강도가 달라집니다. 약한 팀은 월즈 우승이 매우 어려우니 「도전 성과」(플레이오프 진출·결승·LCK 우승 등)를 단계별 목표로 삼아 보세요.</p>
         <p className="muted xs">전력 = 선발 5명의 평균 능력치, 연봉 합 = 선발 5명 연봉(게임용 가상 금액, 억). 구단 규모는 연봉 합으로 정하며(S 200↑ · A 150↑ · B 115↑ · C 그 미만), S·A·B 등급은 게임의 평균 수입을 넘는 연봉만큼 매 시즌 말 모기업 지원을 받아 적자를 막습니다. 이 지원은 시작할 때 정해져 선수를 더 사도 늘지 않습니다.</p>
 
         {pick && <div className="card" data-testid="history-pick">

@@ -882,3 +882,4 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 .sg-name small{display:block;line-height:1.35}.sg-name .sg-focus{margin:3px 0;max-width:210px}.sg-all td{background:rgba(94,234,212,.06);border-bottom:2px solid var(--line2)}
 
 .sg-name{width:190px;max-width:190px}.sg-name .sg-focus{max-width:100%}.sg-line{flex-wrap:wrap;row-gap:2px}.sg-name .gauge{width:48px}
+.achv{list-style:none;margin:6px 0 0;padding:0}.achv li{display:grid;grid-template-columns:22px 190px 1fr;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}.achv li i{font-style:normal;color:var(--sub)}.achv li.done i{color:var(--good)}.achv li.done b{color:#fff}.achv li:not(.done) b{color:var(--sub);font-weight:600}
