@@ -311,6 +311,7 @@ export default function Setup() {
           <div>
             <h2>스폰서 협상</h2>
             <p className="muted">첫 시즌 메인 스폰서입니다. 모두 가상의 회사이며, 실제 브랜드와 관련이 없습니다. 비워 두어도 됩니다.</p>
+            <p className="muted sm" data-testid="sponsor-pay-note">{mode === "story" ? "스폰서 수입은 시즌이 끝날 때 성적 상금과 함께 자금에 들어옵니다." : "스폰서 수입은 시즌을 시작할 때 자금에 바로 더해집니다."}</p>
             <div className="mode-grid">
               {sponsors.map((sp, i) => (
                 <button key={sp.name} className={"mode-card" + (sponsor === i ? " on" : "")} onClick={() => setSponsor(i)}>

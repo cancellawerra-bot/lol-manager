@@ -34,7 +34,7 @@ export default function Club() {
           <li><b>{s.eco.fans}</b><span>팬심</span></li>
           <li><b>{fmtMoney(s.eco.cash)}</b><span>자금 (한도 {fmtMoney(s.eco.cap)})</span></li>
         </div>
-        {s.eco.sponsor && <p className="sm">스폰서 {s.eco.sponsor.name} 연 {fmtMoney(s.eco.sponsor.amount)} · 목표 {s.eco.sponsor.goal}</p>}
+        {s.eco.sponsor && <p className="sm">스폰서 {s.eco.sponsor.name} 연 {fmtMoney(s.eco.sponsor.amount)} · 목표 {s.eco.sponsor.goal}{!s.story && <> · 시즌 시작 때 자금에 더해졌습니다</>}</p>}
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       {s.story && <Ledger s={s} />}
