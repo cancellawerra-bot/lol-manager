@@ -8,8 +8,8 @@ const core = JSON.parse(readFileSync("public/data/core.json", "utf8")).players a
 const audit = JSON.parse(readFileSync("docs/research/player_birthdates_verified.json", "utf8"));
 const all = new Set([...cards.map((c) => c.pkey), ...core.map((p) => p.personKey ?? p.key.toLowerCase())]);
 const verified = Object.keys(PLAYER_BIRTHDATES);
-assert.equal(all.size, 397);
-assert.equal(verified.length, 391);
+assert.equal(all.size, 396); // 2026-11-22 오너 결정으로 선수 1명 카드를 제외해 397에서 396
+assert.equal(verified.length, 390);
 assert.equal(audit.verified.length, verified.length);
 assert.equal(audit.missing.length, 6);
 assert.equal(new Set([...audit.verified, ...audit.missing].map((r) => r.person)).size, all.size);
@@ -29,7 +29,7 @@ for (const row of audit.missing) {
   assert.deepEqual([p.mechanics, p.strategy, p.recovery, p.fatigueLoad], [1, 1, 1, 1]);
 }
 assert.deepEqual(audit.missing.map((r) => r.person).sort(), ["ashart", "clear (kim jae-yeol)", "nolja", "nonamed", "raccoon (hwang won-jun)", "vin (shin min-jae)"].sort());
-console.log("OK complete birth coverage audit: 391/397 IDs; remaining 6 neutral with source reasons");
+console.log("OK complete birth coverage audit: 390/396 IDs; remaining 6 neutral with source reasons");
 
 assert.equal(PLAYER_BIRTHDATES.calix.date, "2007-03-22");
 assert.equal(PLAYER_BIRTHDATES.smash.date, "2006-07-20");

@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import assert from "node:assert/strict";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, CARDS, PL } from "../../src/data";
-import { newStoryCareer, marketCards, storySalary, ensurePlayer, cmpCard, upcomingSalaryDue, payrollSoftCap, cardForYear } from "../../src/game/story";
+import { newStoryCareer, marketCards, storySalary, ensurePlayer, cmpCard, upcomingSalaryDue, payrollSoftCap, cardForYear, DECAY_PCT } from "../../src/game/story";
 import { autoManageRoster, autoAdvanceOffseason, placeFaBid, type IncomingBid } from "../../src/game/stove";
 import { Rng } from "../../src/game/rng";
 
@@ -84,10 +84,15 @@ for (const budget of [{ cash: 112, reserve: 0, renew: true }, { cash: 118, reser
 {
   const s = fixture();
   s.story!.year = 2026; s.eco.cash = 46;
-  s.story!.stove!.faPool = ["easyhoon-2015", "bdd-2026"];
+  // 옛 카드는 감쇠 전 백분위가 현재 카드(bdd 2026)보다 높지만, 감쇠(−DECAY_PCT) 뒤에는 낮은 선수여야 이 검사의 뜻이 성립합니다.
+  // (Easyhoon 2015는 월즈 우승 가산점으로 백분위가 100이라 감쇠 뒤에도 bdd보다 높아 더 이상 알맞지 않습니다.)
+  const cur = CARDS["bdd-2026"];
+  const old = Object.values(CARDS).filter((c) => c.posIdx === 2 && c.year < 2026 && c.percentile > cur.percentile && Math.round(c.percentile) - DECAY_PCT < cur.percentile).sort((x, y) => (x.id < y.id ? -1 : 1))[0];
+  assert(old, "비교할 옛 카드가 있어야 함");
+  s.story!.stove!.faPool = [old.id, "bdd-2026"];
   autoManageRoster(s, new Rng(1));
   const bid = s.story!.stove!.pendingBids.find((b) => CARDS[b.cardId].posIdx === 2);
-  assert.equal(bid?.person, "bdd", "예전 카드의 감쇠 전 89보다 실제 다음 시즌 종합 79를 우선해야 함 (추정 Easyhoon은 74)");
+  assert.equal(bid?.person, "bdd", `예전 카드의 감쇠 전 ${old.percentile}보다 실제 다음 시즌 종합 ${cur.percentile}를 우선해야 함 (추정 ${old.name}은 ${Math.round(old.percentile) - DECAY_PCT})`);
   console.log("OK upgrades compare effective season ratings");
 }
 

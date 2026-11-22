@@ -19,7 +19,17 @@ function fixture(seed = 17): Save {
   s.story!.franchised = true; s.story!.year = 2021; s.eco.cash = 100; s.eco.trust = 100;
   applyStoryWorld(s); beginSplit(s, 2021, "spring"); prepareInSeason(s); return s;
 }
-function free(s: Save) { return seasonCandidates(s).filter((c) => c.owner === "FA" && c.salary < 10).sort((a, b) => b.ovr - a.ovr)[0]; }
+// 선수가 어느 구단을 고를지는 확률적입니다(인기 선수는 강팀을 고를 수 있음). 이 검사들은 계약이 성사된 뒤의 장부·계약 상태를 보므로,
+// 가장 능력치 높은 자유계약 선수 중 같은 조건에서 실제로 계약이 성사되는 선수를 고릅니다(복사본으로 미리 시험).
+function free(s: Save) {
+  const pool = seasonCandidates(s).filter((c) => c.owner === "FA" && c.salary < 10).sort((a, b) => b.ovr - a.ovr);
+  const signs = (c: (typeof pool)[number]): boolean => {
+    const t = copy(s); applyStoryWorld(t); const sal = Math.min(20, Math.max(c.salary * 2, 5));
+    t.eco.cash = Math.max(t.eco.cash, seasonSalaryDue(t, sal) + seasonReserve(t));
+    return startSeasonNegotiation(t, c.card.id, 0) === undefined && seasonPlayerReply(t, sal, 1, true).ok;
+  };
+  return pool.find(signs) ?? pool[0];
+}
 function healthy(s: Save) {
   const people: string[] = [];
   for (const t of [...s.story!.lck, ...s.story!.ck]) {
