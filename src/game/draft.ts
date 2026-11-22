@@ -21,6 +21,8 @@ export interface DraftState {
   bans: Record<Side, string[]>;
   picks: Record<Side, DPick[]>;
   locked: string[];                 // 피어리스: 같은 시리즈 앞 세트에서 쓴 챔피언
+  /** v2.34.0 챔피언 훈련으로 쌓은 연습 일수(선수 key → 챔피언 → 일수). 챔피언 숙련도에 연습 2일 = 1경기로 더합니다. */
+  practice?: Record<string, Record<string, number>>;
   log: DLog[];
 }
 export interface Reason { t: string; v: number }
@@ -78,13 +80,17 @@ export function rankedSyn(pa: number, a: string, pb: number, b: string): { wr: n
 }
 const pctS = (x: number): string => `${(x * 100).toFixed(1)}%`;
 const POOLM = new Map<string, Map<string, [number, number]>>();
-export function comfort(p: Player | undefined, c: string): { n: number; w: number } {
-  if (!p) return { n: 0, w: 0 };
+/** 챔피언 숙련: n = 2026 LCK 경기 수(base) + 연습 보정(bonus). 연습은 2일 = 1경기로 셉니다(경기 기록과 달리 승수는 없음). */
+export const PRACTICE_PER_GAME = 2;
+export function comfort(p: Player | undefined, c: string, practiceDays = 0): { n: number; w: number; base: number; bonus: number } {
+  const bonus = Math.floor(Math.max(0, practiceDays) / PRACTICE_PER_GAME);
+  if (!p) return { n: bonus, w: 0, base: 0, bonus };
   let m = POOLM.get(p.key);
   if (!m) { m = new Map(p.pool.map((x) => [x[0], [x[1], x[2]]])); POOLM.set(p.key, m); }
   const r = m.get(c);
-  return r ? { n: r[0], w: r[1] } : { n: 0, w: 0 };
+  return r ? { n: r[0] + bonus, w: r[1], base: r[0], bonus } : { n: bonus, w: 0, base: 0, bonus };
 }
+export const practiceOf = (d: DraftState, key: string | undefined, c: string): number => (key ? d.practice?.[key]?.[c] ?? 0 : 0);
 const STYM = new Map<string, Map<string, number>>();
 function styleCount(team: string, kind: "picks" | "bans", c: string): number {
   const st = CORE.styles?.[team];
@@ -122,8 +128,8 @@ export function recommend(d: DraftState, side: Side, kind: Kind, forcePos?: PosI
         const m = metaScore(c); if (m) rs.push(m); else rs.push({ t: "LCK 2026 표본 부족(픽 3회 미만)", v: -0.4 });
         const pl = PL[d.lineup[side]?.[pos]];
         if (!pl) continue;
-        const cf = comfort(pl, c.id);
-        if (cf.n > 0) rs.push({ t: `${pl.name} 2026 LCK ${cf.n}경기 ${cf.w}승`, v: Math.min(cf.n, 12) / 12 * 1.8 });
+        const cf = comfort(pl, c.id, practiceOf(d, pl.key, c.id));
+        if (cf.n > 0) rs.push({ t: cf.bonus > 0 ? `${pl.name} 2026 LCK ${cf.base}경기 + 연습 ${cf.bonus}경기 상당` : `${pl.name} 2026 LCK ${cf.n}경기 ${cf.w}승`, v: Math.min(cf.n, 12) / 12 * 1.8 });
         else rs.push({ t: `${pl?.name ?? "선수"} 2026 LCK 기록 없음`, v: -0.5 });
         const sc = styleCount(team, "picks", c.id);
         if (sc > 0) rs.push({ t: `${team} 성향 픽 ${sc}회`, v: (sc / Math.max(1, styleGames(team))) * 5 });

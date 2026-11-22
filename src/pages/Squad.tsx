@@ -7,6 +7,7 @@ import { trainingProfile, trainingBonuses, fatiguePenalty, WEEKLY_POINTS } from 
 import { ratingColor } from "../rating";
 import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
 import { RotationControls } from "./Rotation";
+import ScheduleGrid from "./ScheduleGrid";
 
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 const ACT: { id: DayAct; t: string }[] = [{ id: "train", t: "훈련" }, { id: "scrim", t: "스크림" }, { id: "rest", t: "휴식" }, { id: "", t: "미정" }];
@@ -29,7 +30,8 @@ export default function Squad() {
   return (
     <div className="col gap">
       <RotationControls />
-      <Card title="선수단 일정" right={<button className="btn sm" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button>}>
+      {story && <ScheduleGrid />}
+      {!story && <Card title="선수단 일정" right={<button className="btn sm" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button>}>
         <p className="muted sm">한 주에 하루는 휴식으로 두세요. {story ? "피지컬 훈련·전략 스크림·휴식을 현재 날짜에 맞춰 처리합니다. 수석코치에게 맡기면 나이에 맞춘 계획을 자동 배정합니다." : "빈 칸이 있거나 휴식이 없으면 경기를 진행할 수 없습니다. 한 번 정하면 매주 같은 패턴이 이어집니다."}</p>
         <div className="tbl-wrap">
           <table className="tbl sched-grid">
@@ -52,7 +54,8 @@ export default function Squad() {
         </div>
         {story && <p className="muted xs">요일표를 좌우로 넘겨 모든 요일의 계획을 확인할 수 있습니다.</p>}
         <p className={s.schedOk ? "ok sm" : "err sm"}>{s.schedOk ? "일정이 준비되었습니다." : story ? "권장 계획을 변경하거나 수석코치에게 맡겨 확정해 주세요. 선수마다 휴식일이 하나 이상 필요합니다." : "빈 칸을 채우고, 선수마다 휴식일을 하나 이상 넣어 주세요."}</p>
-      </Card>
+        <p className="muted xs">이 모드의 일정은 한 주에 휴식을 하루 이상 두었는지 확인하는 용도이며, 경기와 성장에는 영향이 없습니다. 훈련·성장·챔피언 연습은 스토리 모드에서 작동합니다.</p>
+      </Card>}
       {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">다음 일정 {date}</span>}>
         <p className="muted sm">훈련 성장은 선수 개인에게 쌓이고 시즌이 바뀌어도 유지됩니다(원본 시즌 기록·연봉과 별개인 게임 효과). 피지컬 훈련은 교전·압박(손으로 실행), 전략 스크림과 출전 경험은 판단·운영(뇌지컬)을 올립니다. 모든 선수가 100까지 키울 수 있습니다. 다만 능력치가 높을수록 천천히 올라 한 시즌 만에는 닿지 않고, 재능(커리어 최고 기록)은 성장 속도에만 영향을 줍니다(최상위 약 4시즌, 80대 초반 약 8시즌). 한 주 훈련은 5포인트까지 성장에 반영되고, 넘으면 피로만 크게 쌓여 컨디션이 떨어집니다. 어린 선수는 피지컬이 빨리 오르고, 25세부터는 한 주에 피지컬 훈련을 2번 미만 하면 피지컬이 조금씩 내려갑니다(꾸준히 훈련하면 막을 수 있음).</p>
         <div className="card-grid" data-testid="training-roster">{[...new Map([...keys, ...(s.story?.contracts.map((c) => c.key) ?? [])].map((k) => [trainingPerson(s, k), k])).values()].map((k) => {

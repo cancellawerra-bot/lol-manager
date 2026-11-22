@@ -47,7 +47,7 @@ export interface Economy {
   grant: number; bonus: number; trustHit: number; trustWin: number;
   sponsor?: { name: string; amount: number; goal: string; years: number };
 }
-export type DayAct = "train" | "scrim" | "rest" | "";
+export type DayAct = "train" | "scrim" | "champ" | "rest" | "";
 export interface Save {
   v: number; slot: number; seed: number; rng: number; team: string; manager: string; created: string; updated: string;
   mode: Mode; managerInfo: Manager; club?: ClubInfo; eco: Economy; cards: string[];

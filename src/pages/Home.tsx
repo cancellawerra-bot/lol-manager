@@ -26,7 +26,7 @@ export default function Home({ onAdvance }: { onAdvance?: () => void }) {
       <ManagerDashboard s={s} onAdvance={onAdvance} />
       {!s.schedOk && !s.story?.ended && s.phase !== "done" && (
         <Card title="주전 일정을 정해 주세요" className="span2">
-          <p>한 주 일정의 빈 칸을 채워야 경기를 진행할 수 있습니다. 수석코치에게 맡기면 훈련·스크림과 휴식일이 채워집니다.</p>
+          <p>한 주 일정의 빈 칸을 채워야 경기를 진행할 수 있습니다. 수석코치에게 맡기면 훈련과 휴식일이 채워집니다.</p>
           <div className="row gap wrap"><a className="btn" href="#/squad">선수단 일정</a><button className="btn primary" data-testid="delegate-sched" onClick={() => fillSchedule()}>수석코치에게 맡기기</button><button className="btn" data-testid="delegate-sched-go" onClick={() => { fillSchedule(); onAdvance?.(); }}>맡기고 바로 진행 ▶</button></div>
         </Card>
       )}

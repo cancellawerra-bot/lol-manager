@@ -2,7 +2,7 @@
 // 경기 진행(라인전·오브젝트·한타)은 그 확률을 바탕으로 한 난수 규칙입니다. 계수는 '게임 규칙'으로 데이터 출처·방법 페이지에 공개합니다.
 import { CH, CORE, PL, TM, POS_KO, fmt } from "../data";
 import type { PosIdx } from "../types";
-import { DraftState, Side, comfort, rankedMu, rankedSyn, shrink, other } from "./draft";
+import { DraftState, Side, comfort, practiceOf, rankedMu, rankedSyn, shrink, other } from "./draft";
 import { Rng, sigmoid, logit } from "./rng";
 import type { MatchTraining, TrainingImpact, TrainingSummary } from "./training";
 import { tacticEffects, tacticExecution, tacticsRecord, type TacticPlan, type TacticDecision, type TacticStage, type TacticsRecord } from "./tactics";
@@ -51,10 +51,10 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
   {
     let v = 0; const lines: string[] = [];
     for (const s of ["B", "R"] as Side[]) for (const pk of d.picks[s]) {
-      const pl = PL[d.lineup[s][pk.pos]]; const cf = comfort(pl, pk.c);
+      const pl = PL[d.lineup[s][pk.pos]]; const cf = comfort(pl, pk.c, practiceOf(d, d.lineup[s][pk.pos], pk.c));
       let x = 0;
       if (cf.n >= 5) x = COEF.comfortHi + Math.min(cf.n, 15) * COEF.comfortStep; else if (cf.n === 0) x = COEF.comfortNone;
-      if (x !== 0) { v += s === "B" ? x : -x; lines.push(`${pl.name} ${CH[pk.c].ko}: 2026 LCK ${cf.n}경기${cf.n ? ` ${cf.w}승` : " (기록 없음)"}`); }
+      if (x !== 0) { v += s === "B" ? x : -x; lines.push(`${pl.name} ${CH[pk.c].ko}: 2026 LCK ${cf.base}경기${cf.bonus ? ` + 연습 ${cf.bonus}경기 상당` : cf.base ? ` ${cf.w}승` : " (기록 없음)"}`); }
     }
     F.push({ key: "comfort", label: "챔피언 숙련도", v, lines });
   }

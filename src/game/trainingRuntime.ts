@@ -15,7 +15,7 @@ export function trainingPerson(s: Save, key: string): string | undefined {
   if (!key || key.startsWith("intl-") || !PL[key]) return;
   return s.story?.contracts.find((c) => c.key === key)?.person ?? PL[key].personKey ?? CARDS[key]?.pkey ?? key.toLowerCase();
 }
-const validPlan = (plan?: DayAct[]): plan is DayAct[] => !!plan && plan.length === 7 && plan.every((a) => ["train", "scrim", "rest"].includes(a)) && plan.includes("rest");
+const validPlan = (plan?: DayAct[]): plan is DayAct[] => !!plan && plan.length === 7 && plan.every((a) => ["train", "scrim", "champ", "rest"].includes(a)) && plan.includes("rest");
 export function initializeTraining(s: Save): TrainingState | undefined {
   if (!AGE_TRAINING_ENABLED || s.mode !== "story") return;
   if (!s.training) {
@@ -100,10 +100,50 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
       let act = (validPlan(chosen) ? chosen : recommendedTraining(person, day))[weekday];
       const automatic = team !== s.team || state.automatic[person] || (!state.plans[person] && !validPlan(s.sched[key])) || !validPlan(chosen);
       if (automatic && p.fatigue >= 60) act = "rest";
-      p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : "recovery", day, PLAYER_BIRTHDATES[person], ctx).progress;
+      p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : act === "champ" ? "champion" : "recovery", day, PLAYER_BIRTHDATES[person], ctx).progress;
     }
     state.players[person] = p;
   }
+}
+
+/** v2.34.0 챔피언 훈련: 선수가 연습할 챔피언을 정합니다(이미 쌓은 연습은 그대로 남음). */
+export function setChampFocus(s: Save, key: string, champ: string): void {
+  const person = trainingPerson(s, key), state = initializeTraining(s);
+  if (!person || !state) return;
+  const p = state.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0 };
+  state.players[person] = { ...p, champFocus: champ || undefined };
+}
+/** 경기에 쓸 연습 기록: 선수 key → 챔피언 → 연습 일수 (연습한 선수만) */
+export function practiceMap(s: Save, keys: string[]): Record<string, Record<string, number>> | undefined {
+  if (s.mode !== "story" || !s.training) return;
+  const out: Record<string, Record<string, number>> = {};
+  for (const key of keys) {
+    const person = trainingPerson(s, key); const champs = person ? s.training.players[person]?.champs : undefined;
+    if (champs && Object.keys(champs).length) out[key] = { ...champs };
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+export interface WeekPreview { days: { act: DayAct; fatigue: number; over: boolean }[]; trainDays: number; overDays: number; maxFatigue: number; champDays: number; needFocus: boolean }
+/** 일정 미리보기: 게임이 실제로 훈련을 처리하는 trainingSession을 복사본에 하루씩 돌려 보므로 실제 결과와 같습니다(읽기 전용). */
+export function previewWeek(s: Save, key: string, plan: DayAct[], date = trainingDate(s)): WeekPreview | undefined {
+  const person = trainingPerson(s, key); if (!person || s.mode !== "story") return;
+  let p: TrainingProgress = { ...(s.training?.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0 }) };
+  const ctx = growthCtx(s, key, date);
+  const days: WeekPreview["days"] = [];
+  let day = p.lastDate && p.lastDate >= date ? nextDate(p.lastDate) : date;
+  let over = 0, max = 0, train = 0, champ = 0;
+  for (let i = 0; i < 7; i++, day = nextDate(day)) {
+    const weekday = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7;
+    const act = plan[weekday] ?? "";
+    const kind = act === "train" ? "mechanics" : act === "scrim" ? "strategy" : act === "champ" ? "champion" : "recovery";
+    const before = p.overDays ?? 0;
+    p = trainingSession(p, kind, day, PLAYER_BIRTHDATES[person], ctx).progress;
+    const o = (p.overDays ?? 0) > before;
+    if (o) over++; if (act === "train" || act === "scrim" || act === "champ") train++; if (act === "champ") champ++;
+    max = Math.max(max, p.fatigue);
+    days.push({ act, fatigue: p.fatigue, over: o });
+  }
+  return { days, trainDays: train, overDays: over, maxFatigue: Math.round(max), champDays: champ, needFocus: champ > 0 && !p.champFocus };
 }
 export function prepareSeriesTraining(s: Save, sr: SeriesRec): void {
   if (sr.winner || !s.days[sr.day]) return;

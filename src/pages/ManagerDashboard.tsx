@@ -18,7 +18,7 @@ export function homeAttention(s: Save): Attention[] {
   if (s.story?.ended || s.phase === "done") return [{ label: "이번 여정을 돌아볼 시간", detail: "구단의 기록과 다음 도전을 살펴보세요.", href: "#/club", tone: "neutral" }];
   if (s.session) return [{ label: "진행 중인 경기가 있습니다", detail: "현재 경기의 준비와 결과 확인을 이어가세요.", href: "#/match", tone: "warn" }];
   const items: Attention[] = [];
-  if (!s.schedOk) items.push({ label: "선수단 일정이 비어 있습니다", detail: "훈련·스크림·휴식 계획을 먼저 정해 주세요.", href: "#/squad", tone: "warn" });
+  if (!s.schedOk) items.push({ label: "선수단 일정이 비어 있습니다", detail: "훈련과 휴식 계획을 먼저 정해 주세요.", href: "#/squad", tone: "warn" });
   const expiry = s.story?.phase === "expiry" ? s.story.stove?.expiryKeys.filter(k => !s.story!.stove!.expiryDecided[k]).length ?? 0 : 0;
   if (expiry) items.push({ label: `만료 계약 ${expiry}명 결정 대기`, detail: "재계약과 방출을 정해야 다음 단계로 갑니다.", href: "#/stove", tone: "warn" });
   if (s.story?.phase === "franchise") items.push({ label: "2021 프랜차이즈 전환", detail: "슬롯·예산 조건과 진입 여부를 확인해 주세요.", href: "#/home", tone: "warn" });

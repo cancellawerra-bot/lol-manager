@@ -1,6 +1,6 @@
 /** 훈련 진행도는 커리어의 게임 값이며 원본 시즌 기록과 분리합니다. */
 export const AGE_TRAINING_ENABLED = true;
-export type TrainingKind = "mechanics" | "strategy" | "recovery";
+export type TrainingKind = "mechanics" | "strategy" | "champion" | "recovery";
 export interface VerifiedBirth { date: string; sourceUrl: string; checkedAt: string }
 export interface TrainingProfile { age?: number; known: boolean; mechanics: number; strategy: number; recovery: number; fatigueLoad: number }
 export interface TrainingProgress {
@@ -13,6 +13,8 @@ export interface TrainingProgress {
   sets?: number; overDays?: number;
   /** 처리한 일정 일수(훈련·스크림·휴식 포함) */
   days?: number;
+  /** v2.34.0 챔피언 훈련: 연습할 챔피언(champFocus)과 챔피언별 누적 연습 일수(champs). 경기의 챔피언 숙련도 보정에 반영됩니다. */
+  champFocus?: string; champs?: Record<string, number>;
 }
 /** 성장 계산 기준: 원본 능력치(base), 상한(potential = 모든 선수 100), 재능에 따른 성장 속도(speed, 기본 1) */
 export interface GrowthCtx { base: number; potential: number; speed?: number }
@@ -136,14 +138,16 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
     p.weekPts = (p.weekPts ?? 0) + 1;
     over = p.weekPts > WEEKLY_POINTS;
     if (kind === "mechanics" && !over) p.weekPhys = (p.weekPhys ?? 0) + 1;
+    const champ = kind === "champion";   // 챔피언 훈련은 성장(XP·능력치) 대신 연습한 챔피언의 숙련을 쌓습니다
     const attr = kind === "mechanics" ? "mechanicsXp" : "strategyXp";
     const fatigueFactor = Math.max(0.5, 1 - p.fatigue / 150);
     const progressFactor = 1 - p[attr] / 200;
-    if (!over) p[attr] = clamp(p[attr] + 10 * profile[kind] * fatigueFactor * progressFactor, 0, 100);
+    if (!over && !champ) p[attr] = clamp(p[attr] + 10 * profile[kind as "mechanics" | "strategy"] * fatigueFactor * progressFactor, 0, 100);
+    if (!over && champ && p.champFocus) p.champs = { ...(p.champs ?? {}), [p.champFocus]: (p.champs?.[p.champFocus] ?? 0) + 1 };
     // 과훈련: 성장 없음 + 피로 3배 → 컨디션 저하
     p.fatigue = clamp(p.fatigue + 12 * profile.fatigueLoad * (over ? 3 : 1), 0, 100);
     if (over) p.overDays = (p.overDays ?? 0) + 1;
-    else if (ctx) {
+    else if (ctx && !champ) {
       if (kind === "mechanics") p.physGain = (p.physGain ?? 0) + grow(ctx.base + (p.physGain ?? 0), ctx.potential, ag.phys * fatigueFactor, ctx.speed);
       else p.brainGain = (p.brainGain ?? 0) + grow(ctx.base + (p.brainGain ?? 0), ctx.potential, ag.brain * experienceFactor(p.sets) * fatigueFactor, ctx.speed);
     }

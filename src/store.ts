@@ -10,7 +10,7 @@ import { hydrateSave } from "./game/cards";
 import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, applyStoryWorld, FRANCHISE_BUYIN } from "./game/story";
 import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
-import { initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
+import { practiceMap, setChampFocus, initializeTraining, prepareSeriesTraining, matchTraining, recommendedTraining, trainingDate, trainingPerson, setTrainingPlan } from "./game/trainingRuntime";
 import { prepareInSeason } from "./game/inSeason";
 import { matchTactics, normalizeTactic, recommendTactic, type TacticPlan } from "./game/tactics";
 import { prepareSeriesLineups, makePromise, cancelPromise, setRotationAutomatic } from "./game/rotation";
@@ -139,6 +139,7 @@ export function choose(choice: "blue" | "red" | "first" | "last"): void {
     const red = blue === me ? op : me;
     ss.blue = blue; ss.red = red; ss.firstSide = firstTeam === blue ? "B" : "R";
     ss.draft = newDraft(blue, red, s.starters[blue] ?? [], s.starters[red] ?? [], ss.firstSide ?? "B", lockedChamps(sr) ?? []);
+    const pm = practiceMap(s, [...ss.draft.lineup.B, ...ss.draft.lineup.R]); if (pm) ss.draft.practice = pm;   // 챔피언 훈련 기록을 이 세트의 숙련도에 반영
     ss.stage = "draft";
   });
 }
@@ -246,6 +247,7 @@ export function autoGame(): void {
     }
   }
 }
+export function setChampionFocus(key: string, champ: string): void { mutate((s) => setChampFocus(s, key, champ)); }
 export function markSchedOk(ok: boolean): void { mutate((s) => { s.schedOk = ok; }); }
 export function fillSchedule(): void {
   mutate((s) => {

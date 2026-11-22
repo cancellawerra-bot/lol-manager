@@ -3,6 +3,8 @@ import { useSave } from "../store";
 import { formVal } from "../game/season";
 import { Bar, Card, ChampIcon, Ovr, Pct, Sample, TeamChip } from "../ui";
 import { ratingOf } from "../rating";
+import { playerTraining } from "../game/trainingRuntime";
+import { comfort } from "../game/draft";
 import { TIERS, masteryOf, masterySummary } from "../game/mastery";
 
 const GROUP_KO: Record<string, string> = { lane: "라인전", fight: "교전", farm: "성장", vision: "시야", pool: "챔피언 폭" };
@@ -21,6 +23,13 @@ export default function PlayerPage({ k }: { k: string }) {
         <p>근거 {card.year}년 · {card.games > 0 ? `${card.games}경기` : "경기 기록 없음"}. 현재 게임 능력치 <Ovr p={p} />.{card.honors?.length ? <> 국제대회: {card.honors.join(", ")}.</> : null}</p><p className="muted sm">아래는 확인된 시즌 기록입니다. 없는 지표는 기록 없음으로 표시합니다. 게임 종합에는 현재 커리어의 기존 추정 규칙이 적용될 수 있습니다.</p>
         <div className="facts">{stats.map(([label, value]) => <li key={label}><b>{value}</b><span>{label}</span></li>)}</div><p className="muted sm">챔피언별 사용 기록은 이 시즌 카드에 포함되어 있지 않습니다.</p>
       </Card>
+      {(() => {
+        const tr = playerTraining(s, k), list = Object.entries(tr?.champs ?? {}).filter(([, n]) => n > 0).sort((x, y) => y[1] - x[1]);
+        return list.length ? <Card title="챔피언 연습" data-testid="champ-practice">
+          <p className="muted sm">일정표의 「챔피언」 훈련으로 쌓은 연습입니다. 연습 2일이 1경기 상당으로 경기의 챔피언 숙련도 보정에 반영됩니다.</p>
+          <div className="pool">{list.map(([c, n]) => { const cf = comfort(p, c, n); return <div key={c} className="pool-i"><ChampIcon id={c} size={40} /><div><b>{CH[c]?.ko ?? c}</b><small>연습 {n}일 · {cf.bonus}경기 상당</small><span className="pool-tags"><span className={"mst t-" + masteryOf(cf.n).id}>{masteryOf(cf.n).ko}</span></span></div></div>; })}</div>
+        </Card> : null;
+      })()}
       <Card title="이번 커리어 경기 기록">{career?.g ? <p>{career.g}경기 {career.w}승 · 평균 평점 {(career.rsum / career.g).toFixed(2)} · MVP {career.mvp}회</p> : <p className="muted">이번 커리어 출전 기록 없음</p>}<p className="muted xs">실제 시즌 통계와 게임 안 경기 기록을 구분합니다.</p></Card>
       <Card title="선수단 관리"><p>선발·로테이션·훈련·출전 약속은 선수단에서 관리합니다.</p><div className="row wrap gap"><a className="btn" href="#/squad">선수단으로</a><a className="btn" href="#/home">감독 홈으로</a></div></Card>
     </div>;
