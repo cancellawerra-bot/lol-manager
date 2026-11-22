@@ -58,7 +58,8 @@ export function growthCtx(s: Save, key: string, _date = trainingDate(s)): Growth
   const person = trainingPerson(s, key); if (!person) return;
   const base = ratingOf(PL[key]) ?? 85;
   const best = Math.max(base, careerBest(person) ?? base);
-  return { base, potential: potentialFor(), speed: talentSpeed(best) };
+  const boost = s.story?.history?.growth ?? 1;   // 역사 모드 약팀 육성 지원
+  return { base, potential: potentialFor(), speed: talentSpeed(best) * boost };
 }
 /** 화면용: 훈련 성장을 반영한 능력치(피지컬·뇌지컬·종합) */
 export function trainedRatingOf(s: Save, key: string): { phys: number; brain: number; overall: number; base: number; potential: number } | undefined {

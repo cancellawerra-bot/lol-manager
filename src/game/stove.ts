@@ -14,6 +14,7 @@ import {
   type Contract, type Tier,
 } from "./story";
 import { moneyRound } from "./money";
+import { sponsorBonus } from "./story";
 import { ratingOf } from "../rating";
 import { initializeInSeason } from "./inSeason";
 
@@ -152,10 +153,13 @@ export function payIncome(s: Save): void {
   const sp = s.eco.sponsor?.amount ?? (st.tier === "LCK" ? LCK_SPONSOR : 0.5);
   const ops = st.tier === "CK" ? CK_OPS : LCK_OPS;
   const parent = st.history?.support ?? 0;   // 역사 모드: 구단 규모 등급에 따른 모기업 지원
-  s.eco.cash = moneyRound(s.eco.cash + prize + share + sp - ops + parent);
+  const sb = sponsorBonus(s, rank);
+  const bonus = sb?.hit ? sb.amount : 0;
+  s.eco.cash = moneyRound(s.eco.cash + prize + share + sp - ops + parent + bonus);
   const opsTxt = `, 운영비 −${fmtMoney(ops)}${parent > 0 ? `, 모기업 지원 +${fmtMoney(parent)}` : ""}`;
+  const bonusTxt = sb ? (sb.hit ? `, 스폰서 목표(${sb.goal}) 달성 보너스 +${fmtMoney(bonus)}` : `, 스폰서 목표(${sb.goal}) 미달성`) : "";
   addNews(s, "season", `${st.year} 시즌 수입`,
-    `성적 ${fmtMoney(prize)}(${rank || "?"}위), 스폰서 ${fmtMoney(sp)}${share ? `, ${st.franchised ? "프랜차이즈" : "LCK 중계"} 배분 ${fmtMoney(share)}` : ""}${opsTxt}. 잔고 ${fmtMoney(s.eco.cash)}(게임용 가상 금액).`, s.team);
+    `성적 ${fmtMoney(prize)}(${rank || "?"}위), 스폰서 ${fmtMoney(sp)}${share ? `, ${st.franchised ? "프랜차이즈" : "LCK 중계"} 배분 ${fmtMoney(share)}` : ""}${opsTxt}${bonusTxt}. 잔고 ${fmtMoney(s.eco.cash)}(게임용 가상 금액).`, s.team);
 }
 
 export function beginOffseason(s: Save): void {

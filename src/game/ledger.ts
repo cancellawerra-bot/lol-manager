@@ -2,7 +2,7 @@
 // 실제 정산(payIncome·settlePayrollAndSolvency)과 같은 공식을 쓰되, 성적은 지금 순위가 끝까지 이어진다고 가정한 추정입니다.
 import type { Save } from "./season";
 import { standings } from "./season";
-import { CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR, lckPrizeOf } from "./story";
+import { sponsorBonus, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR, lckPrizeOf } from "./story";
 import { moneyRound } from "./money";
 
 export interface LedgerExtra { label: string; amount: number }
@@ -40,6 +40,8 @@ export function projectLedger(s: Save, extras: LedgerExtra[] = []): Ledger | nul
     if (share) lines.push({ label: st.franchised ? "프랜차이즈 배분" : "LCK 중계 배분", amount: share });
     lines.push({ label: "스폰서", amount: sp });
     lines.push({ label: "운영비", amount: -ops });
+    const sb = sponsorBonus(s, rank);
+    if (sb) lines.push({ label: "스폰서 목표 보너스", amount: sb.hit ? sb.amount : 0, note: `${sb.goal} · ${sb.hit ? "현재 순위 기준 달성" : `미달성 시 0 (달성하면 +${sb.amount})`}` });
     if (st.history?.support) lines.push({ label: "모기업 지원", amount: st.history.support, note: `구단 규모 ${st.history.grade}등급` });
   }
   // 다음 시즌까지 이어지는 계약의 연봉(이번 시즌 끝에 계약 햇수가 1 줄어듭니다)

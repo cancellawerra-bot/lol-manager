@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, TM, PL } from "../../src/data";
-import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard, payrollSoftCap, upcomingSalaryDue, LCK_PAYROLL_SOFT, LCK_PAYROLL_SOFT_PRE, intlGhostBand, ghostLineup, aiWeeklyFaBudget, AI_FA_BUDGET_MULT, replaceOvrOf, REPLACE_OVR, REPLACE_OVR_EASY } from "../../src/game/story";
+import { newStoryCareer, simRestOfPhase, finishStoryDay, STORY_BUDGETS, storySalary, marketCards, pumpStory, resolveFranchise, FRANCHISE_BUYIN, cardForYear, ensurePlayer, settlePayrollAndSolvency, LCK_SPONSOR, LCK_SPONSOR_BONUS, LCK_SHARE, LCK_OPS, lckPrizeOf, cmpStr, cmpCard, payrollSoftCap, upcomingSalaryDue, LCK_PAYROLL_SOFT, LCK_PAYROLL_SOFT_PRE, intlGhostBand, ghostLineup, aiWeeklyFaBudget, AI_FA_BUDGET_MULT, replaceOvrOf, REPLACE_OVR, REPLACE_OVR_EASY } from "../../src/game/story";
 import { autoAdvanceOffseason, stepYear, payIncome } from "../../src/game/stove";
 import { Rng } from "../../src/game/rng";
 import type { Save } from "../../src/game/season";
@@ -152,7 +152,7 @@ function stove(s: Save, rng: Rng, signStars: boolean, reserve = 0): void {
   payIncome(inc);
   if ((inc.eco.sponsor?.amount ?? 0) !== LCK_SPONSOR) throw new Error("sponsor not scaled, " + inc.eco.sponsor?.amount);
   const gained = inc.eco.cash - cash0;
-  const expect = lckPrizeOf(1) + LCK_SHARE + LCK_SPONSOR - LCK_OPS;
+  const expect = lckPrizeOf(1) + LCK_SHARE + LCK_SPONSOR - LCK_OPS + LCK_SPONSOR_BONUS; // 1위 = 6위 이내 → 스폰서 목표 보너스
   if (Math.abs(gained - expect) > 0.05) throw new Error("LCK income " + gained + " expected " + expect);
   console.log("OK LCK income", { gained, expect, sponsor: inc.eco.sponsor?.amount });
 

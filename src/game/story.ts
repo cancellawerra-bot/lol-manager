@@ -29,6 +29,7 @@ export const FRANCHISE_BUYIN = { easy: 3.5, normal: 6, hard: 9 } as const;
 export const LCK_SHARE = 70; // 2021+ LCK 프랜차이즈 중계·배분(억)
 export const LCK_SHARE_PRE = 25; // 2018–2020 LCK 중계 배분(억)
 export const LCK_SPONSOR = 40; // LCK 기본 스폰서·미디어 수입(억). 2부 계약을 승격 시 이 규모로 올립니다.
+export const LCK_SPONSOR_BONUS = 8; // LCK 스폰서 목표(플레이오프 진출=정규 6위 이내) 달성 보너스(억)
 export const LCK_OPS = 8; // LCK 연간 운영비(억)
 export const LCK_PRIZE = [30, 22, 16, 12, 10, 10, 7, 7, 5, 5] as const; // 서머 정규 순위 상금(억)
 export const LCK_PAYROLL_SOFT = 115; // 2021 이후 자동 감독 권고 총액. LCK 중위 연간 수입(~112억)에 맞춥니다.
@@ -115,7 +116,7 @@ export interface StoryState {
   /** AI 로스터를 마지막으로 짠 시즌 연도. 같은 해에 다시 호출하면 유지합니다. */
   worldBuiltYear?: number;
   /** v2.35.0 역사 모드: 그해 실제 LCK 팀으로 시작. 구단 규모 등급(grade)과 매 시즌 말 받는 모기업 지원(support, 억). */
-  history?: { startYear: number; grade: "S" | "A" | "B" | "C"; support: number };
+  history?: { startYear: number; grade: "S" | "A" | "B" | "C"; support: number; rank?: number; growth?: number };
 }
 
 export const STORY_BUDGET_NOTE = "기본 자금(창단 한도)은 쉬움 5억, 보통 3.2억, 어려움 2억입니다. 개막 로스터 연봉은 시작할 때 차감합니다. 모두 게임용 가상 금액입니다.";
@@ -633,7 +634,7 @@ export function scaleLckIncome(s: Save): void {
   s.eco.sponsor = {
     name: cur?.name ? `${cur.name} · LCK` : "LCK 중계·스폰서",
     amount: LCK_SPONSOR,
-    goal: cur?.goal ?? "po",
+    goal: "플레이오프 진출",
     years: Math.max(cur?.years ?? 0, 3),
   };
   addNews(s, "season", "LCK 수입 규모 적용",
@@ -1456,6 +1457,15 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
 }
 
 /** 역사 모드: startYear(2021~2026)의 실제 LCK 팀 하나를 맡아 2027 월즈 우승을 노립니다. 프랜차이즈 이후라 2부·승강전이 없습니다. */
+/** 그해 LCK 10개 팀 중 선발 5명 평균 능력치 순위(1이 가장 강함) */
+export function historyPowerRank(team: string, year: number): number {
+  const pw = (t: string): number => { const cs = exactRosterIds(t, year).starters.map((id) => CARDS[id]).filter(Boolean); return cs.length ? cs.reduce((n, c) => n + cardRating(c, false), 0) / cs.length : 0; };
+  const mine = pw(team);
+  return 1 + lckTeamsOf(year).filter((t) => t.short !== team && pw(t.short) > mine).length;
+}
+/** 약팀 육성 지원: 전력 5~7위 +20%, 8~10위 +40% 훈련 성장 속도. 상위 4팀은 없음. 월즈 우승이 약팀에게 지나치게 멀지 않도록 한 보정입니다. */
+export function historyGrowthBoost(rank: number): number { return rank >= 8 ? 1.4 : rank >= 5 ? 1.2 : 1; }
+
 export function newHistoryCareer(teamShort: string, slot: number, seed: number, opt: {
   startYear: number; managerInfo: import("./season").Manager; difficulty: StoryDiff;
 }): Save {
@@ -1469,6 +1479,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   const contracts = makeContracts(cardIds, 2, "LCK");
   const payroll = moneyRound(roster.starters.reduce((n, id) => n + (CARDS[id]?.salary ?? 0), 0));
   const grade = historyGrade(payroll), support = historySupport(payroll);
+  const rank = historyPowerRank(teamShort, year), growth = historyGrowthBoost(rank);
   const cap = HISTORY_RESERVE[opt.difficulty];
   const eco: Economy = { difficulty: opt.difficulty, cap, cash: cap, trust: 55, fans: 50, goal: "po", grant: 0, bonus: 2, trustHit: 6, trustWin: 8 };
   const now = new Date().toISOString();
@@ -1478,7 +1489,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
     year, split: "spring", tier: "LCK", phase: "regular",
     lck, ck: ckTeamsOf(year, undefined).map((t) => t.short).filter((t) => t !== teamShort), franchised: true, buyInOffered: true, buyInPaid: false,
     trophies: { lck: 0, msi: 0, worlds: 0 },
-    contracts, history: { startYear: year, grade, support },
+    contracts, history: { startYear: year, grade, support, rank, growth },
   };
   const starters = roster.starters.map((id) => (CARDS[id] ? contracts.find((c) => c.cardId === id)?.key ?? id : ""));
   const s: Save = {
@@ -1490,7 +1501,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   applyStoryWorld(s);
   initializeClubTimeline(s, false);
   beginSplit(s, year, "spring");
-  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.`, teamShort);
+  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.${growth > 1 ? ` 전력 ${rank}위 팀이라 육성 지원(선수 훈련 성장 속도 +${Math.round((growth - 1) * 100)}%)을 받습니다.` : ""}`, teamShort);
   return s;
 }
 
@@ -1514,4 +1525,14 @@ export function pumpStory(s: Save, rng: Rng, stop: StoryPhase[] = ["awards", "tr
     }
   }
   return s.story!.phase;
+}
+
+/** 스폰서 목표 보너스(스토리·역사 모드). LCK는 플레이오프 진출(6위 이내), 2부는 고른 스폰서의 목표(보너스 = 연 수입의 절반). rank 0은 순위 미정이라 달성 아님. */
+export function sponsorBonus(s: { story?: { tier: string }; eco: { sponsor?: { amount: number; goal: string } } }, rank: number): { amount: number; goal: string; hit: boolean } | null {
+  const st = s.story; if (!st) return null;
+  if (st.tier === "LCK") return { amount: LCK_SPONSOR_BONUS, goal: "플레이오프 진출(정규 6위 이내)", hit: rank > 0 && rank <= 6 };
+  const sp = s.eco.sponsor; if (!sp) return null;
+  const limit: Record<string, number> = { "상위권 유지": 3, "승강전 진출": 2, "중위권 이상": 4, "2부 우승": 1 };
+  const lim = limit[sp.goal]; if (!lim) return null;
+  return { amount: Math.round(sp.amount * 50) / 100, goal: sp.goal, hit: rank > 0 && rank <= lim };
 }

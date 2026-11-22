@@ -6,6 +6,7 @@ import { loadCore, loadRanked, CARDS, PL } from "../../src/data";
 import { newHistoryCareer, lckTeamsOf, exactRosterIds, historyGrade, historySupport, HISTORY_RESERVE, LCK_PAYROLL_SOFT, cardsForOrgYear } from "../../src/game/story";
 import { stepYear } from "../../src/game/stove";
 import { projectLedger } from "../../src/game/ledger";
+import { historyPowerRank, historyGrowthBoost, sponsorBonus, LCK_SPONSOR_BONUS } from "../../src/game/story";
 import { challengeLog } from "../../src/game/achievements";
 import { Rng } from "../../src/game/rng";
 await loadCore(); await loadRanked();
@@ -42,7 +43,10 @@ for (const year of [2021, 2022, 2023, 2024, 2025, 2026]) {
       assert(fresh >= 4, `${year} ${o} AI 선발 중 최신 카드 ${fresh}명`);
     }
     assert(projectLedger(s) !== null);
+    assert.equal(st.history!.rank, historyPowerRank(t.short, year)); assert.equal(st.history!.growth, historyGrowthBoost(st.history!.rank!));
   }
+  // 순위는 1~10을 한 번씩(동률 제외 가정 없이 범위만)
+  const rs = lckTeamsOf(year).map((t) => historyPowerRank(t.short, year)); assert(rs.every((r) => r >= 1 && r <= 10) && rs.includes(1), `${year} 전력 순위`);
 }
 console.log("OK history start for every team/year", teams);
 
@@ -73,4 +77,14 @@ for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, 
   rows.push(`${year} ${short.padEnd(4)} 등급 ${g}  클리어 ${clears}/${n}  파산 ${bankrupt}/${n}  월즈 우승 합 ${worlds}  최저 잔고 ${Math.round(minCash)}`);
 }
 console.log("OK history full careers run to the end\n" + rows.join("\n"));
+// 3) 스폰서 목표 보너스: LCK는 6위 이내, 2부는 고른 목표. 순위 미정(0)은 달성 아님
+{
+  const l = newHistoryCareer("T1", 1, 3, { startYear: 2024, managerInfo: info, difficulty: "normal" });
+  assert.equal(sponsorBonus(l, 6)!.hit, true); assert.equal(sponsorBonus(l, 7)!.hit, false); assert.equal(sponsorBonus(l, 0)!.hit, false);
+  assert.equal(sponsorBonus(l, 1)!.amount, LCK_SPONSOR_BONUS);
+  const ck = { story: { tier: "CK" }, eco: { sponsor: { amount: 0.6, goal: "승강전 진출" } } };
+  assert.deepEqual(sponsorBonus(ck as any, 2), { amount: 0.3, goal: "승강전 진출", hit: true }); assert.equal(sponsorBonus(ck as any, 3)!.hit, false);
+  assert.equal(sponsorBonus({ story: { tier: "CK" }, eco: {} } as any, 1), null);
+  console.log("OK sponsor goal bonus");
+}
 assert.equal(JSON.stringify(CARDS), original, "원본 카드는 수정하지 않음");
