@@ -15,12 +15,12 @@ const info = { name: "역사 검증", birth: "1988-01-01", nation: "한국", car
 
 // 1) 모든 해·팀: 실제 선발 5명(그해 카드), 등급·지원 공식, 시작 자금, 프랜차이즈 이후 상태
 let teams = 0;
-for (const year of [2021, 2022, 2023, 2024, 2025, 2026]) {
+for (const year of [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]) {
   for (const t of lckTeamsOf(year)) {
     const s = newHistoryCareer(t.short, 1, 7, { startYear: year, managerInfo: info, difficulty: "normal" });
     teams++;
     const st = s.story!;
-    assert.equal(st.tier, "LCK"); assert.equal(st.franchised, true); assert.equal(st.year, year); assert.equal(st.ended, undefined);
+    assert.equal(st.tier, "LCK"); assert.equal(st.franchised, year >= 2021); assert.equal(st.year, year); assert.equal(st.ended, undefined);
     assert(st.lck.includes(t.short) && !st.ck.includes(t.short));
     const starters = s.starters[t.short];
     assert.equal(starters.length, 5); assert(starters.every(Boolean), `${year} ${t.short} 선발 5명`);
@@ -33,14 +33,14 @@ for (const year of [2021, 2022, 2023, 2024, 2025, 2026]) {
     const own = ex.starters.map((id) => CARDS[id]).filter((c) => c.year === y).length;
     assert(own >= 4, `${year} ${t.short} 그해 카드 선발 ${own}명`);
     const pay = Math.round(ex.starters.reduce((n, id) => n + CARDS[id].salary, 0) * 100) / 100;
-    assert.equal(st.history!.grade, historyGrade(pay)); assert.equal(st.history!.support, historySupport(pay));
+    assert.equal(st.history!.grade, historyGrade(pay, year)); assert.equal(st.history!.support, historySupport(pay, year));
     assert.equal(s.eco.cash, HISTORY_RESERVE.normal);
-    assert(st.history!.support === 0 || pay > LCK_PAYROLL_SOFT);
+    assert(st.history!.support === 0 || pay > (year <= 2020 ? 70 : LCK_PAYROLL_SOFT));
     // 은퇴한 옛 스타가 AI 선발에 섞이지 않음: 다른 팀 선발 대부분이 그해 카드
     for (const o of st.lck.filter((x) => x !== t.short)) {
       const ks = s.starters[o]; assert.equal(ks.length, 5);
       const fresh = ks.filter((k) => PL[k] && (PL[k].cardYear ?? 0) >= y - 1).length;
-      assert(fresh >= 4, `${year} ${o} AI 선발 중 최신 카드 ${fresh}명`);
+      assert(fresh >= (year <= 2020 ? 3 : 4), `${year} ${o} AI 선발 중 최신 카드 ${fresh}명`);
     }
     assert(projectLedger(s) !== null);
     assert.equal(st.history!.rank, historyPowerRank(t.short, year)); assert.equal(st.history!.growth, historyGrowthBoost(st.history!.rank!));
@@ -52,8 +52,8 @@ console.log("OK history start for every team/year", teams);
 
 // 2) 끝까지 진행: 팀 등급별 표본(시작 해 2024)으로 2027 월즈까지. 오류 없이 진행되고 지원금이 들어오는지 확인하고 결과를 출력합니다.
 const rows: string[] = [];
-for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, "DK"], [2024, "BRO"], [2024, "DRX"], [2021, "DK"], [2022, "T1"]] as [number, string][]) {
-  let clears = 0, bankrupt = 0, minCash = 1e9, worlds = 0, n = 6;
+for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, "DK"], [2024, "BRO"], [2024, "DRX"], [2021, "DK"], [2022, "T1"], [2018, "KT"], [2018, "BBQ"], [2019, "JAG"], [2019, "SKT"], [2020, "SP"], [2020, "DWG"]] as [number, string][]) {
+  let clears = 0, bankrupt = 0, minCash = 1e9, worlds = 0, relegated = 0, n = year <= 2020 ? 3 : 6;
   for (let seed = 1; seed <= n; seed++) {
     const s = newHistoryCareer(short, 1, seed, { startYear: year, managerInfo: info, difficulty: "normal" });
     const rng = new Rng(s.rng);
@@ -66,6 +66,7 @@ for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, 
     if (s.story!.ended === "clear") clears++;
     if (s.story!.ended === "bankrupt") bankrupt++;
     worlds += s.story!.trophies.worlds;
+    if (year <= 2020) { assert(s.story!.franchised || s.story!.tier === "CK" || s.story!.ended, `${year} ${short} 프랜차이즈 판정이 끝났어야 함`); if (s.story!.tier === "CK") relegated++; }
     // 도전 성과: 우승 기록과 모순되지 않아야 함(LCK 우승 → 결승·플레이오프 진출, 월즈 우승 → 최종 성과)
     const log = challengeLog(s)!, by = Object.fromEntries(log.map((x) => [x.id, x.done]));
     assert.equal(log.length, 6);
@@ -74,7 +75,7 @@ for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, 
     if (by.final) assert(by.top6);
   }
   const g = historyGrade(exactRosterIds(short, year).starters.reduce((x, id) => x + CARDS[id].salary, 0));
-  rows.push(`${year} ${short.padEnd(4)} 등급 ${g}  클리어 ${clears}/${n}  파산 ${bankrupt}/${n}  월즈 우승 합 ${worlds}  최저 잔고 ${Math.round(minCash)}`);
+  rows.push(`${year} ${short.padEnd(4)} 등급 ${g}  클리어 ${clears}/${n}  파산 ${bankrupt}/${n}  월즈 우승 합 ${worlds}  2부행 ${relegated}  최저 잔고 ${Math.round(minCash)}`);
 }
 console.log("OK history full careers run to the end\n" + rows.join("\n"));
 // 3) 스폰서 목표 보너스: LCK는 6위 이내, 2부는 고른 목표. 순위 미정(0)은 달성 아님

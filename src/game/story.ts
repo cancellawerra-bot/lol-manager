@@ -393,12 +393,13 @@ export function exactRosterIds(short: string, year: number, used: Set<string> = 
   return { starters, bench };
 }
 /** 구단 규모 등급: 실제 선발 연봉 합이 게임의 평균 수입(권고 총액 115)을 얼마나 넘는지로 정합니다. */
-export function historyGrade(payroll: number): "S" | "A" | "B" | "C" {
-  return payroll >= 200 ? "S" : payroll >= 150 ? "A" : payroll >= 115 ? "B" : "C";
+export function historyGrade(payroll: number, year = 2021): "S" | "A" | "B" | "C" {
+  const k = year <= 2020 ? LCK_PAYROLL_SOFT_PRE / LCK_PAYROLL_SOFT : 1;   // 프랜차이즈 전에는 수입이 작아 기준도 비례해 낮춥니다
+  return payroll >= 200 * k ? "S" : payroll >= 150 * k ? "A" : payroll >= 115 * k ? "B" : "C";
 }
 /** 모기업 지원(억/년): 권고 총액을 넘는 연봉의 85%. 시작 때 정해 고정이므로 선수를 더 사도 늘지 않습니다. */
-export function historySupport(payroll: number): number {
-  return moneyRound(Math.max(0, payroll - LCK_PAYROLL_SOFT) * 0.85);
+export function historySupport(payroll: number, year = 2021): number {
+  return moneyRound(Math.max(0, payroll - (year <= 2020 ? LCK_PAYROLL_SOFT_PRE : LCK_PAYROLL_SOFT)) * 0.85);
 }
 export const HISTORY_RESERVE = { easy: 30, normal: 20, hard: 10 } as const;
 
@@ -1288,12 +1289,21 @@ export function finishStove(s: Save, _rng: Rng): void {
   addNews(s, "welcome", `${next} 시즌 개막`, `연봉 ${fmtMoney(pay)}을 정산했습니다. 잔고 ${fmtMoney(s.eco.cash)}.`, s.team);
 }
 
+/** 역사 모드: 프랜차이즈 진입 때 모기업 지원을 2021 이후 기준(권고 총액 115)으로 다시 정합니다. 이때 한 번만 정하고 이후 고정입니다. */
+function resetHistorySupport(s: Save): void {
+  const h = s.story?.history; if (!h) return;
+  const keys = s.starters[s.team] ?? [];
+  const pay = moneyRound(s.story!.contracts.filter((c) => keys.includes(c.key)).reduce((n, c) => n + c.salary, 0));
+  h.grade = historyGrade(pay, 2021); h.support = historySupport(pay, 2021);
+}
+
 export function resolveFranchise(s: Save, accept: boolean): string | null {
   const st = s.story!;
   st.buyInOffered = true;
   if (st.tier === "LCK") {
     st.franchised = true;
     scaleLckIncome(s);
+    resetHistorySupport(s);
     addNews(s, "season", "프랜차이즈 슬롯 확보", "2020 시즌을 LCK에서 마쳐 2021 프랜차이즈 자리를 받았습니다. 이후 승강전은 없습니다.", s.team);
     if (st.stove) enterStoveWeeksFromFranchise(s, new Rng((s.seed^0)+st.year*19)); else beginOffseason(s);
     return null;
@@ -1304,6 +1314,7 @@ export function resolveFranchise(s: Save, accept: boolean): string | null {
     s.eco.cash = moneyRound(s.eco.cash - cost);
     st.buyInPaid = true; st.franchised = true; st.tier = "LCK";
     scaleLckIncome(s);
+    resetHistorySupport(s);
     // replace weakest 2021 LCK team
     const yearTeams = lckTeamsOf(2021).map((t) => t.short);
     applyStoryWorld(s);
@@ -1456,7 +1467,7 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
   return s;
 }
 
-/** 역사 모드: startYear(2021~2026)의 실제 LCK 팀 하나를 맡아 2027 월즈 우승을 노립니다. 프랜차이즈 이후라 2부·승강전이 없습니다. */
+/** 역사 모드: startYear(2018~2026)의 실제 LCK 팀 하나를 맡아 2027 월즈 우승을 노립니다. 2018~2020 시작은 2부·승강전이 있고, 2021 프랜차이즈를 받아야 월즈에 갑니다. */
 /** 그해 LCK 10개 팀 중 선발 5명 평균 능력치 순위(1이 가장 강함) */
 export function historyPowerRank(team: string, year: number): number {
   const pw = (t: string): number => { const cs = exactRosterIds(t, year).starters.map((id) => CARDS[id]).filter(Boolean); return cs.length ? cs.reduce((n, c) => n + cardRating(c, false), 0) / cs.length : 0; };
@@ -1478,7 +1489,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   const cardIds = [...roster.starters, ...roster.bench].filter(Boolean);
   const contracts = makeContracts(cardIds, 2, "LCK");
   const payroll = moneyRound(roster.starters.reduce((n, id) => n + (CARDS[id]?.salary ?? 0), 0));
-  const grade = historyGrade(payroll), support = historySupport(payroll);
+  const grade = historyGrade(payroll, year), support = historySupport(payroll, year);
   const rank = historyPowerRank(teamShort, year), growth = historyGrowthBoost(rank);
   const cap = HISTORY_RESERVE[opt.difficulty];
   const eco: Economy = { difficulty: opt.difficulty, cap, cash: cap, trust: 55, fans: 50, goal: "po", grant: 0, bonus: 2, trustHit: 6, trustWin: 8 };
@@ -1487,7 +1498,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   const lck = lckTeamsOf(year).map((t) => t.short);
   const story: StoryState = {
     year, split: "spring", tier: "LCK", phase: "regular",
-    lck, ck: ckTeamsOf(year, undefined).map((t) => t.short).filter((t) => t !== teamShort), franchised: true, buyInOffered: true, buyInPaid: false,
+    lck, ck: ckTeamsOf(year, undefined).map((t) => t.short).filter((t) => t !== teamShort), franchised: year >= 2021, ...(year >= 2021 ? { buyInOffered: true, buyInPaid: false } : {}),
     trophies: { lck: 0, msi: 0, worlds: 0 },
     contracts, history: { startYear: year, grade, support, rank, growth },
   };

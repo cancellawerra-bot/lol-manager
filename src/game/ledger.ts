@@ -42,7 +42,7 @@ export function projectLedger(s: Save, extras: LedgerExtra[] = []): Ledger | nul
     lines.push({ label: "운영비", amount: -ops });
     const sb = sponsorBonus(s, rank);
     if (sb) lines.push({ label: "스폰서 목표 보너스", amount: sb.hit ? sb.amount : 0, note: `${sb.goal} · ${sb.hit ? "현재 순위 기준 달성" : `미달성 시 0 (달성하면 +${sb.amount})`}` });
-    if (st.history?.support) lines.push({ label: "모기업 지원", amount: st.history.support, note: `구단 규모 ${st.history.grade}등급` });
+    if (st.history?.support && lck) lines.push({ label: "모기업 지원", amount: st.history.support, note: `구단 규모 ${st.history.grade}등급` });
   }
   // 다음 시즌까지 이어지는 계약의 연봉(이번 시즌 끝에 계약 햇수가 1 줄어듭니다)
   const keep = st.contracts.filter((c) => c.years >= (incomeLeft ? 2 : 1) && c.salary > 0);

@@ -7,8 +7,8 @@ import { fmtMoney } from "../game/money";
 import { slots, setSave } from "../store";
 import { go } from "../nav";
 
-// 역사 모드 새 게임: 시작 연도(2021~2026) → 실제 LCK 팀 선택. 숫자는 그해 시즌 카드로 계산한 값입니다(게임용 가상 금액).
-const YEARS = [2021, 2022, 2023, 2024, 2025, 2026];
+// 역사 모드 새 게임: 시작 연도(2018~2026) → 실제 LCK 팀 선택. 숫자는 그해 시즌 카드로 계산한 값입니다(게임용 가상 금액).
+const YEARS = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
 const GRADE_NOTE: Record<string, string> = { S: "최상위 규모 — 모기업 지원이 큼", A: "상위 규모 — 모기업 지원", B: "표준 규모", C: "수입 안에서 운영하는 규모" };
 const DIFF: [StoryDiff, string][] = [["easy", "쉬움"], ["normal", "보통"], ["hard", "어려움"]];
 
@@ -27,7 +27,7 @@ export default function HistorySetup() {
     const ages = cs.map((c) => PLAYER_BIRTHDATES[c.pkey]?.date).filter(Boolean).map((d) => Math.min(year, 2026) + 0.5 - Number(d!.slice(0, 4)) - (Number(d!.slice(5, 7)) - 1) / 12);
     const age = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length * 10) / 10 : undefined;
     const payroll = Math.round(cs.reduce((n, c) => n + c.salary, 0) * 10) / 10;
-    return { t, names: cs.map((c) => c.name).join(" · "), strength, age, payroll, grade: historyGrade(payroll), support: historySupport(payroll) };
+    return { t, names: cs.map((c) => c.name).join(" · "), strength, age, payroll, grade: historyGrade(payroll, year), support: historySupport(payroll, year) };
   }).sort((a, b) => b.strength - a.strength), [year]);
   const pick = rows.find((r) => r.t.short === team);
   const label = (rank: number): { t: string; k: string } => rank <= 2 ? { t: "쉬움", k: "ok" } : rank <= 4 ? { t: "보통", k: "mid" } : rank <= 7 ? { t: "어려움", k: "warn" } : { t: "매우 어려움", k: "hard" };
@@ -46,7 +46,7 @@ export default function HistorySetup() {
       <div className="newc" data-testid="history-setup">
         <div className="row between wrap gap"><div><a href="#/setup" className="muted">← 새 게임 방식 고르기</a><h1>역사 모드</h1></div>
           <label className="sm">저장 슬롯 <select value={slot} onChange={(e) => setSlot(Number(e.target.value))}>{[1, 2, 3].map((n) => <option key={n} value={n}>슬롯 {n}{sl[n - 1] ? ` (사용 중: ${sl[n - 1]!.team})` : ""}</option>)}</select></label></div>
-        <p className="muted">원하는 해의 실제 LCK 팀을 맡아 2027 월즈 우승에 도전합니다. 프랜차이즈 이후라 2부 리그와 승강전이 없고, 그해 실제 선발 5명으로 시작합니다. 선수 이름·기록은 공개 기록이며 구단 로고는 쓰지 않습니다.</p>
+        <p className="muted">원하는 해의 실제 LCK 팀을 맡아 2027 월즈 우승에 도전합니다. 그해 실제 선발 5명으로 시작합니다. 2021년부터는 프랜차이즈라 2부 리그와 승강전이 없고, 2018~2020년에 시작하면 정규 9·10위가 2부 팀과 승강전을 치르며 2020 시즌을 LCK에서 마쳐야 2021 프랜차이즈 자리를 받습니다. 선수 이름·기록은 공개 기록이며 구단 로고는 쓰지 않습니다.</p>
         {err && <p className="err">{err}</p>}
 
         <h2>① 시작 연도</h2>
@@ -65,7 +65,7 @@ export default function HistorySetup() {
             </tr>))}</tbody>
         </table></div>
         <p className="muted xs">도전 난이도는 그해 10개 팀 중 전력 순위로 붙인 라벨입니다(1~2위 쉬움 · 3~4위 보통 · 5~7위 어려움 · 8~10위 매우 어려움). 월즈·MSI의 해외 팀은 실제 선수 데이터가 없는 가상 시드 팀이며, 아래 난이도 버튼(쉬움·보통·어려움)에 따라 강도가 달라집니다. 전력 5~7위 팀은 훈련 성장 속도 +20%, 8~10위 팀은 +40%의 육성 지원을 받습니다. 그래도 약한 팀은 월즈 우승이 매우 어려우니 「도전 성과」(플레이오프 진출·결승·LCK 우승 등)를 단계별 목표로 삼아 보세요.</p>
-        <p className="muted xs">전력 = 선발 5명의 평균 능력치, 연봉 합 = 선발 5명 연봉(게임용 가상 금액, 억). 구단 규모는 연봉 합으로 정하며(S 200↑ · A 150↑ · B 115↑ · C 그 미만), S·A·B 등급은 게임의 평균 수입을 넘는 연봉만큼 매 시즌 말 모기업 지원을 받아 적자를 막습니다. 이 지원은 시작할 때 정해져 선수를 더 사도 늘지 않습니다.</p>
+        <p className="muted xs">전력 = 선발 5명의 평균 능력치, 연봉 합 = 선발 5명 연봉(게임용 가상 금액, 억). 구단 규모는 연봉 합으로 정하며(2021 이후 S 200↑ · A 150↑ · B 115↑ · C 그 미만, 2018~2020은 수입이 작아 70/115 비율로 낮춘 S 122↑ · A 91↑ · B 70↑), S·A·B 등급은 게임의 평균 수입을 넘는 연봉만큼 매 시즌 말 모기업 지원을 받아 적자를 막습니다. 이 지원은 시작할 때 정해져 선수를 더 사도 늘지 않습니다.</p>
 
         {pick && <div className="card" data-testid="history-pick">
           <h3>{year} {pick.t.ko} · {pick.grade}등급</h3>

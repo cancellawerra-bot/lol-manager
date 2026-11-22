@@ -152,7 +152,7 @@ export function payIncome(s: Save): void {
   const share = st.tier === "LCK" ? (st.franchised ? LCK_SHARE : LCK_SHARE_PRE) : 0;
   const sp = s.eco.sponsor?.amount ?? (st.tier === "LCK" ? LCK_SPONSOR : 0.5);
   const ops = st.tier === "CK" ? CK_OPS : LCK_OPS;
-  const parent = st.history?.support ?? 0;   // 역사 모드: 구단 규모 등급에 따른 모기업 지원
+  const parent = st.tier === "LCK" ? (st.history?.support ?? 0) : 0;   // 역사 모드: 구단 규모 등급에 따른 모기업 지원
   const sb = sponsorBonus(s, rank);
   const bonus = sb?.hit ? sb.amount : 0;
   s.eco.cash = moneyRound(s.eco.cash + prize + share + sp - ops + parent + bonus);
