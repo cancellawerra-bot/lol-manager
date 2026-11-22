@@ -703,3 +703,51 @@ svg.lead circle.b{fill:#3B82F6}svg.lead circle.r{fill:#EF4444}svg.lead .lbl{fill
 .note-fold>summary{cursor:pointer;padding:8px 0;font-weight:800;font-size:13px;color:var(--sub);list-style:none}.note-fold>summary::-webkit-details-marker{display:none}
 .note-fold>summary::before{content:"\25B8";display:inline-block;width:16px;color:var(--gold)}.note-fold[open]>summary::before{content:"\25BE"}
 .note-fold[open]{padding-bottom:6px}
+
+/* v2.27.0 선발 라인업: 포지션별 대결판 */
+.lu{display:flex;flex-direction:column;gap:14px}
+.lu-title h2{margin:0 0 2px}
+.lu-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,rgba(14,200,190,.10),transparent 45%,transparent 55%,rgba(240,180,60,.10));border:1px solid var(--line,#2a3140)}
+.lu-hteam{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lu-hteam.op{justify-content:flex-end}
+.lu-avg{display:flex;flex-direction:column;line-height:1.1}
+.lu-avg small{font-size:11px;opacity:.65}
+.lu-avg b{font-size:20px;color:var(--gold,#e0b252)}
+.lu-vs{font-weight:800;letter-spacing:.1em;opacity:.55}
+.lu-rows{display:flex;flex-direction:column;gap:8px}
+.lu-row{display:grid;grid-template-columns:1fr 64px 1fr;gap:8px;align-items:stretch}
+.lu-p{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel2,rgba(255,255,255,.04));border:1px solid var(--line,#2a3140);border-left:4px solid var(--tc,#667);min-width:0}
+.lu-p.op{flex-direction:row-reverse;text-align:right;border-left:1px solid var(--line,#2a3140);border-right:4px solid var(--tc,#667)}
+.lu-ovr{flex:none;width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:rgba(0,0,0,.28);border:2px solid var(--tc,#667)}
+.lu-ovr b{font-size:24px;color:var(--tc,#ddd)}
+.lu-info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.lu-p.op .lu-info{align-items:flex-end}
+.lu-name{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu-meta{display:flex;gap:5px;flex-wrap:wrap}
+.lu-p.op .lu-meta{justify-content:flex-end}
+.lu-meta em{font-style:normal;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.08)}
+.lu-meta em.est{opacity:.7}
+.lu-meta em.rs.gold{background:rgba(224,178,82,.22);color:var(--gold,#e0b252)}
+.lu-meta em.rs.teal{background:rgba(14,200,190,.18);color:var(--teal,#2dd4c4)}
+.lu-meta em.rs.blue{background:rgba(90,140,255,.2);color:#9db8ff}
+.lu-fat{display:flex;align-items:center;gap:8px}
+.lu-fat small{font-size:11px;opacity:.75;white-space:nowrap}
+.lu-fat i{display:block;flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;min-width:60px}
+.lu-fat u{display:block;height:100%}
+.lu-swap{display:flex;align-items:center;gap:6px}
+.lu-swap small{font-size:11px;opacity:.65}
+.lu-swap select{max-width:150px}
+.lu-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.lu-mid b{font-size:14px;letter-spacing:.05em}
+.lu-mid small{font-size:11px;opacity:.6}
+.lu-diff{margin-top:2px;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.08)}
+.lu-diff.up{color:var(--good,#4ade80);background:rgba(74,222,128,.14)}
+.lu-diff.down{color:var(--bad,#f87171);background:rgba(248,113,113,.14)}
+@media (max-width:640px){
+  .lu-row{grid-template-columns:1fr 44px 1fr;gap:4px}
+  .lu-p,.lu-p.op{flex-direction:column;align-items:flex-start;text-align:left;padding:8px;gap:6px;border-left:4px solid var(--tc,#667);border-right:1px solid var(--line,#2a3140)}
+  .lu-p.op .lu-info,.lu-p.op .lu-meta{align-items:flex-start;justify-content:flex-start}
+  .lu-ovr{width:40px;height:40px}.lu-ovr b{font-size:19px}
+  .lu-name{font-size:14px}.lu-mid small{display:none}
+  .lu-fat i{min-width:40px}.lu-swap select{max-width:100%}.lu-swap small{display:none}
+}

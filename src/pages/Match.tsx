@@ -6,7 +6,7 @@ import { STAGE_KO, standings } from "../game/season";
 import type { GameResult, GEvent } from "../game/sim";
 import { sigmoid } from "../game/rng";
 import { ChampIcon, TeamChip, Ovr, form5 } from "../ui";
-import { ratingOf } from "../rating";
+import { ratingOf, ratingColor } from "../rating";
 import type { PosIdx } from "../types";
 import { go } from "../nav";
 import { TacticsControls, TacticsReview } from "./Tactics";
@@ -108,28 +108,81 @@ function Press() {
     </div>
   );
 }
+// 라인업 화면 (v2.27.0): 포지션 줄마다 우리 선수 ↔ 상대 선수를 마주 보게 하고, 능력치 차이·피로·기용 근거를 한눈에 보여 줍니다.
+// 보여 주는 값은 전부 기존 값(능력치·피로·로테이션 근거)이며 새 계산은 없습니다. 상대 컨디션은 계속 보이지 않습니다.
+const POS_SHORT = ["TOP", "JGL", "MID", "ADC", "SUP"];
+function splitLabel(label: string): { year?: string; name: string; est: boolean } {
+  const m = label.match(/^(\d{4})\s+(.*?)(\s*·\s*추정)?$/);
+  return m ? { year: m[1], name: m[2], est: !!m[3] } : { name: label, est: false };
+}
+function reasonChip(reason: string): { t: string; k: string } {
+  if (/^약속|출전 약속/.test(reason)) return { t: "출전 약속", k: "gold" };
+  if (/로테이션/.test(reason)) return { t: "로테이션", k: "teal" };
+  if (/수동/.test(reason)) return { t: "감독 기용", k: "blue" };
+  return { t: "선발 유지", k: "" };
+}
+const fatigueColor = (f: number): string => (f >= 45 ? "var(--bad)" : f >= 30 ? "var(--warn)" : "var(--good)");
 function Lineup() {
   const s = useSave()!; const sr = sessionSeries(s); const op = sr.a === s.team ? sr.b : sr.a;
   const mine = s.starters[s.team];
+  const theirs = s.starters[op];
   const bench = (s.cards.length ? s.cards : []).filter((k) => !mine.includes(k));
+  const story = s.mode === "story";
+  const avg = (ks: string[]): number | null => { const v = ks.map((k) => ratingOf(PL[k])).filter((x): x is number => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const a1 = avg(mine), a2 = avg(theirs);
+  const reasonOf = (k: string, i: number): string => sr.rotation?.[s.team]?.keys[i] === k ? sr.rotation[s.team].reasons[i] : "감독 수동 교체";
   return (
-    <div className="panel">
-      <h2>선발 라인업 · {sr.games.length + 1}세트</h2>
-      <p className="muted">같은 포지션 벤치와만 교체할 수 있습니다. 상대 컨디션은 보이지 않습니다.</p>
-      {s.mode === "story" && <p className="sm" data-testid="rotation-lineup">{mine.map((k, i) => `${POS_KO[i]} ${PL[k]?.name} · 피로 ${(playerTraining(s, k)?.fatigue ?? 0).toFixed(1)} · ${sr.rotation?.[s.team]?.keys[i] === k ? sr.rotation[s.team].reasons[i] : "감독 수동 교체"}`).join(" / ")}</p>}
-      <div className="brief-grid">
-        <div className="brief-team"><TeamChip t={s.team} full />
-          <ul>{mine.map((k, i) => {
-            const opts = bench.filter((x) => PL[x]?.pos === i);
-            return <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Ovr p={PL[k]} />
-              {opts.length > 0 && <select data-testid={`lineup-player-${i}`} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select>}
-            </li>;
-          })}</ul>
-        </div>
-        <div className="brief-team"><TeamChip t={op} full />
-          <ul>{s.starters[op].map((k, i) => <li key={k}><small>{POS_KO[i]}</small><span>{PL[k]?.label ?? PL[k]?.name}</span><Ovr p={PL[k]} /></li>)}</ul>
-        </div>
+    <div className="panel lu" data-testid="lineup-screen">
+      <div className="lu-title">
+        <h2>선발 라인업 · {sr.games.length + 1}세트</h2>
+        <p className="muted sm">같은 포지션 벤치와만 교체할 수 있습니다. 상대 컨디션은 보이지 않습니다.</p>
       </div>
+      <div className="lu-head">
+        <div className="lu-hteam me"><TeamChip t={s.team} size="lg" full />{a1 != null && <span className="lu-avg"><small>선발 평균</small><b>{a1.toFixed(1)}</b></span>}</div>
+        <span className="lu-vs">VS</span>
+        <div className="lu-hteam op"><TeamChip t={op} size="lg" full />{a2 != null && <span className="lu-avg"><small>선발 평균</small><b>{a2.toFixed(1)}</b></span>}</div>
+      </div>
+      <div className="lu-rows">
+        {mine.map((k, i) => {
+          const pm = PL[k], po = PL[theirs[i]];
+          const rm = ratingOf(pm), ro = ratingOf(po);
+          const diff = rm != null && ro != null ? Math.round(rm - ro) : null;
+          const lm = splitLabel(pm?.label ?? pm?.name ?? k), lo = splitLabel(po?.label ?? po?.name ?? theirs[i]);
+          const opts = bench.filter((x) => PL[x]?.pos === i);
+          const fat = story ? playerTraining(s, k)?.fatigue ?? 0 : null;
+          const rc = story ? reasonChip(reasonOf(k, i)) : null;
+          return (
+            <div className="lu-row" key={k} data-testid={`lineup-row-${i}`}>
+              <div className="lu-p me" style={{ "--tc": rm != null ? ratingColor(rm) : undefined } as React.CSSProperties}>
+                <span className="lu-ovr"><b>{rm ?? "–"}</b></span>
+                <div className="lu-info">
+                  <b className="lu-name">{lm.name}</b>
+                  <span className="lu-meta">{lm.year && <em>{lm.year}</em>}{lm.est && <em className="est">추정</em>}{rc && <em className={"rs " + rc.k} title={reasonOf(k, i)}>{rc.t}</em>}</span>
+                  {fat != null && <span className="lu-fat" title="현재 피로 (0~100)"><small>피로 {fat.toFixed(1)}</small><i><u style={{ width: `${Math.min(100, fat)}%`, background: fatigueColor(fat) }} /></i></span>}
+                  {opts.length > 0 && <label className="lu-swap"><small>벤치 교체</small><select data-testid={`lineup-player-${i}`} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select></label>}
+                </div>
+              </div>
+              <div className="lu-mid">
+                <b>{POS_SHORT[i]}</b><small>{POS_KO[i]}</small>
+                {diff != null && <span className={"lu-diff " + (diff > 0 ? "up" : diff < 0 ? "down" : "")} title="우리 − 상대 능력치">{diff > 0 ? "+" : diff < 0 ? "−" : "±"}{Math.abs(diff)}</span>}
+              </div>
+              <div className="lu-p op" style={{ "--tc": ro != null ? ratingColor(ro) : undefined } as React.CSSProperties}>
+                <span className="lu-ovr"><b>{ro ?? "–"}</b></span>
+                <div className="lu-info">
+                  <b className="lu-name">{lo.name}</b>
+                  <span className="lu-meta">{lo.year && <em>{lo.year}</em>}{lo.est && <em className="est">추정</em>}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {story && (
+        <details className="note-fold" data-testid="rotation-lineup-fold">
+          <summary>기용 근거 자세히 보기</summary>
+          <p className="sm" data-testid="rotation-lineup">{mine.map((k, i) => `${POS_KO[i]} ${PL[k]?.name} · 피로 ${(playerTraining(s, k)?.fatigue ?? 0).toFixed(1)} · ${reasonOf(k, i)}`).join(" / ")}</p>
+        </details>
+      )}
       <button className="btn primary lg" data-testid="lineup-next" onClick={confirmLineup}>선발 확정 · 선택권 ▶</button>
     </div>
   );
