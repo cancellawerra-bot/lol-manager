@@ -927,3 +927,14 @@ svg.lead .mk.B{fill:#3B82F6}svg.lead .mk.R{fill:#EF4444}
 .tag.k-rank{background:#6366f122;color:#c4b5fd}
 .tag.k-result{background:#2dd4bf22;color:#5eead4}
 .tag.k-upset{background:#fb718522;color:#fda4af}
+
+.pc-ovr.est{min-width:92px;width:auto;height:auto;min-height:54px;padding:6px 8px}
+.pc-ovr.est b.scout-stars,.scout-stars{font-size:13px;line-height:1.25;font-weight:800;letter-spacing:.02em;word-break:keep-all;color:var(--teal);text-shadow:none}
+.scout-est{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center}
+.scout-est.exact b{font-variant-numeric:tabular-nums}
+.scout-est small{font-size:9px;color:var(--dim)}
+.scout-est-line{margin:4px 0}
+@media (max-width:860px){
+  .pc-ovr.est{min-width:72px;padding:4px 6px}
+  .pc-ovr.est b.scout-stars,.scout-stars{font-size:12px}
+}

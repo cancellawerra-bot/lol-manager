@@ -12,7 +12,57 @@ import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 export type ScoutGoal = "upgrade" | "value" | "development" | "watch";
 export type ScoutContext = "season" | "fa" | "tryout";
 export interface ScoutPreferences { goal: ScoutGoal; pos: number | "all"; affordableOnly: boolean }
-export interface ScoutingState extends ScoutPreferences { version: 1; watch: string[] }
+export interface ScoutingState extends ScoutPreferences { version: 1; watch: string[]; reports?: Record<string, number> }
+export const MAX_SCOUT_REPORTS = 3;
+export function personId(s: Save | null | undefined, personOrKey: string): string {
+  if (s?.story) {
+    const ct = s.story.contracts.find(c => c.key === personOrKey || c.person === personOrKey);
+    if (ct) return ct.person;
+  }
+  if (CARDS[personOrKey]?.pkey) return CARDS[personOrKey].pkey;
+  const p = PL[personOrKey];
+  if (p?.personKey) return p.personKey;
+  for (const c of s?.story?.contracts ?? []) { if (c.key === personOrKey) return c.person; }
+  if (s) {
+    for (const k of [...(s.starters[s.team] ?? []), ...(s.cards ?? [])]) {
+      if (k === personOrKey) return CARDS[k]?.pkey ?? PL[k]?.personKey ?? k;
+    }
+  }
+  return personOrKey;
+}
+export function isOurPlayer(s: Save | null | undefined, personOrKey: string): boolean {
+  if (!s) return false;
+  if (s.story) return s.story.contracts.some(c => c.person === personOrKey || c.key === personOrKey || c.person === personId(s, personOrKey));
+  const mine = [...(s.starters[s.team] ?? []), ...(s.cards ?? [])];
+  if (mine.includes(personOrKey)) return true;
+  const id = personId(s, personOrKey);
+  return mine.some(k => k === id || CARDS[k]?.pkey === id || PL[k]?.personKey === id);
+}
+export function scoutReportsMap(s: Save | null | undefined): Record<string, number> {
+  const raw = s?.scouting?.reports ?? {}, out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof k === "string" && k && Number.isInteger(v) && v > 0) out[k] = Math.min(MAX_SCOUT_REPORTS, v);
+  }
+  return out;
+}
+export const scoutReports = (s: Save | null | undefined, person: string): number => scoutReportsMap(s)[personId(s, person)] ?? 0;
+export function writeScoutingState(s: Save, patch?: Partial<Pick<ScoutingState, "watch" | "reports">> & Partial<ScoutPreferences>): void {
+  const watch = patch?.watch ?? scoutWatch(s);
+  const reports = scoutReportsMap({ scouting: { version: 1, goal: "upgrade", pos: "all", affordableOnly: true, watch, reports: patch?.reports ?? s.scouting?.reports } } as Save);
+  const prefs = scoutPreferences({ ...s, scouting: { version: 1, ...scoutPreferences(s), ...patch, watch } as ScoutingState });
+  const next: ScoutingState = { version: 1, ...prefs, watch };
+  if (Object.keys(reports).length) next.reports = reports;
+  s.scouting = next;
+}
+export function addScoutReport(s: Save, person: string): string | undefined {
+  const id = personId(s, person);
+  if (isOurPlayer(s, id)) return "우리 구단 선수는 이미 정확한 능력치를 볼 수 있습니다.";
+  if (!cardForYear(id, s.story?.year ?? 2026) && !PL[person] && !Object.values(PL).some(p => p.personKey === id)) return "현재 연도에 확인된 선수 기록이 없습니다.";
+  const n = scoutReports(s, id);
+  if (n >= MAX_SCOUT_REPORTS) return "더 이상 좁힐 관찰이 없습니다.";
+  writeScoutingState(s, { reports: { ...scoutReportsMap(s), [id]: n + 1 } });
+}
+
 export interface ScoutCandidate {
   person: string; card?: SeasonCard; offerCardId?: string; owner: string; ovr?: number; bestOwned?: number; delta?: number;
   age?: number; estimated: boolean; salary?: number; fee?: number; cost?: number; reserve?: number; years: number;
@@ -27,8 +77,7 @@ export function scoutPreferences(s: Save): ScoutPreferences {
 export const scoutWatch = (s: Save): string[] => [...new Set((s.scouting?.watch ?? []).filter(p => typeof p === "string"))].slice(0, 20);
 export function setScoutPreferences(s: Save, p: ScoutPreferences): void {
   if (s.mode !== "story" || !s.story) return;
-  const candidate = { ...s, scouting: { ...p, version: 1 as const, watch: scoutWatch(s) } };
-  s.scouting = { version: 1, ...scoutPreferences(candidate), watch: scoutWatch(s) };
+  writeScoutingState(s, { ...p, watch: scoutWatch(s) });
 }
 export function toggleScoutWatch(s: Save, person: string): string | undefined {
   if (s.mode !== "story" || !s.story) return "프랜차이즈에서 이용할 수 있습니다.";
@@ -39,7 +88,7 @@ export function toggleScoutWatch(s: Save, person: string): string | undefined {
     if (watch.length >= 20) return "관심 선수는 20명까지 저장할 수 있습니다.";
     watch.push(person);
   }
-  s.scouting = { version: 1, ...scoutPreferences(s), watch };
+  writeScoutingState(s, { watch });
 }
 const effective = (c: SeasonCard, year: number): number => c.year < Math.min(year, 2026) ? Math.max(5, Math.round(c.percentile) - DECAY_PCT) : c.percentile;
 function ownedOvr(s: Save, person: string, key: string, pos?: number): number | undefined {

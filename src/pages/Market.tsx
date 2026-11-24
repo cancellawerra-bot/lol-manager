@@ -5,6 +5,7 @@ import { personUsed } from "../game/cards";
 import { getSave, useSave } from "../store";
 import { Card } from "../ui";
 import { cardRating, ratingColor } from "../rating";
+import { estimateOvr } from "../game/scoutEstimate";
 import { HonorChips, MiniFour } from "../pcard";
 import { go } from "../nav";
 import { fmtMoney, moneyRound } from "../game/money";
@@ -13,11 +14,12 @@ import InSeasonMarket from "./InSeasonMarket";
 import { OpeningScouting } from "./Scouting";
 
 export function CardTile({ c, on, disabled, reason, onClick, price, personView, ratingOf, showFour = true }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean; ratingOf?: (c: SeasonCard) => number; showFour?: boolean }) {
-  const rt = ratingOf ? ratingOf(c) : cardRating(c);
+  const s = useSave(), rt = ratingOf ? ratingOf(c) : cardRating(c), est = estimateOvr(s, c.pkey, rt, c);
+  const exact = est.kind === "exact", tone = exact ? rt : 84;
   return (
-    <button type="button" className={"card-tile pc" + (rt >= 92 ? " top" : "") + (on ? " on" : "") + (disabled ? " dim" : "")} style={{ "--tc": ratingColor(rt) } as React.CSSProperties} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
+    <button type="button" className={"card-tile pc" + (exact && rt >= 92 ? " top" : "") + (on ? " on" : "") + (disabled ? " dim" : "")} style={{ "--tc": ratingColor(tone) } as React.CSSProperties} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
       <div className="pc-head">
-        <div className="pc-ovr" aria-label={`능력치 ${rt}`}><b>{rt}</b><small>능력치</small></div>
+        <div className={"pc-ovr" + (exact ? "" : " est")} aria-label={est.kind === "none" ? "능력치 기록 없음" : exact ? `능력치 ${rt}` : `능력치 추정 ${est.text}`} data-testid="scout-stars" data-kind={est.kind} data-lo={est.lo} data-hi={est.hi} title={est.reason}>{est.kind === "none" ? <b className="muted">–</b> : exact ? <b>{rt}</b> : <b className="scout-stars">{est.text}</b>}<small>{est.kind === "range" ? "능력치 추정" : est.kind === "none" ? "기록 없음" : "능력치"}</small></div>
         <div className="pc-id">
           <b className="pc-name">{personView ? c.name : cardLabel(c)}</b>
           <span className="pc-sub">{personView && `${c.year} 기록 · `}{POS_KO[c.posIdx]} · {c.team}</span>

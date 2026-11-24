@@ -3,6 +3,8 @@ import { CARDS, PL, POS_KO, TM, cardLabel } from "../data";
 import { useSave, mutate, confirmStove, autoStove } from "../store";
 import { Card } from "../ui";
 import { cardRating } from "../rating";
+import { ratingLabel } from "../game/scoutEstimate";
+import { ScoutObserve, ScoutPotential } from "./ScoutRating";
 import { fmtMoney } from "../game/money";
 import type { Bonus } from "../game/stove";
 import { storySalary } from "../game/story";
@@ -88,7 +90,9 @@ function Tryout() {
             <label><input type="checkbox" checked={starter} onChange={(e) => setStarter(e.target.checked)} /> 주전 보장</label>
             <label><input type="checkbox" checked={!!bon.callup} onChange={(e) => setBon({ ...bon, callup: e.target.checked })} /> 1부 콜업 보너스</label>
           </div>
-          {c && <p className="muted sm">{c.name} · {c.year}시즌 · 능력치 {cardRating(c)} · 2부 계약가 {fmtMoney(storySalary(c, s.story!.tier))} (게임용 가상 금액)</p>}
+          {c && <p className="muted sm">{c.name} · {c.year}시즌 · 능력치 <b data-testid="scout-stars">{ratingLabel(s, c.pkey, cardRating(c), c)}</b> · 2부 계약가 {fmtMoney(storySalary(c, s.story!.tier))} (게임용 가상 금액)</p>}
+          {c && <ScoutPotential person={c.pkey} value={cardRating(c)} card={c} />}
+          {c && <ScoutObserve person={c.pkey} onStatus={setMsg} />}
           <div className="row gap wrap">
             <button className="btn" data-testid="tryout-offer" onClick={() => {
               if (!c) return;
@@ -181,7 +185,7 @@ function Weeks() {
           <h3>FA 밀봉 입찰</h3>
           <div className="row gap wrap">
             <select data-testid="fa-pick" value={pick} onChange={(e) => { setPick(e.target.value); const x = CARDS[e.target.value]; if (x) setSalary(storySalary(x, s.story!.tier)); }} style={{ maxWidth: "100%" }}>
-              {[...new Set([...(stove.faPool.includes(pick) ? [pick] : []), ...stove.faPool.slice(0, 80)])].map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))} · {CARDS[id].year} · 능력치 {cardRating(CARDS[id])}</option>)}
+              {[...new Set([...(stove.faPool.includes(pick) ? [pick] : []), ...stove.faPool.slice(0, 80)])].map((id) => <option key={id} value={id}>{cardLabel(CARDS[id])} · {fmtMoney(storySalary(CARDS[id], s.story!.tier))} · {CARDS[id].year} · 능력치 {ratingLabel(s, CARDS[id].pkey, cardRating(CARDS[id]), CARDS[id])}</option>)}
             </select>
             <label>연봉 <input type="number" step={0.1} min={0.3} value={salary} onChange={(e) => setSalary(Number(e.target.value))} style={{ width: 80 }} />억</label>
             <label>기간 <input type="number" min={1} max={4} value={years} onChange={(e) => setYears(Number(e.target.value))} style={{ width: 56 }} />년</label>

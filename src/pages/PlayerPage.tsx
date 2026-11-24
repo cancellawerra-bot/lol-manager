@@ -7,6 +7,8 @@ import { playerTraining } from "../game/trainingRuntime";
 import { comfort } from "../game/draft";
 import { TIERS, masteryOf, masterySummary } from "../game/mastery";
 import { careerYear, hasYearPlayerPools, lckYearName, NO_RECORD } from "../game/yearRecords";
+import { estimateOvr } from "../game/scoutEstimate";
+import { ScoutObserve, ScoutPotential } from "./ScoutRating";
 
 const GROUP_KO: Record<string, string> = { lane: "라인전", fight: "교전", farm: "성장", vision: "시야", pool: "챔피언 폭" };
 const sign = (v: number | null, d = 0): string => (v == null ? "–" : `${v >= 0 ? "+" : ""}${fmt(v, d)}`);
@@ -22,7 +24,10 @@ export default function PlayerPage({ k }: { k: string }) {
     const career = s.pstats[k];
     return <div className="grid" data-testid="season-player-profile">
       <Card className="span2" title={`${card.name} · ${card.year} 시즌 기록`}><div className="row wrap gap"><span className="tag">{POS_KO[card.posIdx]}</span><span className="tag">당시 {card.team}</span>{s.story?.contracts.some(c => c.person === card.pkey) && <span className="tag good">우리 구단 보유</span>}{card.small && <span className="tag warn">표본 부족</span>}{card.limited && <span className="tag">지표 제한</span>}{p.label?.includes("추정") && <span className="tag warn">과거 기록 기반 추정</span>}</div>
-        <p>근거 {card.year}년 · {card.games > 0 ? `${card.games}경기` : "경기 기록 없음"}. 현재 게임 능력치 <Ovr p={p} />.{card.honors?.length ? <> 국제대회: {card.honors.join(", ")}.</> : null}</p><p className="muted sm">아래는 확인된 시즌 기록입니다. 없는 지표는 기록 없음으로 표시합니다. 게임 종합에는 현재 커리어의 기존 추정 규칙이 적용될 수 있습니다.</p>
+        <p>근거 {card.year}년 · {card.games > 0 ? `${card.games}경기` : "경기 기록 없음"}. 현재 게임 능력치 {(() => { const est = estimateOvr(s, card.pkey, ratingOf(p), card, p); return est.kind === "range" ? <b data-testid="scout-stars" title={est.reason}>{est.text} 추정</b> : <Ovr p={p} />; })()}.{card.honors?.length ? <> 국제대회: {card.honors.join(", ")}.</> : null}</p>
+        <ScoutPotential person={card.pkey} value={ratingOf(p)} card={card} player={p} />
+        <div className="row wrap gap"><ScoutObserve person={card.pkey} /></div>
+        <p className="muted sm">아래는 확인된 시즌 기록입니다. 없는 지표는 기록 없음으로 표시합니다. 아직 파악이 부족한 선수의 종합 능력치는 별점 구간으로만 보여 줍니다. 구간은 실제 값을 포함하며 관찰 리포트로 좁아집니다.</p>
         <div className="facts">{stats.map(([label, value]) => <li key={label}><b>{value}</b><span>{label}</span></li>)}</div><p className="muted sm">챔피언별 사용 기록은 이 시즌 카드에 포함되어 있지 않습니다.</p>
       </Card>
       {(() => {
@@ -37,7 +42,7 @@ export default function PlayerPage({ k }: { k: string }) {
     </div>;
   }
   const t = CORE.teams.find((x) => x.id === p.team)!;
-  if (!t) return <Card title={p.name}><p>공식 개인 시즌 기록 없음 · 현재 게임 능력치 <Ovr p={p} />.</p><a className="btn" href="#/squad">선수단으로</a></Card>;
+  if (!t) return <Card title={p.name}><p>공식 개인 시즌 기록 없음 · 현재 게임 능력치 {(() => { const est = estimateOvr(s, p.personKey ?? p.key, ratingOf(p), undefined, p); return est.kind === "range" ? <b data-testid="scout-stars">{est.text} 추정</b> : <Ovr p={p} />; })()}.</p><ScoutObserve person={p.personKey ?? p.key} /><a className="btn" href="#/squad">선수단으로</a></Card>;
   const st = s.pstats[k];
   const w = CORE.meta.weights[String(p.pos)];
   const raw: Record<string, string[]> = {
@@ -52,7 +57,7 @@ export default function PlayerPage({ k }: { k: string }) {
     <div className="grid">
       <Card className="span2 pcard" title={null}>
         <div className="pc-head" style={{ ["--tc" as string]: t.color }}>
-          <div className="pc-ovr"><small>종합</small><b>{ratingOf(p)}</b><small>{POS_KO[p.pos]} 백분위 {p.pct.ovr}</small></div>
+          {(() => { const est = estimateOvr(s, p.personKey ?? p.key, ratingOf(p), undefined, p); return <div className={"pc-ovr" + (est.kind === "exact" ? "" : " est")} data-testid="scout-stars" data-kind={est.kind} title={est.reason}><small>종합</small>{est.kind === "range" ? <b className="scout-stars">{est.text}</b> : <b>{ratingOf(p)}</b>}<small>{est.kind === "exact" ? `${POS_KO[p.pos]} 백분위 ${p.pct.ovr}` : "능력치 추정"}</small></div>; })()}
           <div className="pc-id">
             <h1>{p.name}</h1>
             <div className="row gap wrap"><TeamChip t={t.short} full /><span className="tag">{POS_KO[p.pos]}</span>{starter && <span className="tag good">{starter[0]} 주전</span>}<Sample n={p.games} min={CORE.meta.small} /></div>
@@ -60,6 +65,8 @@ export default function PlayerPage({ k }: { k: string }) {
           </div>
           <div className="pc-form">{st ? <><small>이번 커리어</small><b>{st.g}경기 {st.w}승</b><small>평점 {(st.rsum / st.g).toFixed(2)} · MVP {st.mvp} · 폼 {formVal(s, k) >= 0 ? "+" : ""}{formVal(s, k).toFixed(2)}</small></> : <small className="muted">이번 커리어 출전 기록 없음</small>}</div>
         </div>
+        <div className="row wrap gap" style={{ margin: "8px 0" }}><ScoutObserve person={p.personKey ?? p.key} /></div>
+        <ScoutPotential person={p.personKey ?? p.key} value={ratingOf(p)} player={p} />
         <div className="pc-attrs">
           {(["lane", "fight", "farm", "vision", "pool"] as const).map((g) => (
             <div key={g} className="attr">
