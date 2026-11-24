@@ -224,11 +224,15 @@ export function fanOpinion(s: Save): FanOpinion {
     templates.push(`${name} 이번 주 남은 일정을 정리해 봤습니다`, "밴픽과 경기 결과만 놓고 이야기해 봐요");
   }
   const seed = hash(`${s.team}|${mine.length}|${form.map(Number).join("")}|${press ?? ""}|${lastScore}`);
-  const posts: FanPost[] = [0, 1, 2].map((i) => {
-    const text = templates[(seed + i * 7) % templates.length];
+  const uniq = [...new Set(templates)];
+  const posts: FanPost[] = [];
+  for (let k = 0; k < uniq.length && posts.length < 3; k++) {
+    const text = uniq[(seed + k) % uniq.length];
+    if (posts.some((p) => p.text === text)) continue;
+    const i = posts.length;
     const base = (hash(`${seed}|${i}`) % 180) + 12;
-    return { board: BOARDS[(seed + i * 3) % BOARDS.length], text, likes: mood === "hot" || mood === "up" ? base + 60 : base, replies: hash(`r${seed}${i}`) % 60 + 2 };
-  });
+    posts.push({ board: BOARDS[(seed + i * 3) % BOARDS.length], text, likes: mood === "hot" || mood === "up" ? base + 60 : base, replies: hash(`r${seed}${i}`) % 60 + 2 });
+  }
   const summary = form.length
     ? `최근 ${form.length}경기 ${wins}승 ${losses}패${rank > 0 ? ` · 현재 ${rank}위` : ""}${press ? ` · 최근 기자회견 「${press}」` : ""}`
     : "아직 치른 경기가 없어 팬들이 개막을 기다리고 있습니다.";

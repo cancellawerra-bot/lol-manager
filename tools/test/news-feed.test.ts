@@ -55,6 +55,7 @@ const beforeNews = (s: ReturnType<typeof newHistoryCareer>) => s.news.map((n) =>
   const banned = /인벤|포모스|펨코|디시인사이드|FMKorea|fmkorea|골든보이|쓰레기|ㅂㅅ|꺼져/;
   const o = fanOpinion(s);
   assert.ok(o.score >= 5 && o.score <= 95);
+  assert.equal(new Set(o.posts.map((p) => p.text)).size, o.posts.length, "여론 글 문장이 서로 다름");
   assert.equal(o.form.length, Math.min(5, mine.length));
   for (const p of o.posts) {
     assert.ok(!banned.test(p.text + p.board), "실제 커뮤니티 이름·욕설 금지: " + p.board + p.text);
