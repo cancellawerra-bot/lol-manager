@@ -3,6 +3,7 @@ import { useSave, fillSchedule, autoSimSplit, autoToOffseason, acceptFranchise }
 import { standings, nextMySeries, dateKo, STAGE_KO, opp } from "../game/season";
 import { FRANCHISE_BUYIN, SPLIT_KO, TIER_KO, PHASE_STORY_KO, fmtMoney } from "../game/story";
 import { Card, Ovr, TeamChip, form5, PName } from "../ui";
+import { careerYear, hasYearMeta, lckYearName, NO_RECORD, yearSeason } from "../game/yearRecords";
 import { TacticsControls } from "./Tactics";
 import ManagerDashboard from "./ManagerDashboard";
 import "./home.css";
@@ -140,9 +141,8 @@ export default function Home({ onAdvance }: { onAdvance?: () => void }) {
       </Card>
       <Card title="데이터 한눈에">
         <ul className="facts">
-          <li><b>{CORE.meta.games}</b><span>2026 LCK 경기 ({CORE.meta.period[0]} ~ {CORE.meta.period[1]})</span></li>
-          <li><b>{CORE.meta.players}</b><span>기록이 있는 선수</span></li>
-          <li><b>{fmt(CORE.meta.rankedGames)}</b><span>랭크 경기 (상성·시너지는 30판 이상만)</span></li>
+          {hasYearMeta(careerYear(s)) && yearSeason(careerYear(s)) ? <li><b>{yearSeason(careerYear(s))!.games}</b><span>{lckYearName(careerYear(s))} 경기{yearSeason(careerYear(s))!.period ? ` (${yearSeason(careerYear(s))!.period![0]} ~ ${yearSeason(careerYear(s))!.period![1]})` : ""}</span></li> : <li><b>{NO_RECORD}</b><span>{lckYearName(careerYear(s))} 상세 경기 수</span></li>}
+          <li><b>{fmt(CORE.meta.rankedGames)}</b><span>랭크 경기 (상성·시너지는 30판 이상만, 연도와 별개 표본)</span></li>
         </ul>
         <a className="sm" href="#/method">계산 방법 보기 ›</a>
       </Card>

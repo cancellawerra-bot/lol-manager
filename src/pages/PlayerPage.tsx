@@ -6,12 +6,14 @@ import { ratingOf } from "../rating";
 import { playerTraining } from "../game/trainingRuntime";
 import { comfort } from "../game/draft";
 import { TIERS, masteryOf, masterySummary } from "../game/mastery";
+import { careerYear, hasYearPlayerPools, lckYearName, NO_RECORD } from "../game/yearRecords";
 
 const GROUP_KO: Record<string, string> = { lane: "라인전", fight: "교전", farm: "성장", vision: "시야", pool: "챔피언 폭" };
 const sign = (v: number | null, d = 0): string => (v == null ? "–" : `${v >= 0 ? "+" : ""}${fmt(v, d)}`);
 
 export default function PlayerPage({ k }: { k: string }) {
   const s = useSave()!;
+  const year = careerYear(s);
   const p = PL[k];
   if (!p) return <Card title="선수"><p>선수를 찾지 못했습니다.</p></Card>;
   const contract = s.story?.contracts.find(c => c.key === k), card = CARDS[k] ?? (contract ? CARDS[contract.cardId] : undefined);
@@ -54,7 +56,7 @@ export default function PlayerPage({ k }: { k: string }) {
           <div className="pc-id">
             <h1>{p.name}</h1>
             <div className="row gap wrap"><TeamChip t={t.short} full /><span className="tag">{POS_KO[p.pos]}</span>{starter && <span className="tag good">{starter[0]} 주전</span>}<Sample n={p.games} min={CORE.meta.small} /></div>
-            <p className="muted sm">2026 LCK {p.games}경기 {p.wins}승 ({pctTxt(p.wins, p.games)}){Object.keys(p.teamsPlayed).length > 1 ? ` · 소속 기록 ${Object.entries(p.teamsPlayed).map(([a, b]) => `${a} ${b}경기`).join(", ")}` : ""}</p>
+            <p className="muted sm">{hasYearPlayerPools(year) ? <>{lckYearName(year)} {p.games}경기 {p.wins}승 ({pctTxt(p.wins, p.games)}){Object.keys(p.teamsPlayed).length > 1 ? ` · 소속 기록 ${Object.entries(p.teamsPlayed).map(([a, b]) => `${a} ${b}경기`).join(", ")}` : ""}</> : <>{lckYearName(year)} 상세 출전 기록 {NO_RECORD}</>}</p>
           </div>
           <div className="pc-form">{st ? <><small>이번 커리어</small><b>{st.g}경기 {st.w}승</b><small>평점 {(st.rsum / st.g).toFixed(2)} · MVP {st.mvp} · 폼 {formVal(s, k) >= 0 ? "+" : ""}{formVal(s, k).toFixed(2)}</small></> : <small className="muted">이번 커리어 출전 기록 없음</small>}</div>
         </div>
@@ -67,17 +69,17 @@ export default function PlayerPage({ k }: { k: string }) {
             </div>
           ))}
         </div>
-        <p className="muted sm">백분위는 2026 LCK 같은 포지션 선수 {CORE.players.filter((x) => x.pos === p.pos).length}명과 비교한 값입니다(0 = 가장 낮음, 100 = 가장 높음). 경기 수가 적으면 포지션 평균 쪽으로 {CORE.meta.shrinkK}경기만큼 당겨 계산합니다. <a href="#/method">계산 방법 ›</a></p>
+        <p className="muted sm">{hasYearPlayerPools(year) ? <>백분위는 {lckYearName(year)} 같은 포지션 선수 {CORE.players.filter((x) => x.pos === p.pos).length}명과 비교한 값입니다(0 = 가장 낮음, 100 = 가장 높음). 경기 수가 적으면 포지션 평균 쪽으로 {CORE.meta.shrinkK}경기만큼 당겨 계산합니다.</> : <>백분위는 이 시즌 상세 표본이 없어 {NO_RECORD}으로 표시하지 않고, 게임 능력치만 보여 줍니다.</>} <a href="#/method">계산 방법 ›</a></p>
       </Card>
-      <Card title={`챔피언 폭 · ${POS_KO[p.pos]} (2026 LCK)`} className="span2">
+      <Card title={`챔피언 폭 · ${POS_KO[p.pos]} (${hasYearPlayerPools(year) ? lckYearName(year) : `${lckYearName(year)} ${NO_RECORD}`})`} className="span2">
         <div className="mst-sum" data-testid="mastery-summary">
           {TIERS.slice().reverse().map((t) => <span key={t.id} className={"mst t-" + t.id} title={t.desc}>{t.ko} {masterySummary(p.pool)[t.id]}</span>)}
-          <small className="muted">2026 LCK 경기 수 기준 · 장인 12+ · 전문 7+ · 숙련 3+ · 입문 1+</small>
+          <small className="muted">{hasYearPlayerPools(year) ? `${lckYearName(year)} 경기 수 기준 · 장인 12+ · 전문 7+ · 숙련 3+ · 입문 1+` : `${lckYearName(year)} 챔피언별 출전 ${NO_RECORD}`}</small>
         </div>
         <div className="pool">
-          {p.pool.map(([c, n, wv]) => (
+          {hasYearPlayerPools(year) ? p.pool.map(([c, n, wv]) => (
             <div key={c} className="pool-i"><ChampIcon id={c} size={40} /><div><b>{CH[c]?.ko ?? c}</b><small>{n}경기 {wv}승 · {pctTxt(wv, n, 0)}</small><span className="pool-tags"><span className={"mst t-" + masteryOf(n).id}>{masteryOf(n).ko}</span>{n < 5 && <span className="tag warn xs">표본 부족</span>}</span></div></div>
-          ))}
+          )) : <p className="muted sm">{lckYearName(year)} 챔피언별 출전 {NO_RECORD}. 다른 연도 경기 수로 채우지 않습니다.</p>}
         </div>
       </Card>
       <Card title="팀 내 같은 포지션">

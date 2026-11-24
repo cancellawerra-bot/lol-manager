@@ -140,7 +140,7 @@ export function choose(choice: "blue" | "red" | "first" | "last"): void {
     else { blue = op; firstTeam = choice === "first" ? me : op; ss.choiceNote = `${op}가 블루 진영, 우리가 ${choice === "first" ? "선픽" : "후픽"}을 골랐습니다.`; }
     const red = blue === me ? op : me;
     ss.blue = blue; ss.red = red; ss.firstSide = firstTeam === blue ? "B" : "R";
-    ss.draft = newDraft(blue, red, s.starters[blue] ?? [], s.starters[red] ?? [], ss.firstSide ?? "B", lockedChamps(sr) ?? []);
+    ss.draft = newDraft(blue, red, s.starters[blue] ?? [], s.starters[red] ?? [], ss.firstSide ?? "B", lockedChamps(sr) ?? [], s.story?.year);
     const pm = practiceMap(s, [...ss.draft.lineup.B, ...ss.draft.lineup.R]); if (pm) ss.draft.practice = pm;   // 챔피언 훈련 기록을 이 세트의 숙련도에 반영
     ss.stage = "draft";
   });

@@ -1,4 +1,5 @@
 import type { Core, Champ, Ranked, Player, Team, CardsFile, SeasonCard } from "./types";
+import { setYearMeta, type YearMetaFile } from "./game/yearRecords";
 
 export let CORE: Core;
 export let CHAMPS: Champ[] = [];
@@ -18,8 +19,8 @@ async function get<T>(name: string): Promise<T> {
 
 export async function loadCore(): Promise<void> {
   if (CORE) return;
-  const [core, champs, cards] = await Promise.all([get<Core>("core"), get<Champ[]>("champs"), get<CardsFile>("cards")]);
-  CORE = core; CHAMPS = champs; CARDS_FILE = cards;
+  const [core, champs, cards, yearMeta] = await Promise.all([get<Core>("core"), get<Champ[]>("champs"), get<CardsFile>("cards"), get<YearMetaFile>("yearMeta")]);
+  CORE = core; CHAMPS = champs; CARDS_FILE = cards; setYearMeta(yearMeta);
   for (const c of champs) CH[c.id] = c;
   for (const c of cards.cards) {
     CARDS[c.id] = c;

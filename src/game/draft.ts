@@ -3,6 +3,7 @@
 import { CH, CHAMPS, CORE, PL, RANKED, POS_KO, fmt } from "../data";
 import type { Champ, Player, PosIdx } from "../types";
 import { Rng } from "./rng";
+import { hasYearMeta, hasYearTeamStyles, metaReasonText, playerChampReason, NO_RECORD, lckYearName } from "./yearRecords";
 
 export type Side = "B" | "R";
 export type Ord = "F" | "L";
@@ -24,6 +25,8 @@ export interface DraftState {
   /** v2.34.0 챔피언 훈련으로 쌓은 연습 일수(선수 key → 챔피언 → 일수). 챔피언 숙련도에 연습 2일 = 1경기로 더합니다. */
   practice?: Record<string, Record<string, number>>;
   log: DLog[];
+  /** 표시용 커리어 연도. 없으면 2026. 계산에는 쓰지 않습니다. */
+  year?: number;
 }
 export interface Reason { t: string; v: number }
 export interface Rec { c: string; pos: PosIdx | null; score: number; reasons: Reason[] }
@@ -34,8 +37,8 @@ export function turn(d: DraftState): { side: Side; kind: Kind } | null {
   const s = SEQ[d.step];
   return { side: s.ord === "F" ? d.firstSide : other(d.firstSide), kind: s.kind };
 }
-export function newDraft(blue: string, red: string, lineB: string[], lineR: string[], firstSide: Side, locked: string[]): DraftState {
-  return { teams: { B: blue, R: red }, lineup: { B: lineB, R: lineR }, firstSide, step: 0, bans: { B: [], R: [] }, picks: { B: [], R: [] }, locked, log: [] };
+export function newDraft(blue: string, red: string, lineB: string[], lineR: string[], firstSide: Side, locked: string[], year?: number): DraftState {
+  return { teams: { B: blue, R: red }, lineup: { B: lineB, R: lineR }, firstSide, step: 0, bans: { B: [], R: [] }, picks: { B: [], R: [] }, locked, log: [], year };
 }
 export function used(d: DraftState): Set<string> {
   if (!d?.bans) return new Set(d?.locked ?? []);
@@ -102,10 +105,13 @@ function styleCount(team: string, kind: "picks" | "bans", c: string): number {
 function styleGames(team: string): number { return CORE.styles?.[team]?.games ?? 0; }
 const isFront = (c: Champ): boolean => c.u >= 3 || c.tags.includes("T");
 
-function metaScore(c: Champ): Reason | null {
+function draftYear(d: DraftState): number { return d.year ?? 2026; }
+/** 점수(v)는 기존 2026 c.pro 계산을 유지합니다. 문구만 그해 기록(없으면 기록 없음)입니다. */
+function metaScore(c: Champ, year: number): Reason | null {
   if (!c.pro || c.pro.eb == null) return null;
   const v = (c.pro.eb - 0.5) * 10 + (c.pro.pr ?? 0) * 2.5;
-  return { t: `LCK 2026 보정 승률 ${pctS(c.pro.eb)} · 픽 ${c.pro.p} 밴 ${c.pro.b}`, v };
+  const t = metaReasonText(year, c.id, c.pro.eb, c.pro.p, c.pro.b) ?? `${lckYearName(year)} ${NO_RECORD}`;
+  return { t, v };
 }
 
 export function recommend(d: DraftState, side: Side, kind: Kind, forcePos?: PosIdx | null): Rec[] {
@@ -125,14 +131,15 @@ export function recommend(d: DraftState, side: Side, kind: Kind, forcePos?: PosI
         const pw = posWeight(c)[pos];
         if (pw < 0.15) continue;
         const rs: Reason[] = [];
-        const m = metaScore(c); if (m) rs.push(m); else rs.push({ t: "LCK 2026 표본 부족(픽 3회 미만)", v: -0.4 });
+        const year = draftYear(d);
+        const m = metaScore(c, year); if (m) rs.push(m); else rs.push({ t: hasYearMeta(year) ? `${lckYearName(year)} 표본 부족(픽 3회 미만)` : `${lckYearName(year)} ${NO_RECORD}`, v: -0.4 });
         const pl = PL[d.lineup[side]?.[pos]];
         if (!pl) continue;
         const cf = comfort(pl, c.id, practiceOf(d, pl.key, c.id));
-        if (cf.n > 0) rs.push({ t: cf.bonus > 0 ? `${pl.name} 2026 LCK ${cf.base}경기 + 연습 ${cf.bonus}경기 상당` : `${pl.name} 2026 LCK ${cf.n}경기 ${cf.w}승`, v: Math.min(cf.n, 12) / 12 * 1.8 });
-        else rs.push({ t: `${pl?.name ?? "선수"} 2026 LCK 기록 없음`, v: -0.5 });
+        if (cf.n > 0) rs.push({ t: playerChampReason(year, pl.name, cf.base, cf.w, cf.bonus), v: Math.min(cf.n, 12) / 12 * 1.8 });
+        else rs.push({ t: playerChampReason(year, pl?.name ?? "선수", 0, 0, 0), v: -0.5 });
         const sc = styleCount(team, "picks", c.id);
-        if (sc > 0) rs.push({ t: `${team} 성향 픽 ${sc}회`, v: (sc / Math.max(1, styleGames(team))) * 5 });
+        if (sc > 0) rs.push({ t: hasYearTeamStyles(year) ? `${team} 성향 픽 ${sc}회` : NO_RECORD, v: (sc / Math.max(1, styleGames(team))) * 5 });
         const opp = d.picks[enemy].find((p) => p.pos === pos);
         if (opp) {
           const mu = rankedMu(pos, c.id, opp.c);
@@ -155,19 +162,20 @@ export function recommend(d: DraftState, side: Side, kind: Kind, forcePos?: PosI
     const eopen = openPos(d, enemy);
     for (const c of avail) {
       const rs: Reason[] = [];
-      const m = metaScore(c); if (m) rs.push({ ...m, v: m.v * 0.9 });
+      const year = draftYear(d);
+      const m = metaScore(c, year); if (m) rs.push({ ...m, v: m.v * 0.9 });
       let bestCf: Reason | null = null;
       for (const pos of eopen) {
         if (!playable(c, pos)) continue;
         const pl = PL[d.lineup[enemy]?.[pos]]; if (!pl) continue; const cf = comfort(pl, c.id);
-        if (cf.n >= 2) { const v = Math.min(cf.n, 12) / 12 * 1.6 + (cf.w / cf.n - 0.5) * 1.2; if (!bestCf || v > bestCf.v) bestCf = { t: `상대 ${pl.name} 2026 LCK ${cf.n}경기 ${cf.w}승`, v }; }
+        if (cf.n >= 2) { const v = Math.min(cf.n, 12) / 12 * 1.6 + (cf.w / cf.n - 0.5) * 1.2; if (!bestCf || v > bestCf.v) bestCf = { t: `상대 ${playerChampReason(year, pl.name, cf.n, cf.w, 0)}`, v }; }
       }
       if (bestCf) rs.push(bestCf);
       if (!eopen.some((p) => playable(c, p))) rs.push({ t: "상대에게 남은 포지션과 맞지 않음", v: -2 });
       const ep = styleCount(eteam, "picks", c.id);
-      if (ep > 0) rs.push({ t: `${eteam} 성향 픽 ${ep}회`, v: (ep / Math.max(1, styleGames(eteam))) * 4 });
+      if (ep > 0) rs.push({ t: hasYearTeamStyles(year) ? `${eteam} 성향 픽 ${ep}회` : NO_RECORD, v: (ep / Math.max(1, styleGames(eteam))) * 4 });
       const ob = styleCount(team, "bans", c.id);
-      if (ob > 0) rs.push({ t: `${team} 성향 밴 ${ob}회`, v: (ob / Math.max(1, styleGames(team))) * 3 });
+      if (ob > 0) rs.push({ t: hasYearTeamStyles(year) ? `${team} 성향 밴 ${ob}회` : NO_RECORD, v: (ob / Math.max(1, styleGames(team))) * 3 });
       // 우리 픽의 랭크 천적 견제
       for (const o of d.picks[side]) {
         const mu = rankedMu(o.pos, c.id, o.c);

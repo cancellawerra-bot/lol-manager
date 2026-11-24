@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { blueSideHint, careerYear, hasYearMeta, lckYearName, NO_RECORD } from "../game/yearRecords";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
 import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, lockerSay, lockerDelegate, setStarter, toMeet, toPog, autoGame } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
@@ -293,7 +294,7 @@ function Select() {
       <p className="muted">{why} 선택권 팀은 <b>진영(블루/레드)</b> 또는 <b>순서(선픽/후픽)</b> 중 하나를 고르고, 상대가 나머지를 고릅니다.</p>
       {mine ? (
         <div className="sel-grid">
-          <button className="sel b" onClick={() => choose("blue")} data-testid="sel-blue"><b>블루 진영</b><small>2026 LCK 블루 승률이 더 높았습니다. 상대가 순서를 고릅니다.</small></button>
+          <button className="sel b" onClick={() => choose("blue")} data-testid="sel-blue"><b>블루 진영</b><small>{blueSideHint(careerYear(s))}</small></button>
           <button className="sel r" onClick={() => choose("red")}><b>레드 진영</b><small>상대가 순서를 고릅니다.</small></button>
           <button className="sel" onClick={() => choose("first")} data-testid="sel-first"><b>선픽</b><small>가장 강한 챔피언을 먼저 가져옵니다. 상대가 진영을 고릅니다.</small></button>
           <button className="sel" onClick={() => choose("last")}><b>후픽</b><small>마지막 픽으로 카운터를 노립니다. 상대가 진영을 고릅니다.</small></button>
@@ -429,8 +430,8 @@ function Draft({ d }: { d: DraftState }) {
                     {r.reasons.filter((x) => Math.abs(x.v) > 0.05).sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 2).map((x) => <small key={x.t} className={x.v < 0 ? "neg" : ""}>{x.t}</small>)}</span>
                 </button>
               ))}
-              {!myTurn && <p className="muted sm">상대 팀은 실제 2026 LCK 밴픽 기록과 선수 숙련도를 근거로 고릅니다. 고른 이유는 위쪽에 표시됩니다.</p>}
-              <p className="muted xs">추천 근거: LCK 2026 챔피언 지표, 선수 2026 LCK 경기 수, 팀 실제 밴픽 횟수, 랭크 30판 이상 상성·시너지. 챔피언을 두 번 누르면 바로 확정됩니다.</p>
+              {!myTurn && <p className="muted sm">상대 팀은 {hasYearMeta(careerYear(s)) ? `${lckYearName(careerYear(s))} 밴픽 기록과 선수 숙련도를 근거로 고릅니다` : `${lckYearName(careerYear(s))} 밴픽 기록이 없어, 그해 기록으로 대체하지 않고 고른 이유에 「기록 없음」을 표시합니다`}. 고른 이유는 위쪽에 표시됩니다.</p>}
+              <p className="muted xs">추천 근거: {hasYearMeta(careerYear(s)) ? `${lckYearName(careerYear(s))} 챔피언 지표` : `${lckYearName(careerYear(s))} 챔피언 지표 ${NO_RECORD}`}, {hasYearMeta(careerYear(s)) && careerYear(s)===2026 ? "선수 2026 LCK 경기 수, 팀 실제 밴픽 횟수" : "이 시즌 선수·팀 밴픽 상세 기록 없음"}, 랭크 30판 이상 상성·시너지. 챔피언을 두 번 누르면 바로 확정됩니다.</p>
             </div>
           </div>
         )}

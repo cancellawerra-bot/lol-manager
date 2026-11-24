@@ -199,7 +199,7 @@ export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
     const gi = sr.games.length;
     const holder = selectionFor(sr, gi, rng);
     const sel = aiSelection(holder, holder === sr.a ? sr.b : sr.a, rng);
-    const d0 = newDraft(sel.blue, sel.red, s.starters[sel.blue], s.starters[sel.red], sel.firstSide, lockedChamps(sr));
+    const d0 = newDraft(sel.blue, sel.red, s.starters[sel.blue], s.starters[sel.red], sel.firstSide, lockedChamps(sr), s.story?.year);
     const d = autoDraft(d0, rng);
     const res = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]), matchTactics(d, s.tactics));
     recordGame(s, sr, d, res, holder, false);

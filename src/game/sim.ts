@@ -5,6 +5,7 @@ import type { PosIdx } from "../types";
 import { DraftState, Side, comfort, practiceOf, rankedMu, rankedSyn, shrink, other } from "./draft";
 import { Rng, sigmoid, logit } from "./rng";
 import type { MatchTraining, TrainingImpact, TrainingSummary } from "./training";
+import { champProForYear, hasYearMeta, hasYearTeamStyles, lckYearName, NO_RECORD, playerChampReason, yearSeason } from "./yearRecords";
 import { tacticEffects, tacticExecution, tacticsRecord, type TacticPlan, type TacticDecision, type TacticStage, type TacticsRecord } from "./tactics";
 
 export interface Factor { key: string; label: string; v: number; lines: string[] }
@@ -32,6 +33,7 @@ export function summarizeTraining(d: DraftState, training: MatchTraining): Train
 }
 export function factorsFor(d: DraftState, form: Record<string, number>, training?: MatchTraining): Factor[] {
   const F: Factor[] = [];
+  const year = d.year ?? 2026;
   const pB = d.lineup.B.map((k) => PL[k]); const pR = d.lineup.R.map((k) => PL[k]);
   const mean = (a: number[]): number => a.reduce((x, y) => x + y, 0) / a.length;
   // 1 선수 기량
@@ -39,13 +41,13 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
     const who = (p: typeof pB[0]): string => `${p.label ?? p.name} ${p.pct.ovr} (${p.cardYear ? p.cardYear+" 카드 · " : ""}${p.games}경기${p.small ? "·표본 부족" : ""})`;
     const lines = [0, 1, 2, 3, 4].map((i) => `${POS_KO[i]} ${who(pB[i])} vs ${who(pR[i])}`);
     const anyCard = [...pB, ...pR].some((p) => p.cardYear);
-    F.push({ key: "skill", label: anyCard ? "선수 지표 (시즌 카드·2026 LCK)" : "선수 지표 (2026 LCK)", v: COEF.skill * (mean(pB.map((p) => p.z.ovr)) - mean(pR.map((p) => p.z.ovr))), lines });
+    F.push({ key: "skill", label: anyCard ? (year === 2026 ? "선수 지표 (시즌 카드·2026 LCK)" : "선수 지표 (시즌 카드)") : (hasYearMeta(year) ? `선수 지표 (${lckYearName(year)})` : "선수 지표 (이 시즌 상세 기록 없음)"), v: COEF.skill * (mean(pB.map((p) => p.z.ovr)) - mean(pR.map((p) => p.z.ovr))), lines });
   }
   // 2 팀 경기력
   {
     const b = TM[d.teams.B], r = TM[d.teams.R];
-    const rec = (x: typeof b): string => (x.gw + x.gl === 0 || x.founded) ? `${x.short} 신생·2026 세트 승률 기록 없음 (평균으로 반영)` : `${x.short} ${x.gw}승 ${x.gl}패`;
-    F.push({ key: "org", label: "팀 세트 승률 (2026 LCK)", v: COEF.org * (orgOf(b.short) - orgOf(r.short)), lines: [`${rec(b)} · ${rec(r)} (보정: (승+10)/(경기+20))`] });
+    const rec = (x: typeof b): string => (x.gw + x.gl === 0 || x.founded || year !== 2026) ? `${x.short} ${year === 2026 && (x.gw + x.gl === 0 || x.founded) ? "신생·" : ""}${year === 2026 && !(x.gw + x.gl === 0 || x.founded) ? `${x.gw}승 ${x.gl}패` : `${lckYearName(year)} 세트 승률 ${NO_RECORD}`}` : `${x.short} ${x.gw}승 ${x.gl}패`;
+    F.push({ key: "org", label: hasYearTeamStyles(year) ? `팀 세트 승률 (${lckYearName(year)})` : "팀 세트 승률 (이 시즌 기록 없음)", v: COEF.org * (orgOf(b.short) - orgOf(r.short)), lines: [`${rec(b)} · ${rec(r)} (보정: (승+10)/(경기+20))`] });
   }
   // 3 숙련도
   {
@@ -54,7 +56,7 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
       const pl = PL[d.lineup[s][pk.pos]]; const cf = comfort(pl, pk.c, practiceOf(d, d.lineup[s][pk.pos], pk.c));
       let x = 0;
       if (cf.n >= 5) x = COEF.comfortHi + Math.min(cf.n, 15) * COEF.comfortStep; else if (cf.n === 0) x = COEF.comfortNone;
-      if (x !== 0) { v += s === "B" ? x : -x; lines.push(`${pl.name} ${CH[pk.c].ko}: 2026 LCK ${cf.base}경기${cf.bonus ? ` + 연습 ${cf.bonus}경기 상당` : cf.base ? ` ${cf.w}승` : " (기록 없음)"}`); }
+      if (x !== 0) { v += s === "B" ? x : -x; lines.push(`${pl.name} ${CH[pk.c].ko}: ${playerChampReason(year, pl.name, cf.base, cf.w, cf.bonus).replace(pl.name + " ", "")}`); }
     }
     F.push({ key: "comfort", label: "챔피언 숙련도", v, lines });
   }
@@ -82,9 +84,12 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
     let v = 0; const lines: string[] = [];
     for (const s of ["B", "R"] as Side[]) for (const pk of d.picks[s]) {
       const c = CH[pk.c];
-      if (c.pro && c.pro.eb != null) { const x = (c.pro.eb - 0.5) * COEF.meta; v += s === "B" ? x : -x; if (Math.abs(c.pro.eb - 0.5) >= 0.015) lines.push(`${c.ko}: LCK 2026 보정 승률 ${pctS(c.pro.eb)} (픽 ${c.pro.p})`); }
+      if (c.pro && c.pro.eb != null) { const x = (c.pro.eb - 0.5) * COEF.meta; v += s === "B" ? x : -x; }
+      const yp = champProForYear(year, c.id);
+      if (yp && yp.eb != null && Math.abs(yp.eb - 0.5) >= 0.015) lines.push(`${c.ko}: ${lckYearName(year)} 보정 승률 ${pctS(yp.eb)} (픽 ${yp.p})`);
+      else if (c.pro && c.pro.eb != null && Math.abs(c.pro.eb - 0.5) >= 0.015 && !hasYearMeta(year)) lines.push(`${c.ko}: ${lckYearName(year)} ${NO_RECORD}`);
     }
-    F.push({ key: "meta", label: "LCK 2026 챔피언 지표", v, lines });
+    F.push({ key: "meta", label: hasYearMeta(year) ? `${lckYearName(year)} 챔피언 지표` : "챔피언 지표 (이 시즌 기록 없음)", v, lines });
   }
   // 6 조합
   {
@@ -99,7 +104,13 @@ export function factorsFor(d: DraftState, form: Record<string, number>, training
     F.push({ key: "comp", label: "조합 균형 (게임 규칙)", v, lines });
   }
   // 7 진영
-  F.push({ key: "side", label: "진영", v: BLUE_EDGE(), lines: [`2026 LCK 블루 ${CORE.meta.blueWins}승 · 레드 ${CORE.meta.redWins}승 (${CORE.meta.games}경기)`] });
+  {
+    const rec = yearSeason(year);
+    const sideLine = rec && rec.blueWins != null && rec.redWins != null
+      ? `${lckYearName(year)} 블루 ${rec.blueWins}승 · 레드 ${rec.redWins}승 (${rec.games}경기)`
+      : `${lckYearName(year)} 진영 승률 ${NO_RECORD}`;
+    F.push({ key: "side", label: "진영", v: BLUE_EDGE(), lines: [sideLine] });
+  }
   // 8 폼
   {
     const fb = mean(d.lineup.B.map((k) => form[k] ?? 0)), fr = mean(d.lineup.R.map((k) => form[k] ?? 0));
