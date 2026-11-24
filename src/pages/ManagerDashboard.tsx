@@ -6,6 +6,7 @@ import { seasonMarketWeek } from "../game/inSeason";
 import { trainingDate, trainingPerson } from "../game/trainingRuntime";
 import { TALK_COOLDOWN_DAYS } from "../game/talks";
 import { fmtMoney } from "../game/money";
+import { unreadHonorNews } from "../game/achievements";
 import { PlayerAvatar } from "../ui";
 import { ratingOf } from "../rating";
 import SeasonJourney from "./SeasonJourney";
@@ -53,6 +54,8 @@ export function homeTodos(s: Save): HomeTodos {
   if (news.length) {
     if (unread) pending.push({ id: "news", label: `미확인 소식 ${unread}건`, detail: "구단 소식을 확인해 주세요.", href: "#/news", tone: "neutral" });
     else done.push({ id: "news", label: "새 소식을 모두 확인했습니다", detail: "소식함에서 지난 기록을 볼 수 있습니다.", href: "#/news", tone: "good", done: true });
+    const honorN = unreadHonorNews(s);
+    if (honorN) pending.push({ id: "honors", label: `새 구단 기록 ${honorN}건`, detail: "진열장에서 이번 커리어의 트로피와 업적을 확인하세요.", href: "#/club", tone: "neutral" });
   }
 
   if (s.story && s.story.phase !== undefined && !s.story.ended) {
@@ -130,6 +133,7 @@ export default function ManagerDashboard({ s, onAdvance }: { s: Save; onAdvance?
   const shortcuts: { href: string; label: string; hint: string }[] = [
     ...(storyCareer ? [{ href: "#/squad/talks", label: "면담", hint: "선수 면담" }] : []),
     { href: "#/squad/plan", label: "주간 일정", hint: "선수단 주간 일정" },
+    { href: "#/club", label: "진열장", hint: "트로피·업적" },
     ...(storyCareer ? [{ href: "#/club/marketing", label: "마케팅", hint: "굿즈·팬미팅" }] : []),
   ];
   return <div className="manager-dashboard" data-testid="manager-dashboard">

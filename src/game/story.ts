@@ -13,6 +13,7 @@ import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 import { prepareInSeason } from "./inSeason";
 import { syncPromises } from "./rotation";
 import { initializeClubTimeline, archiveClubSplit } from "./clubTimeline";
+import { emptyHonors, syncHonors } from "./achievements";
 import { cardRating } from "../rating";
 
 /** 로케일·객체 삽입 순서에 의존하지 않는 비교. Node와 브라우저에서 같은 시드가 같은 결과가 나게 합니다. */
@@ -1383,7 +1384,7 @@ export function makeContracts(cardIds: string[], years: number, tier: Tier): Con
   });
 }
 
-export function finishStoryDay(s: Save, rng: Rng): void {
+function finishStoryDayBody(s: Save, rng: Rng): void {
   const st = s.story!;
   if (st.phase === "clear" || st.phase === "fail" || st.phase === "bankrupt" || st.ended) { s.phase = "done"; return; }
   prepareInSeason(s);
@@ -1463,7 +1464,7 @@ export function newStoryCareer(teamShort: string, _manager: string, slot: number
     v: 2, slot, seed, rng: rng.s, team: teamShort, manager: info.name, created: now, updated: now,
     mode: "story", managerInfo: info, club, eco, cards: opt.cards,
     day: 0, days: [], series: [], news: [], newsSeq: 0, form: {}, starters: { [teamShort]: opt.starters },
-    pstats: {}, sched: {}, schedOk: false, phase: "regular", seen: "", story,
+    pstats: {}, sched: {}, schedOk: false, phase: "regular", seen: "", story, honors: emptyHonors(),
   };
   applyStoryWorld(s);
   initializeClubTimeline(s, false);
@@ -1518,7 +1519,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
     v: 2, slot, seed, rng: rng.s, team: teamShort, manager: info.name, created: now, updated: now,
     mode: "story", managerInfo: info, club, eco, cards: cardIds,
     day: 0, days: [], series: [], news: [], newsSeq: 0, form: {}, starters: { [teamShort]: starters },
-    pstats: {}, sched: {}, schedOk: false, phase: "regular", seen: "", story,
+    pstats: {}, sched: {}, schedOk: false, phase: "regular", seen: "", story, honors: emptyHonors(),
   };
   applyStoryWorld(s);
   initializeClubTimeline(s, false);
@@ -1528,6 +1529,11 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
 }
 
 /** 현재 대회/스플릿을 결과가 날 때까지 시뮬합니다. 승패를 조작하지 않고 엔진 그대로 돌립니다. */
+export function finishStoryDay(s: Save, rng: Rng): void {
+  finishStoryDayBody(s, rng);
+  syncHonors(s);
+}
+
 export function pumpStory(s: Save, rng: Rng, stop: StoryPhase[] = ["awards", "tryout", "expiry", "stove", "franchise", "clear", "fail", "bankrupt"]): StoryPhase {
   let g = 0;
   while (g++ < 200) {

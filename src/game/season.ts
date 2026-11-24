@@ -12,10 +12,12 @@ import { prepareSeriesLineups, recordAppearances, type AppearanceRecord, type Li
 import type { ScoutingState } from "./scouting";
 import { captureClubNews, type ClubTimelineState } from "./clubTimeline";
 import { publishMatchdayNews } from "./newsFeed";
+import { emptyHonors, syncHonors } from "./achievements";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
 export const STAGE_KO: Record<Stage, string> = { R: "정규 시즌", SW: "월즈 스위스", PO1: "플레이오프 1라운드", SF: "플레이오프 준결승", F: "결승" };
+
 export interface GameRec {
   blue: string; red: string; winner: string; firstSide: Side; holder: string;
   bans: Record<Side, string[]>; picks: Record<Side, DPick[]>; lineup: Record<Side, string[]>;
@@ -68,6 +70,7 @@ export interface Save {
   marketing?: import("./marketing").MarketingState;
   scouting?: ScoutingState;
   clubTimeline?: ClubTimelineState;
+  honors?: import("./achievements").HonorsState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -128,7 +131,7 @@ export function newCareer(team: string, manager: string, slot: number, seed: num
     v: SAVE_V, slot, seed, rng: rng.s, team, manager: info.name, created: now, updated: now,
     mode, managerInfo: info, club: opt.club, eco, cards: opt.cards ?? [],
     day: 0, days, series, news: [], newsSeq: 0, form: {}, starters, pstats: {},
-    sched: {}, schedOk: false, phase: "regular", seen: "",
+    sched: {}, schedOk: false, phase: "regular", seen: "", honors: emptyHonors(),
   };
   const first = s.series.find((x) => x.day === 0 && (x.a === team || x.b === team));
   const vs = first ? (first.a === team ? first.b : first.a) : "";
@@ -235,6 +238,7 @@ export function finishDay(s: Save, rng: Rng): void {
     judgeSeason(s);
     addNews(s, "season", `${f.winner}, 2026 LOL Manager 시즌 우승`, `결승에서 ${f.winner}가 ${f.winner === f.a ? f.b : f.a}를 ${Math.max(f.sa, f.sb)}:${Math.min(f.sa, f.sb)}로 꺾었습니다.${f.winner === s.team ? ` ${s.manager} 감독의 우승입니다.` : ""} ${s.ownerNote ?? ""}`, f.winner);
   }
+  syncHonors(s);
 }
 function judgeSeason(s: Save): void {
   if (!s.eco) return;

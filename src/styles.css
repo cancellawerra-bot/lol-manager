@@ -938,3 +938,24 @@ svg.lead .mk.B{fill:#3B82F6}svg.lead .mk.R{fill:#EF4444}
   .pc-ovr.est{min-width:110px;padding:4px 6px}
   .pc-ovr.est b.scout-stars,.scout-stars{font-size:11px}
 }
+
+/* 구단 트로피 진열장·업적 (자체 도형, 원작 컵 아트 복제 아님) */
+.trophy-case{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.trophy-case li{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:14px 10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);min-height:164px}
+.trophy-case li.empty{opacity:.55;border-style:dashed;background:transparent}
+.trophy-case li.earned{border-color:rgba(233,196,106,.45);background:linear-gradient(180deg,rgba(233,196,106,.12),rgba(14,21,33,.4));box-shadow:0 10px 24px -18px rgba(233,196,106,.7)}
+.trophy-case li b{font-size:13px;line-height:1.3}
+.trophy-case li.empty b{color:var(--sub);font-weight:600}
+.trophy-count{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:18px;padding:0 6px;border-radius:999px;background:rgba(233,196,106,.18);color:var(--gold);font-size:11px;font-weight:700}
+.honor-mark{width:48px;height:48px;display:block;flex-shrink:0}
+.honor-feats{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.honor-feats li{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.honor-feats li.empty{opacity:.6;border-style:dashed;background:transparent}
+.honor-feats li.earned{border-color:rgba(45,212,191,.28)}
+.honor-feats li .honor-mark{width:36px;height:36px;margin-top:2px}
+.honor-feats li b{display:block;font-size:13.5px}
+.honor-feats li.empty b{color:var(--sub);font-weight:600}
+@media (max-width:520px){
+  .trophy-case{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .honor-feats{grid-template-columns:1fr}
+}
