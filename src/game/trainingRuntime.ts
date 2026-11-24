@@ -3,6 +3,7 @@ import { ratingOf, cardRating } from "../rating";
 import type { Save, SeriesRec, DayAct } from "./season";
 import { moraleEdge } from "./talks";
 import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, talentSpeed, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
+import { historyGrowthSpeed } from "./historyGrowth";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
 export interface TrainingState {
@@ -54,13 +55,20 @@ export function careerBest(person: string): number | undefined {
   const cs = CARDS_BY_PERSON[person];
   return cs?.length ? Math.max(...cs.map((c) => cardRating(c))) : undefined;
 }
-/** 성장 기준: 원본 능력치(지금 시즌 카드), 상한 100(모든 선수), 커리어 최고 기록에 따른 성장 속도 */
-export function growthCtx(s: Save, key: string, _date = trainingDate(s)): GrowthCtx | undefined {
+/** 성장 기준: 원본 능력치(지금 시즌 카드), 상한 100(모든 선수), 커리어 최고 기록에 따른 성장 속도. 역사 모드 약팀 가속은 현재 종합 능력치에 따라 줄어듭니다. */
+export function growthCtxAt(s: Save, key: string, overall: number): GrowthCtx | undefined {
   const person = trainingPerson(s, key); if (!person) return;
   const base = ratingOf(PL[key]) ?? 85;
   const best = Math.max(base, careerBest(person) ?? base);
-  const boost = s.story?.history?.growth ?? 1;   // 역사 모드 약팀 육성 지원
+  const boost = historyGrowthSpeed(s.story?.history?.growth ?? 1, overall);   // 스토리·창작·판타지는 1
   return { base, potential: potentialFor(), speed: talentSpeed(best) * boost };
+}
+export function growthCtx(s: Save, key: string, _date = trainingDate(s)): GrowthCtx | undefined {
+  const person = trainingPerson(s, key); if (!person) return;
+  const base = ratingOf(PL[key]) ?? 85;
+  const p = playerTraining(s, key);
+  const overall = p ? trainedRating(p, { base, potential: potentialFor(), speed: 1 }).overall : base;
+  return growthCtxAt(s, key, overall);
 }
 /** 화면용: 훈련 성장을 반영한 능력치(피지컬·뇌지컬·종합) */
 export function trainedRatingOf(s: Save, key: string): { phys: number; brain: number; overall: number; base: number; potential: number } | undefined {
@@ -95,13 +103,14 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
     const person = trainingPerson(s, key); if (!person) continue;
     let p = state.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0, lastDate: previousDate(state.periodStart > date ? date : state.periodStart) };
     if (p.lastDate && p.lastDate >= date) continue;
-    const ctx = growthCtx(s, key, date);
     for (let day = nextDate(p.lastDate ?? previousDate(state.periodStart > date ? date : state.periodStart)); day <= date; day = nextDate(day)) {
       const weekday = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7;
       const chosen = trainingPlan(s, key, day, team);
       let act = (validPlan(chosen) ? chosen : recommendedTraining(person, day))[weekday];
       const automatic = team !== s.team || state.automatic[person] || (!state.plans[person] && !validPlan(s.sched[key])) || !validPlan(chosen);
       if (automatic && p.fatigue >= 60) act = "rest";
+      const base = ratingOf(PL[key]) ?? 85;
+      const ctx = growthCtxAt(s, key, trainedRating(p, { base, potential: potentialFor(), speed: 1 }).overall);
       p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : act === "champ" ? "champion" : "recovery", day, PLAYER_BIRTHDATES[person], ctx).progress;
     }
     state.players[person] = p;
@@ -130,7 +139,6 @@ export interface WeekPreview { days: { act: DayAct; fatigue: number; over: boole
 export function previewWeek(s: Save, key: string, plan: DayAct[], date = trainingDate(s)): WeekPreview | undefined {
   const person = trainingPerson(s, key); if (!person || s.mode !== "story") return;
   let p: TrainingProgress = { ...(s.training?.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0 }) };
-  const ctx = growthCtx(s, key, date);
   const days: WeekPreview["days"] = [];
   let day = p.lastDate && p.lastDate >= date ? nextDate(p.lastDate) : date;
   let over = 0, max = 0, train = 0, champ = 0;
@@ -139,6 +147,8 @@ export function previewWeek(s: Save, key: string, plan: DayAct[], date = trainin
     const act = plan[weekday] ?? "";
     const kind = act === "train" ? "mechanics" : act === "scrim" ? "strategy" : act === "champ" ? "champion" : "recovery";
     const before = p.overDays ?? 0;
+    const base = ratingOf(PL[key]) ?? 85;
+    const ctx = growthCtxAt(s, key, trainedRating(p, { base, potential: potentialFor(), speed: 1 }).overall);
     p = trainingSession(p, kind, day, PLAYER_BIRTHDATES[person], ctx).progress;
     const o = (p.overDays ?? 0) > before;
     if (o) over++; if (act === "train" || act === "scrim" || act === "champ") train++; if (act === "champ") champ++;

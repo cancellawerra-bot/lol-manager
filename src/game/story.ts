@@ -1474,8 +1474,9 @@ export function historyPowerRank(team: string, year: number): number {
   const mine = pw(team);
   return 1 + lckTeamsOf(year).filter((t) => t.short !== team && pw(t.short) > mine).length;
 }
-/** 약팀 지원: 전력 5~7위는 훈련 성장 속도 +40%·시작 자금 +5억·모기업 최소 지원 연 2억, 8~10위는 +80%·+10억·연 5억. 상위 4팀은 없음. 월즈 우승이 약팀에게 지나치게 멀지 않도록 한 보정입니다. */
+/** 약팀 지원: 전력 5~7위는 훈련 성장 속도 +40%·시작 자금 +5억·모기업 최소 지원 연 2억, 8~10위는 +80%·+10억·연 5억. 상위 4팀은 없음. 성장 가속은 낮은 능력치에서만 온전히 적용됩니다(`historyGrowthSpeed`). */
 export function historyGrowthBoost(rank: number): number { return rank >= 8 ? 1.8 : rank >= 5 ? 1.4 : 1; }
+export { historyGrowthSpeed, HISTORY_GROWTH_FULL, HISTORY_GROWTH_CUTOFF } from "./historyGrowth";
 /** 약팀 시작 자금 보너스(억): 전력 8~10위 +10, 5~7위 +5 */
 export function historyStartBonus(rank: number): number { return rank >= 8 ? 10 : rank >= 5 ? 5 : 0; }
 /** 약팀 모기업 최소 지원(억/년, LCK 소속일 때): 전력 8~10위 5, 5~7위 2 */
@@ -1517,7 +1518,7 @@ export function newHistoryCareer(teamShort: string, slot: number, seed: number, 
   applyStoryWorld(s);
   initializeClubTimeline(s, false);
   beginSplit(s, year, "spring");
-  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support2 > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support2)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.${growth > 1 ? ` 전력 ${rank}위 팀이라 약팀 지원(선수 훈련 성장 속도 +${Math.round((growth - 1) * 100)}%, 시작 자금 +${fmtMoney(historyStartBonus(rank))})을 받습니다.` : ""}`, teamShort);
+  addNews(s, "welcome", `${info.name} 감독, ${era.ko} 부임 (${year})`, `${year} 시즌의 실제 ${era.ko} 명단으로 시작합니다. 구단 규모 ${grade}등급${support2 > 0 ? ` — 매 시즌 말 모기업 지원 ${fmtMoney(support2)}이 들어옵니다` : ""}. 목표는 2027 월즈 우승입니다.${growth > 1 ? ` 전력 ${rank}위 팀이라 약팀 지원(낮은 능력치에서 훈련 성장 +${Math.round((growth - 1) * 100)}%, 90 이상에서는 가속 없음, 시작 자금 +${fmtMoney(historyStartBonus(rank))})을 받습니다.` : ""}`, teamShort);
   return s;
 }
 
