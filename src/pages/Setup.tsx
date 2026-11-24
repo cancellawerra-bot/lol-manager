@@ -442,12 +442,16 @@ function GoalForm({ goal, setGoal, cap, salary, story, trust, options, onBack, o
   return (
     <div>
       <h2>시즌 목표 및 예산</h2>
-      <p className="muted">구단주는 신생·약팀에는 보통 8위 이내를 제안합니다. 더 높은 목표를 고르면 추가 예산이 붙고, 실패 시 신뢰 감소가 커집니다. 현재 구단주 신뢰 {trust}.</p>
+      <p className="muted">{story
+        ? <>스토리 모드에서는 구단주가 제시하는 목표를 고를 수 있고, 더 높은 목표를 고르면 시작 자금에 추가 예산이 붙습니다. 시즌 목표를 달성했는지로는 구단주 신뢰나 보너스가 바뀌지 않습니다. 신뢰는 연봉 정산 뒤 잔고가 0 아래일 때 줄어듭니다. 현재 구단주 신뢰 {trust}.</>
+        : <>구단주는 신생·약팀에는 보통 8위 이내를 제안합니다. 더 높은 목표를 고르면 추가 예산이 붙고, 실패 시 신뢰 감소가 커집니다. 현재 구단주 신뢰 {trust}.</>}</p>
       <div className="mode-grid">
         {options.map((x) => (
           <button key={x.id} className={"mode-card" + (goal === x.id ? " on" : "")} onClick={() => setGoal(x.id)}>
             <b>{x.t}</b>
-            <p>추가 예산 +{fmtMoney(x.grant)} · 달성 보너스 +{fmtMoney(x.bonus)} · 실패 시 신뢰 −{x.hit} / 성공 +{x.win}</p>
+            <p>{story
+              ? <>추가 예산 +{fmtMoney(x.grant)} · 스토리 모드에서는 목표 달성으로 신뢰나 보너스가 바뀌지 않습니다</>
+              : <>추가 예산 +{fmtMoney(x.grant)} · 달성 보너스 +{fmtMoney(x.bonus)} · 실패 시 신뢰 −{x.hit} / 성공 +{x.win}</>}</p>
           </button>
         ))}
       </div>

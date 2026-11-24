@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { CARDS, CARDS_FILE, PL, POS_KO, TM, recTxt, fmt } from "../data";
 import { useSave } from "../store";
 import { fantasyPrice, rosterSalary } from "../game/cards";
@@ -26,6 +27,14 @@ export default function Club() {
   const sal = s.story || s.mode === "fantasy"
     ? [...keys, ...bench].reduce((n, k) => n + (payOf(k) ?? 0), 0)
     : rosterSalary(s.cards.length ? s.cards : keys);
+
+  useEffect(() => {
+    const sub = location.hash.replace(/^#\/?/, "").split("/")[1];
+    if (sub !== "marketing") return;
+    const el = document.getElementById("club-marketing");
+    const t = window.setTimeout(() => el?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    return () => clearTimeout(t);
+  }, [location.hash]);
   return (
     <div className="col gap">
       <Card title="구단 개요" right={<TeamChip t={s.team} full />}>
@@ -40,7 +49,7 @@ export default function Club() {
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       {s.story && <Ledger s={s} />}
-      <MarketingCard />
+      <div id="club-marketing" data-testid="club-marketing"><MarketingCard /></div>
       {s.story && (() => {
         const log = challengeLog(s); if (!log) return null;
         return <Card title="도전 성과" right={<span className="muted sm">{log.filter((x) => x.done).length} / {log.length}</span>}>

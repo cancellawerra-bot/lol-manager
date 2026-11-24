@@ -48,7 +48,7 @@ export default function SeasonJourney({ s }: { s: Save }) {
   return (
     <section className="sj" aria-label="시즌 여정" data-testid="season-journey">
       <div className="sj-head">
-        <div><small>THE JOURNEY</small><h2>2018 창단에서 2027 월즈까지</h2></div>
+        <div><small>시즌 여정</small><h2>2018 창단에서 2027 월즈까지</h2></div>
         <span className="sj-now" data-testid="journey-now">{nowLabel}</span>
       </div>
       <ol className="sj-track" aria-label="연도별 여정 (표시는 그해 가장 높은 리그)" title="표시는 그해 가장 높은 리그입니다">

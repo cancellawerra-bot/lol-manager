@@ -59,7 +59,7 @@ input:focus,select:focus{border-color:var(--teal)}
 .chips{display:flex;gap:8px;margin-left:auto;flex-wrap:nowrap;overflow:hidden}
 .chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 12px;white-space:nowrap}
 .chip small{display:block;color:var(--dim);font-size:11px;line-height:1.2}.chip b{font-size:14px}
-.top .go{font-size:15.5px;padding:11px 22px;min-width:150px}
+.top .go{font-size:15.5px;padding:11px 22px;min-width:150px}.top .go.warn{background:linear-gradient(135deg,#f0c9a0,#d4a06a);color:#17202b;box-shadow:0 6px 20px -8px rgba(212,160,106,.45)}
 .content{padding:22px;max-width:1440px;width:100%;margin:0 auto;flex:1}
 .bnav{display:none}
 .scrim{display:none}

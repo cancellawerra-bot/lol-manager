@@ -34,7 +34,7 @@ import type { Save } from "./game/season";
 
 function useHash(): string {
   const [h, setH] = useState(location.hash || "#/");
-  useEffect(() => { const f = (): void => { setH(location.hash || "#/"); window.scrollTo(0, 0); }; window.addEventListener("hashchange", f); return () => window.removeEventListener("hashchange", f); }, []);
+  useEffect(() => { const f = (): void => { setH(location.hash || "#/"); const sub = (location.hash || "").replace(/^#\/?/, "").split("/")[1]; if (!sub || !["talks", "plan", "marketing"].includes(sub)) window.scrollTo(0, 0); }; window.addEventListener("hashchange", f); return () => window.removeEventListener("hashchange", f); }, []);
   return h;
 }
 
@@ -91,9 +91,11 @@ export default function App() {
   const endLabel = storyEnded === "clear" ? "클리어" : storyEnded === "bankrupt" ? "파산" : storyEnded === "fail" ? "여정의 끝" : "";
   const day = save.days[Math.min(save.day, save.days.length - 1)];
   const unread = save.news.filter((n) => !n.read).length;
+  const needsSched = !save.schedOk && !save.session && !storyEnded && save.phase !== "done";
   const onAdvance = (): void => {
+    if (needsSched) { setNote("선수단 주간 일정을 먼저 정해 주세요."); go("#/squad/plan"); return; }
     const r = advance();
-    if (r === "sched") { setNote("선수단 주간 일정을 먼저 정해 주세요."); go("#/home"); }
+    if (r === "sched") { setNote("선수단 주간 일정을 먼저 정해 주세요."); go("#/squad/plan"); }
     else if (r === "match") go("#/match");
     else if (r === "franchise") { setNote("2021 프랜차이즈 전환을 확인해 주세요."); go("#/home"); }
     else if (r === "stove") { setNote("스토브리그 본편으로 이동합니다."); go("#/stove"); }
@@ -127,8 +129,8 @@ export default function App() {
             <div className="chip hide-m"><small>다음 경기</small><b>{storyEnded ? "종료" : (nx ? <>vs {nx.a === save.team ? nx.b : nx.a} <span className="muted">· {dateKo(save.days[nx.day].date)}</span></> : "없음")}</b></div>
             <div className="chip hide-s"><small>최근 5경기</small><b>{me.last.length ? form5(me.last) : "–"}</b></div>
           </div>
-          {!inMatch && <button className="btn primary go" onClick={onAdvance} disabled={save.phase === "done" || !!storyEnded} data-testid="advance">
-            {storyEnded || save.phase === "done" ? (endLabel || "시즌 종료") : save.session ? "경기 계속하기 ▶" : nx && nx.day === save.day ? "경기 시작 ▶" : "진행하기 ▶"}
+          {!inMatch && <button className={"btn primary go" + (needsSched ? " warn" : "")} onClick={onAdvance} disabled={save.phase === "done" || !!storyEnded} data-testid="advance">
+            {storyEnded || save.phase === "done" ? (endLabel || "시즌 종료") : save.session ? "경기 계속하기 ▶" : needsSched ? "일정 먼저 정하기 ▶" : nx && nx.day === save.day ? "경기 시작 ▶" : "진행하기 ▶"}
           </button>}
         </header>
         {note && <div className="banner-note">{note}</div>}
