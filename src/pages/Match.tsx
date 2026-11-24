@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { blueSideHint, careerYear, hasYearMeta, lckYearName, NO_RECORD } from "../game/yearRecords";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
-import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, lockerSay, lockerDelegate, setStarter, toMeet, toPog, autoGame } from "../store";
+import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, simTo, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, lockerSay, lockerDelegate, setStarter, toMeet, toPog, autoGame } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
 import { STAGE_KO, standings } from "../game/season";
 import type { GameResult, GEvent } from "../game/sim";
@@ -12,6 +12,7 @@ import type { PosIdx } from "../types";
 import { go } from "../nav";
 import { masteryOf } from "../game/mastery";
 import { SPEED_KO, SPEED_MS, setPrefs, usePrefs, type Prefs } from "../prefs";
+import { WATCH_MODE_KO, WATCH_MODES, coachTalk, leadPoints, nextWatchStep, objectiveMoments, snapWatchStep, type WatchMode } from "../game/watchView";
 import { TacticsControls, TacticsReview } from "./Tactics";
 import { AppearanceReview } from "./Rotation";
 import { playerTraining } from "../game/trainingRuntime";
@@ -441,17 +442,56 @@ function Draft({ d }: { d: DraftState }) {
   );
 }
 
+const OBJ_MARK = new Set(["drake", "herald", "baron", "tower", "fight"]);
+function teamKoOf(t: string): string { return TM[t]?.ko ?? t; }
 function LeadChart({ d, r, upto }: { d: DraftState; r: GameResult; upto: number }) {
-  const pts = [{ t: 0, v: 0 }, ...r.events.slice(0, upto).filter((e) => e.lead != null).map((e) => ({ t: e.t, v: e.lead! }))];
-  const W = 320, H = 90, maxT = Math.max(20, r.dur), maxV = Math.max(3000, ...pts.map((p) => Math.abs(p.v)));
-  const x = (t: number): number => (t / maxT) * W; const y = (v: number): number => H / 2 - (v / maxV) * (H / 2 - 6);
+  const pts = leadPoints(r, upto);
+  const W = 400, H = 148, padX = 28, padY = 18;
+  const maxT = Math.max(20, r.dur, ...pts.map((p) => p.t));
+  const maxV = Math.max(3000, ...pts.map((p) => Math.abs(p.v)));
+  const x = (t: number): number => padX + (t / maxT) * (W - padX - 8);
+  const y = (v: number): number => H / 2 - (v / maxV) * (H / 2 - padY);
+  const now = pts[pts.length - 1];
+  const ticks = [0, 15, 30].filter((t) => t <= maxT);
+  if (ticks[ticks.length - 1] !== maxT) ticks.push(maxT);
+  const marks = pts.filter((p) => p.kind && OBJ_MARK.has(p.kind));
   return (
-    <svg className="lead" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="골드 차 흐름">
-      <line x1="0" x2={W} y1={H / 2} y2={H / 2} className="axis" />
-      <polyline points={pts.map((p) => `${x(p.t)},${y(p.v)}`).join(" ")} className="ln" />
-      {pts.map((p, i) => <circle key={i} cx={x(p.t)} cy={y(p.v)} r="3" className={p.v >= 0 ? "b" : "r"} />)}
-      <text x="4" y="12" className="lbl">{d.teams.B} 우세</text><text x="4" y={H - 4} className="lbl">{d.teams.R} 우세</text>
-    </svg>
+    <div className="lead-wrap" data-testid="gold-chart">
+      <div className="lead-h">
+        <b>골드 차이</b>
+        <span className="muted sm">기록된 골드 차만 표시 · 새 값은 만들지 않습니다</span>
+        {now && now.t > 0 && <strong className={now.v >= 0 ? "b" : "r"}>{now.v >= 0 ? teamKoOf(d.teams.B) : teamKoOf(d.teams.R)} +{fmt(Math.abs(now.v))}</strong>}
+      </div>
+      <svg className="lead" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="골드 차이 그래프">
+        <line x1={padX} x2={W - 8} y1={H / 2} y2={H / 2} className="axis" />
+        {ticks.map((t) => <g key={t}><line x1={x(t)} x2={x(t)} y1={padY - 4} y2={H - 10} className="grid" /><text x={x(t)} y={H - 2} className="lbl tick">{t}분</text></g>)}
+        <polyline points={pts.map((p) => `${x(p.t)},${y(p.v)}`).join(" ")} className="ln" />
+        {pts.filter((p) => p.t > 0).map((p, i) => <circle key={i} cx={x(p.t)} cy={y(p.v)} r="2.5" className={p.v >= 0 ? "b" : "r"} />)}
+        {marks.map((p, i) => <rect key={`m${i}`} x={x(p.t) - 3} y={y(p.v) - 3} width="6" height="6" transform={`rotate(45 ${x(p.t)} ${y(p.v)})`} className={"mk " + (p.side ?? "")} />)}
+        <text x={padX + 2} y="12" className="lbl">{teamKoOf(d.teams.B)} 우세</text>
+        <text x={padX + 2} y={H - 14} className="lbl">{teamKoOf(d.teams.R)} 우세</text>
+      </svg>
+    </div>
+  );
+}
+function ObjTimeline({ d, r, upto }: { d: DraftState; r: GameResult; upto: number }) {
+  const ev = objectiveMoments(r.events, upto);
+  return (
+    <div className="obj-tl" data-testid="obj-timeline">
+      <div className="lead-h"><b>오브젝트 흐름</b><span className="muted sm">이 경기에서 실제로 확보·파괴된 기록</span></div>
+      {ev.length === 0 ? <p className="muted sm">아직 기록된 오브젝트가 없습니다.</p> : (
+        <ol>
+          {ev.map((e, i) => (
+            <li key={i} className={e.side ?? ""}>
+              <span className="ev-t">{e.t}:00</span>
+              <span className="ev-k">{EV_KO[e.kind]}</span>
+              {e.side && <TeamChip t={d.teams[e.side]} />}
+              <span>{e.text}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }
 
@@ -535,8 +575,20 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
   const s = useSave()!; const me = mySide(s);
   const [auto, setAuto] = useState(false);
   const pf = usePrefs();
+  const mode: WatchMode = pf.watchMode;
   const end = step >= r.events.length;
-  useEffect(() => { if (auto && !end) { const id = setTimeout(() => simNext(), SPEED_MS[pf.speed]); return () => clearTimeout(id); } }, [auto, step, end, pf.speed]);
+  useEffect(() => {
+    const snap = snapWatchStep(r.events, step, mode);
+    if (snap !== step) simTo(snap);
+  }, [mode]);
+  useEffect(() => {
+    if (auto && !end) {
+      const id = setTimeout(() => simTo(nextWatchStep(r.events, step, mode)), SPEED_MS[pf.speed]);
+      return () => clearTimeout(id);
+    }
+  }, [auto, step, end, pf.speed, mode, r.events]);
+  const advance = (): void => { simTo(nextWatchStep(r.events, step, mode)); };
+  const setMode = (m: WatchMode): void => { setPrefs({ watchMode: m }); if (m === "result") setAuto(false); };
   const ev = r.events.slice(0, step);
   const now = ev[ev.length - 1];
   const clock = now ? now.t : 0;
@@ -573,6 +625,7 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
         <div className="bc-map">
           {pf.map ? <Minimap d={d} r={r} step={step} /> : <div className="mm-off">미니맵 연출 꺼짐 (설정에서 켤 수 있어요)</div>}
           <LeadChart d={d} r={r} upto={step} />
+          <ObjTimeline d={d} r={r} upto={step} />
         </div>
         <div className="bc-main">
           <div className={"bc-scene " + (now ? `${now.kind} ${now.side ?? ""}` : "idle")} key={step} data-testid="sim-scene">
@@ -581,11 +634,23 @@ function Sim({ d, r, step }: { d: DraftState; r: GameResult; step: number }) {
               <div className="bc-scene-b">{nowChamp && <ChampIcon id={nowChamp} size={64} ring={now.side === "B" ? "#3B82F6" : "#EF4444"} />}<p>{now.text}</p></div>
             </> : <div className="bc-scene-b"><p>선수들이 소환사의 협곡에 들어섰습니다. "다음 장면"을 눌러 경기를 시작하세요.</p></div>}
           </div>
+          <div className="coach-talk" data-testid="coach-talk">
+            <div className="coach-h"><b>코치 해설</b><span className="muted sm">이 경기에서 실제로 기록된 장면만 짚습니다. 선수 발언·성격은 지어내지 않습니다.</span></div>
+            <p>{coachTalk(now, { teams: { B: teamKoOf(d.teams.B), R: teamKoOf(d.teams.R) }, me, seen: ev, leadEnd: r.leadEnd }).body}</p>
+          </div>
+          <div className="watch-bar" data-testid="watch-bar">
+            <div className="watch-modes" role="group" aria-label="보기 모드">
+              {WATCH_MODES.map((m) => <button key={m} type="button" className={"btn sm" + (mode === m ? " primary" : "")} data-testid={`watch-mode-${m}`} onClick={() => setMode(m)}>{WATCH_MODE_KO[m]}</button>)}
+            </div>
+            <div className="watch-speeds" role="group" aria-label="진행 속도" data-testid="sim-speed">
+              <span className="muted sm">진행 속도</span>
+              {(Object.keys(SPEED_KO) as Prefs["speed"][]).map((k) => <button key={k} type="button" className={"btn sm" + (pf.speed === k ? " primary" : "")} data-testid={`sim-speed-${k}`} onClick={() => setPrefs({ speed: k })}>{SPEED_KO[k]}</button>)}
+            </div>
+          </div>
           <div className="bc-controls">
-            {!end && <button className="btn primary lg" onClick={() => simNext()} data-testid="sim-next">다음 장면 ▶</button>}
-            {!end && <button className={"btn" + (auto ? " on" : "")} onClick={() => setAuto(!auto)}>{auto ? "❚❚ 자동 진행 멈춤" : "▶▶ 자동 진행"}</button>}
+            {!end && <button className="btn primary lg" onClick={advance} data-testid="sim-next">{mode === "highlight" ? "다음 주요 장면 ▶" : "다음 장면 ▶"}</button>}
+            {!end && <button className={"btn" + (auto ? " on" : "")} data-testid="sim-auto" onClick={() => setAuto(!auto)}>{auto ? "❚❚ 자동 진행 멈춤" : "▶▶ 자동 진행"}</button>}
             {!end && <button className="btn ghost rc-insta" onClick={() => simNext(true)} data-testid="sim-all">즉시 결과</button>}
-            {!end && <label className="sm muted">속도 <select value={pf.speed} onChange={(e) => setPrefs({ speed: e.target.value as Prefs["speed"] })} data-testid="sim-speed">{(Object.keys(SPEED_KO) as Prefs["speed"][]).map((k) => <option key={k} value={k}>{SPEED_KO[k]}</option>)}</select></label>}
             {end && <button className="btn primary lg" onClick={toPog} data-testid="to-result">Player Of the Game ▶</button>}
           </div>
           <div className="feed bc-feed">
@@ -691,6 +756,7 @@ function Result({ d, r }: { d: DraftState; r: GameResult }) {
         <section className="card">
           <div className="card-h"><h2>경기 흐름</h2></div>
           <LeadChart d={d} r={r} upto={r.events.length} />
+          <ObjTimeline d={d} r={r} upto={r.events.length} />
           <ul className="bars">{lane.map((g, i) => <li key={i}><span>{POS_KO[i]}</span><span className="dbar"><i className={g >= 0 ? "pos" : "neg"} style={{ width: `${Math.min(50, (Math.abs(g) / 2500) * 50)}%`, [g >= 0 ? "left" : "right"]: "50%" } as React.CSSProperties} /></span><b className={g >= 0 ? "up" : "down"}>{g >= 0 ? "+" : "−"}{fmt(Math.abs(g))}</b></li>)}</ul>
           <p className="muted xs">14분 포지션별 골드 차(우리 기준)</p>
           <ul className="facts sm">

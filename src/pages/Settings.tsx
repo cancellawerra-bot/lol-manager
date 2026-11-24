@@ -4,6 +4,7 @@ import { useSave, exportJson, importJson, persist, setSave, slots, mutate } from
 import { Card } from "../ui";
 import { go } from "../nav";
 import { SPEED_KO, setPrefs, usePrefs, type Prefs } from "../prefs";
+import { WATCH_MODE_KO, WATCH_MODES, type WatchMode } from "../game/watchView";
 
 export default function Settings() {
   const s = useSave();
@@ -42,6 +43,8 @@ export default function Settings() {
       )}
       <Card title="경기 연출">
         <p className="muted sm">표시와 속도만 바꿉니다. 경기 결과에는 영향이 없고, 이 브라우저에만 저장됩니다.</p>
+        <div className="speedrow"><span>관전 보기 모드</span>
+          {WATCH_MODES.map((m) => <button key={m} className={"btn" + (pf.watchMode === m ? " primary" : "")} onClick={() => setPrefs({ watchMode: m as WatchMode })}>{WATCH_MODE_KO[m]}</button>)}</div>
         <div className="speedrow"><span>자동 진행 속도</span>
           {(Object.keys(SPEED_KO) as Prefs["speed"][]).map((k) => <button key={k} className={"btn" + (pf.speed === k ? " primary" : "")} onClick={() => setPrefs({ speed: k })}>{SPEED_KO[k]}</button>)}</div>
         <p><label><input type="checkbox" checked={pf.map} onChange={(e) => setPrefs({ map: e.target.checked })} /> 경기 중 협곡 미니맵 연출 보이기</label></p>

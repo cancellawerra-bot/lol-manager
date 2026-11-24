@@ -167,6 +167,7 @@ export function runSim(): void {
   });
 }
 export function simNext(all = false): void { mutate((s) => { const ss = s.session!; ss.simStep = all ? ss.result!.events.length : Math.min(ss.result!.events.length, ss.simStep + 1); }); }
+export function simTo(n: number): void { mutate((s) => { const ss = s.session!; const len = ss.result?.events.length ?? 0; ss.simStep = Math.max(0, Math.min(len, n)); }); }
 export function toResult(): void {
   mutate((s) => {
     const ss = s.session!; const sr = sessionSeries(s);
