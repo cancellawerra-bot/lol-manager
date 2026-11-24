@@ -125,8 +125,10 @@ export function careerHonors(s: Save): { trophies: HonorItem[]; feats: HonorItem
     const rows = standings(s), me = rows.findIndex((r) => r.t === s.team) + 1;
     return me === 1 && (rows[0]?.w ?? 0) + (rows[0]?.l ?? 0) > 0;
   })();
-  const promo = (s.clubTimeline?.events ?? []).some((e) => /승격/.test(`${e.title} ${e.body}`))
-    || (s.news ?? []).some((n) => n.team === s.team && /승격/.test(`${n.title} ${n.body ?? ""}`));
+  const promoText = (t: string) => /우리 구단이 LCK로 올라갔습니다/.test(t);
+  const promo = (s.clubTimeline?.events ?? []).some((e) => promoText(`${e.title} ${e.body}`))
+    || (s.news ?? []).some((n) => promoText(`${n.title} ${n.body ?? ""}`))
+    || ((s.clubTimeline?.splits ?? []).some((x) => x.tier === "CK") && (s.clubTimeline?.splits ?? []).some((x) => x.tier === "LCK"));
   const seasonCup = !st && s.champion === s.team;
 
   const item = (id: string, kind: HonorKind, label: string, done: boolean, detail: string, icon: HonorItem["icon"], count?: number, when?: string[]): HonorItem =>

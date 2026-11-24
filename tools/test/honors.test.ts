@@ -138,6 +138,7 @@ function snapshotEconomy(s: { eco: { cash: number; fans: number }; series: { id:
   }
   const splitChamp = (s.clubTimeline?.splits ?? []).some((x) => x.tier === "LCK" && x.champion === s.team);
   assert.equal(!!h.trophies.find((t) => t.id === "lck")?.done, splitChamp, "LCK 트로피는 이번 커리어 스플릿 우승 기록만");
+  assert.equal(!!h.trophies.find((t) => t.id === "promo")?.done, false, "LCK로 시작한 팀은 승격 소식을 승격 업적으로 치지 않음");
   if (h.trophies.find((t) => t.id === "budget-title")?.done) {
     assert.fail("budget-title은 트로피가 아님");
   }
