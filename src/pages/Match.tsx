@@ -13,6 +13,7 @@ import { go } from "../nav";
 import { masteryOf } from "../game/mastery";
 import { SPEED_KO, SPEED_MS, setPrefs, usePrefs, type Prefs } from "../prefs";
 import { WATCH_MODE_KO, WATCH_MODES, coachTalk, leadPoints, nextWatchStep, objectiveMoments, snapWatchStep, type WatchMode } from "../game/watchView";
+import { preMatchBrief, type PreMatchBrief, type SideFact } from "../game/matchup";
 import { TacticsControls, TacticsReview } from "./Tactics";
 import { AppearanceReview } from "./Rotation";
 import { playerTraining } from "../game/trainingRuntime";
@@ -128,6 +129,33 @@ function Press() {
     </div>
   );
 }
+
+function fmtSideStat(v: number | null, f?: (n: number) => string): string {
+  return v == null ? NO_RECORD : (f ? f(v) : String(v));
+}
+function SideFacts({ f, year }: { f: SideFact; year: number }) {
+  const wr = f.cardWr == null ? NO_RECORD : `${(f.cardWr * 100).toFixed(0)}%`;
+  const gd = f.cardGd15 == null ? NO_RECORD : `${f.cardGd15 >= 0 ? "+" : ""}${Math.round(f.cardGd15)}`;
+  return (
+    <div className="mu-facts">
+      <small>{f.cardYear ?? year} 시즌 카드 · {f.cardGames != null && f.cardGames > 0 ? `${f.cardGames}경기` : NO_RECORD} · KDA {fmtSideStat(f.cardKda, (n) => n.toFixed(2))} · 승률 {wr} · GD@15 {gd}</small>
+      <small>{f.careerG ? `이번 커리어 ${f.careerG}경기 ${f.careerW}승${f.careerAvg != null ? ` · 평점 ${f.careerAvg.toFixed(1)}` : ""}${f.careerKda ? ` · ${f.careerKda}` : ""}` : "이번 커리어 출전 기록 없음"}</small>
+      <span className="mu-pool">
+        {f.pool && f.pool.length ? f.pool.map((c) => <span key={c.id} title={`${c.n}경기`}><ChampIcon id={c.id} size={22} /><small>{c.n}</small></span>) : <small className="muted">{year} LCK 챔피언 풀 {NO_RECORD}</small>}
+        {f.practice.map((c) => <span key={`p${c.id}`} title={`연습 ${c.n}일`}><ChampIcon id={c.id} size={22} /><small>연{c.n}</small></span>)}
+      </span>
+    </div>
+  );
+}
+function CoachAdvice({ b }: { b: PreMatchBrief }) {
+  return (
+    <div className="mu-advice" data-testid="coach-advice">
+      <div className="mu-advice-h"><b>감독 조언</b><span className="muted sm">있는 기록만 정리합니다. 선수 발언·성격은 지어내지 않으며, 승부에는 반영되지 않습니다.</span></div>
+      <ul>{b.advice.map((t, i) => <li key={i}>{t}</li>)}</ul>
+    </div>
+  );
+}
+
 // 라인업 화면 (v2.27.0): 포지션 줄마다 우리 선수 ↔ 상대 선수를 마주 보게 하고, 능력치 차이·피로·기용 근거를 한눈에 보여 줍니다.
 // 보여 주는 값은 전부 기존 값(능력치·피로·로테이션 근거)이며 새 계산은 없습니다. 상대 컨디션은 계속 보이지 않습니다.
 const POS_SHORT = ["TOP", "JGL", "MID", "ADC", "SUP"];
@@ -151,11 +179,12 @@ function Lineup() {
   const avg = (ks: string[]): number | null => { const v = ks.map((k) => ratingOf(PL[k])).filter((x): x is number => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const a1 = avg(mine), a2 = avg(theirs);
   const reasonOf = (k: string, i: number): string => sr.rotation?.[s.team]?.keys[i] === k ? sr.rotation[s.team].reasons[i] : "감독 수동 교체";
+  const brief = preMatchBrief(s, s.team, op, sr);
   return (
     <div className="panel lu" data-testid="lineup-screen">
       <div className="lu-title">
         <h2>선발 라인업 · {sr.games.length + 1}세트</h2>
-        <p className="muted sm">같은 포지션 벤치와만 교체할 수 있습니다. 상대 컨디션은 보이지 않습니다.</p>
+        <p className="muted sm">같은 포지션을 있는 기록(종합·시즌 카드·이번 커리어·챔피언 풀)만으로 비교합니다. 상대 컨디션은 보이지 않습니다. 없는 값은 「기록 없음」이며 다른 연도로 채우지 않습니다.</p>
       </div>
       <div className="lu-head">
         <div className="lu-hteam me"><TeamChip t={s.team} size="lg" full />{a1 != null && <span className="lu-avg"><small>선발 평균</small><b>{a1.toFixed(1)}</b></span>}</div>
@@ -172,25 +201,28 @@ function Lineup() {
           const fat = story ? playerTraining(s, k)?.fatigue ?? 0 : null;
           const rc = story ? reasonChip(reasonOf(k, i)) : null;
           return (
-            <div className="lu-row" key={k} data-testid={`lineup-row-${i}`}>
+            <div className={"lu-row" + (brief.keyPos === i ? " key" : "")} key={k} data-testid={`lineup-row-${i}`} data-key-matchup={brief.keyPos === i ? "true" : "false"}>
               <div className="lu-p me" style={{ "--tc": rm != null ? ratingColor(rm) : undefined } as React.CSSProperties}>
                 <span className="lu-ovr"><b>{rm ?? "–"}</b></span>
                 <div className="lu-info">
                   <b className="lu-name">{lm.name}</b>
                   <span className="lu-meta">{lm.year && <em>{lm.year}</em>}{lm.est && <em className="est">추정</em>}{rc && <em className={"rs " + rc.k} title={reasonOf(k, i)}>{rc.t}</em>}</span>
                   {fat != null && <span className="lu-fat" title="현재 피로 (0~100)"><small>피로 {fat.toFixed(1)}</small><i><u style={{ width: `${Math.min(100, fat)}%`, background: fatigueColor(fat) }} /></i></span>}
+                  <SideFacts f={brief.lanes[i].my} year={brief.year} />
                   {opts.length > 0 && <label className="lu-swap"><small>벤치 교체</small><select data-testid={`lineup-player-${i}`} value={k} onChange={(e) => setStarter(s.team, i, e.target.value)}>{[k, ...opts].map((x) => <option key={x} value={x}>{PL[x]?.name}</option>)}</select></label>}
                 </div>
               </div>
               <div className="lu-mid">
                 <b>{POS_SHORT[i]}</b><small>{POS_KO[i]}</small>
                 {diff != null && <span className={"lu-diff " + (diff > 0 ? "up" : diff < 0 ? "down" : "")} title="우리 − 상대 능력치">{diff > 0 ? "+" : diff < 0 ? "−" : "±"}{Math.abs(diff)}</span>}
+                {brief.keyPos === i && <em className="mu-key" data-testid="key-matchup">가장 큰 차이</em>}
               </div>
               <div className="lu-p op" style={{ "--tc": ro != null ? ratingColor(ro) : undefined } as React.CSSProperties}>
                 <span className="lu-ovr"><b>{ro ?? "–"}</b></span>
                 <div className="lu-info">
                   <b className="lu-name">{lo.name}</b>
                   <span className="lu-meta">{lo.year && <em>{lo.year}</em>}{lo.est && <em className="est">추정</em>}</span>
+                  <SideFacts f={brief.lanes[i].op} year={brief.year} />
                 </div>
               </div>
             </div>
@@ -203,16 +235,22 @@ function Lineup() {
           <p className="sm" data-testid="rotation-lineup">{mine.map((k, i) => `${POS_KO[i]} ${PL[k]?.name} · 피로 ${(playerTraining(s, k)?.fatigue ?? 0).toFixed(1)} · ${reasonOf(k, i)}`).join(" / ")}</p>
         </details>
       )}
+      <CoachAdvice b={brief} />
       <button className="btn primary lg" data-testid="lineup-next" onClick={confirmLineup}>선발 확정 · 선택권 ▶</button>
     </div>
   );
 }
 function Meet() {
   const s = useSave()!;
+  const sr = sessionSeries(s);
+  const op = sr.a === s.team ? sr.b : sr.a;
+  const brief = preMatchBrief(s, s.team, op, sr, s.session?.draft);
   return (
     <div className="panel">
       <h2>경기 전 미팅</h2>
-      <p className="muted">오늘 경기 방향을 정하세요. 수석코치에게 맡겨도 됩니다.</p>
+      <p className="muted">오늘 경기 방향을 정하세요. 수석코치에게 맡겨도 됩니다. 아래 맞대결 조언은 기록 정리이며 승부에는 들어가지 않습니다.</p>
+      <CoachAdvice b={brief} />
+      {brief.keyPos != null && <p className="muted sm" data-testid="meet-key-matchup">핵심 맞대결: {brief.lanes[brief.keyPos].posKo} · 우리 {brief.lanes[brief.keyPos].my.name} {brief.lanes[brief.keyPos].my.ovr ?? NO_RECORD} vs 상대 {brief.lanes[brief.keyPos].op.name} {brief.lanes[brief.keyPos].op.ovr ?? NO_RECORD}</p>}
       <TacticsControls draft={s.session?.draft} />
       <div className="row gap wrap" style={{ marginTop: 16 }}>
         <button className="btn primary lg" data-testid="meet-next" onClick={afterMeet}>작전 확정 · 경기 시작 ▶</button>
