@@ -129,7 +129,7 @@ export default function Home({ onAdvance }: { onAdvance?: () => void }) {
       )}
       <Card title="소식" right={<a href="#/news" className="sm">전체 ›</a>}>
         <ul className="news-mini">{s.news.slice(0, 6).map((n) => (
-          <li key={n.id} className={n.read ? "" : "unread"}><small>{dateKo(n.date)}</small><b>{n.title}</b><span className="muted">{n.body}</span></li>
+          <li key={n.id} className={n.read ? "" : "unread"}><a href={`#/news/${n.id}`}><small>{dateKo(n.date)}</small><b>{n.title}</b><span className="muted">{n.body}</span></a></li>
         ))}</ul>
       </Card>
       <Card title="일정">

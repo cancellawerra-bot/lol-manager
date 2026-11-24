@@ -170,6 +170,7 @@ export function simNext(all = false): void { mutate((s) => { const ss = s.sessio
 export function toResult(): void {
   mutate((s) => {
     const ss = s.session!; const sr = sessionSeries(s);
+    if (ss.pressTone && (sr.a === s.team || sr.b === s.team) && !sr.pressTone) sr.pressTone = ss.pressTone;
     if (sr.games.length === ss.gameIdx) recordGame(s, sr, ss.draft!, ss.result!, ss.holder, true);
     ss.stage = "result";
   });

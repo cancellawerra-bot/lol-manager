@@ -1,5 +1,5 @@
 // 커리어 상태, 일정, 순위, 진행 루프, 뉴스 (뉴스는 게임 안 결과로만 만듭니다)
-import { CORE, TM, PL } from "../data";
+import { CORE, TM } from "../data";
 import { DraftState, DPick, Side, autoDraft, newDraft, other } from "./draft";
 import { GameResult, simulateGame } from "./sim";
 import { Rng } from "./rng";
@@ -11,6 +11,7 @@ import { matchTactics, type TacticPlan, type Focus, type TacticsRecord } from ".
 import { prepareSeriesLineups, recordAppearances, type AppearanceRecord, type LineupDecision, type RotationState } from "./rotation";
 import type { ScoutingState } from "./scouting";
 import { captureClubNews, type ClubTimelineState } from "./clubTimeline";
+import { publishMatchdayNews } from "./newsFeed";
 
 export const SAVE_V = 2;
 export type Stage = "R" | "SW" | "PO1" | "SF" | "F";
@@ -23,9 +24,10 @@ export interface GameRec {
   tactics?: TacticsRecord;
   appearances?: AppearanceRecord;
 }
-export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number }; rotation?: Record<string, LineupDecision> }
+export interface SeriesRec { id: string; day: number; stage: Stage; a: string; b: string; bo: 1 | 3 | 5; games: GameRec[]; winner?: string; sa: number; sb: number; holder1?: string; swiss?: { round: number; w: number; l: number }; rotation?: Record<string, LineupDecision>; pressTone?: string }
 export interface Day { date: string; week: number; stage: Stage; label: string }
-export interface News { id: number; day: number; date: string; kind: "result" | "upset" | "streak" | "leader" | "season" | "welcome" | "mvp" | "playoff"; title: string; body: string; team?: string; read: boolean }
+export interface NewsDetail { standings: { t: string; w: number; l: number; gw: number; gl: number; rank: number }[]; upcoming: { date: string; a: string; b: string; stage: string }[] }
+export interface News { id: number; day: number; date: string; kind: "result" | "upset" | "streak" | "leader" | "rank" | "season" | "welcome" | "mvp" | "playoff"; title: string; body: string; team?: string; read: boolean; seriesId?: string; detail?: NewsDetail }
 export interface PStat { g: number; w: number; k: number; d: number; a: number; mvp: number; rsum: number }
 export interface Session {
   seriesId: string; gameIdx: number; holder: string;
@@ -134,11 +136,19 @@ export function newCareer(team: string, manager: string, slot: number, seed: num
   return s;
 }
 export const opp = (s: Save, sr: SeriesRec): string => (sr.a === s.team ? sr.b : sr.a);
-export function addNews(s: Save, kind: News["kind"], title: string, body: string, team?: string): void {
+export function addNews(s: Save, kind: News["kind"], title: string, body: string, team?: string, extra?: { seriesId?: string; detail?: NewsDetail }): void {
   s.newsSeq += 1;
-  s.news.unshift({ id: s.newsSeq, day: s.day, date: s.days[Math.min(s.day, s.days.length - 1)].date, kind, title, body, team, read: false });
+  const day = Math.min(s.day, Math.max(0, s.days.length - 1));
+  s.news.unshift({ id: s.newsSeq, day: s.day, date: s.days[day]?.date ?? "", kind, title, body, team, read: false, seriesId: extra?.seriesId, detail: extra?.detail });
   captureClubNews(s, s.news[0]);
-  if (s.news.length > 200) s.news.length = 200;
+  // 보관 한도: 안 읽은 소식을 우선 남기고, 오래된 읽은 소식부터 줄입니다(최대 100).
+  if (s.news.length > 100) {
+    const unread = s.news.filter((n) => !n.read);
+    const read = s.news.filter((n) => n.read);
+    const keepUnread = unread.slice(0, 100);
+    const keepRead = read.slice(0, Math.max(0, 100 - keepUnread.length));
+    s.news = [...keepUnread, ...keepRead].sort((a, b) => b.id - a.id);
+  }
 }
 export const formVal = (s: Save, key: string): number => { const f = s.form[key]; if (!f || !f.length) return 0; const a = f.reduce((x, y) => x + y, 0) / f.length; return Math.max(-1, Math.min(1, (a - 6.3) / 1.5)); };
 export function formMap(s: Save, keys: string[]): Record<string, number> { const m: Record<string, number> = {}; for (const k of keys) m[k] = formVal(s, k); return m; }
@@ -206,39 +216,15 @@ export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
   }
 }
 
-function seriesNews(s: Save, sr: SeriesRec, before: Row[]): void {
-  const w = sr.winner!, l = w === sr.a ? sr.b : sr.a;
-  const ws = w === sr.a ? sr.sa : sr.sb, ls = w === sr.a ? sr.sb : sr.sa;
-  const mine = w === s.team || l === s.team;
-  const mvpCount: Record<string, number> = {};
-  sr.games.filter((g) => g.winner === w).forEach((g) => { mvpCount[g.mvp] = (mvpCount[g.mvp] ?? 0) + 1; });
-  const pom = Object.entries(mvpCount).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
-  const rank = (t: string): number => before.findIndex((r) => r.t === t) + 1;
-  const stageTxt = STAGE_KO[sr.stage];
-  const gameTxt = sr.games.map((g, i) => `${i + 1}세트 ${g.winner}(${g.dur}분)`).join(", ");
-  if (sr.stage !== "R") {
-    addNews(s, "playoff", `[${stageTxt}] ${w}, ${l}에 ${ws}:${ls} 승리`, `${gameTxt}. 시리즈 MVP 평점 1위: ${pom ? PL[pom].name : "–"}.`, mine ? s.team : w);
-    return;
-  }
-  const playedR = s.series.filter((x) => x.stage === "R" && x.winner).length;
-  const upset = playedR > 10 && rank(w) - rank(l) >= 4;
-  if (mine || upset) addNews(s, upset ? "upset" : "result", upset ? `이변: ${before.length ? rank(w) : ""}위 ${w}, ${rank(l)}위 ${l} 격파 (${ws}:${ls})` : `${w}, ${l}에 ${ws}:${ls} 승리`,
-    `${gameTxt}. ${pom ? `승리 팀 최고 평점: ${PL[pom].name}.` : ""}`, mine ? s.team : w);
-}
+
 
 export function finishDay(s: Save, rng: Rng): void {
-  const before = standings(s);
-  const leaderBefore = s.series.some((x) => x.stage === "R" && x.winner) ? before[0].t : null;
   for (const sr of s.series.filter((x) => x.day === s.day)) {
     if (!sr.winner) simSeries(s, sr, rng);
-    seriesNews(s, sr, before);
   }
-  const after = standings(s);
+  publishMatchdayNews(s, s.day);
   const st = s.days[s.day].stage;
-  if (st === "R") {
-    if (leaderBefore && after[0].t !== leaderBefore) addNews(s, "leader", `${after[0].t}, 단독 선두로`, `${dateKo(s.days[s.day].date)} 경기 후 ${after[0].t}가 ${after[0].w}승 ${after[0].l}패(세트 ${after[0].gw - after[0].gl >= 0 ? "+" : ""}${after[0].gw - after[0].gl})로 1위에 올랐습니다.`, after[0].t);
-    for (const r of after) if (/^[4-9]\d*연승$|^\d{2,}연승$/.test(r.streak) && r.streak !== before.find((b) => b.t === r.t)?.streak) addNews(s, "streak", `${r.t} ${r.streak}`, `${r.t}가 정규 시즌 ${r.streak}을 달리고 있습니다. 현재 ${after.findIndex((x) => x.t === r.t) + 1}위 (${r.w}승 ${r.l}패).`, r.t);
-  }
+  const after = standings(s);
   s.day += 1;
   if (st === "R" && s.days[s.day]?.stage === "PO1") seedPlayoffs(s, after);
   else if (st === "PO1") advanceBracket(s, "SF");

@@ -6,6 +6,7 @@ import { Rng } from "./rng";
 import type { Day, Economy, Save, SeriesRec } from "./season";
 import type { StoveState } from "./stove";
 import { addNews, dateKo, simSeries, standings } from "./season";
+import { publishMatchdayNews } from "./newsFeed";
 import { moneyRound, fmtMoney } from "./money";
 import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
 import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
@@ -594,7 +595,9 @@ export function seedTop4PO(s: Save): void {
   s.series.push({ id: `${s.story!.year}-SF0`, day: d, stage: "SF", a: seeds[0], b: seeds[3], bo: 5, games: [], sa: 0, sb: 0, holder1: seeds[0] });
   s.series.push({ id: `${s.story!.year}-SF1`, day: d, stage: "SF", a: seeds[1], b: seeds[2], bo: 5, games: [], sa: 0, sb: 0, holder1: seeds[1] });
   s.day = d;
-  addNews(s, "season", "플레이오프 대진 확정", `1위 ${seeds[0]} vs 4위 ${seeds[3]}, 2위 ${seeds[1]} vs 3위 ${seeds[2]} (Bo5).`, s.team);
+  const inPO = seeds.includes(s.team);
+  const myRank = rows.findIndex((r) => r.t === s.team) + 1;
+  addNews(s, "playoff", "플레이오프 대진 확정", `1위 ${seeds[0]} vs 4위 ${seeds[3]}, 2위 ${seeds[1]} vs 3위 ${seeds[2]} (Bo5). ${inPO ? `${s.team}는 ${seeds.indexOf(s.team) + 1}번 시드입니다.` : `${s.team}는 ${myRank}위로 플레이오프에 오르지 못했습니다.`}`, s.team);
 }
 
 /** 스플릿 종료 성적(정규 순위·PO 결승)을 저장합니다. 월즈/승강전으로 일정이 바뀌어도 상금과 시드가 유지됩니다. */
@@ -1386,12 +1389,14 @@ export function finishStoryDay(s: Save, rng: Rng): void {
   prepareInSeason(s);
   const date = s.days[Math.min(s.day, s.days.length - 1)]?.date;
   if (date) advanceTeamTraining(s, s.team, date);
+  const newsDay = s.day;
   for (const sr of s.series.filter((x) => x.day === s.day && !x.winner)) {
     if ((s.starters[sr.a] ?? []).filter(Boolean).length < 5 || (s.starters[sr.b] ?? []).filter(Boolean).length < 5) {
       // still try if intl ghosts
     }
     try { simSeries(s, sr, rng); } catch { /* 라인업 부족 */ }
   }
+  publishMatchdayNews(s, newsDay);
   if (st.phase === "regular") {
     s.day += 1;
     const regDays = s.days.filter((d) => d.stage === "R").length;

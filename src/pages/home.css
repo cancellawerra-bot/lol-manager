@@ -84,3 +84,11 @@
 .mh-primary.is-warn{border-color:#e8b4a8;background:linear-gradient(115deg,#f0c9a0,#d4a06a)}
 @media(min-width:861px){.mh-shortcuts{flex-wrap:wrap;overflow:visible}}
 @media(max-width:860px){.mh-shortcuts{margin:0 -4px;padding:0 4px 4px;gap:8px}.mh-shortcut{padding:9px 16px;font-size:13px}.mh-sched-warn{font-size:12px;padding:11px 14px}.mh-count-frac{font-size:10px}}
+
+.mh-gauge{display:flex;flex-direction:column;gap:6px}
+.mh-gauge-scale{position:relative;height:10px;border-radius:6px;background:linear-gradient(90deg,#64748b,#93c5fd,#fbbf24,#fb7185);overflow:visible}
+.mh-gauge-scale i{display:block;height:100%;border-radius:6px 0 0 6px;background:transparent}
+.mh-gauge-scale em{position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:#f8fafc;box-shadow:0 0 0 2px #0e1725;pointer-events:none}
+.mh-gauge-meta{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:#9fb0c8}
+.mh-gauge-meta b{font-size:18px;color:#e8eef7}
+.mh-gauge-note{margin:0;font-size:10.5px;color:#7b8ca6}
