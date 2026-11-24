@@ -44,7 +44,7 @@
   팀 배수 숫자(5~7위 1.4, 8~10위 1.8, 상위 4팀 1)와 시작 자금·모기업 지원은 그대로입니다. 가속만 낮은 능력치에서 따라잡는 용도로 남겼습니다. 스토리·창작·판타지 모드 성장(`training.ts` 공식, `history.growth` 없음)은 건드리지 않았습니다. 40시드 난이도 재측정은 하지 않았습니다.
 - **코드:** `src/game/historyGrowth.ts`(`historyGrowthSpeed`), `trainingRuntime.ts` `growthCtx`/`growthCtxAt`(하루마다 현재 종합으로 배수 재계산). 화면·부임 소식 문구도 「90 이상에서는 가속 없음」을 밝힙니다.
 - **테스트:** `tools/test/history-growth.test.ts` 추가(배수 구간, 스토리 100 도달 4/5/8/10/11, 정리 후 표, 1.8배도 4시즌보다 빠르지 않음, 하위 75는 스토리보다 조금 빠름, 배수 1은 스토리와 같음). `tools/test/*.test.ts` 전체 통과(`history.test.ts` 포함, 시작 90팀·풀 커리어·스폰서 보너스, 파산 0). `npm run build`(tsc+vite) 통과.
-- **배포:** 아래 라이브 QA 뒤에 해시가 적힙니다.
+- **배포:** `tools/deploy.sh`로 **v2.38.2 배포 완료**(2026-11-24 15:18 서울). 배포 원본 main@`6605425a975127b49bc9037c55fef7a776886a1d`, gh-pages@`09d2181922831a3dab65156b32bda3308f087cbf`, 라이브 번들 `assets/index-Y2_KAVGL.js`. 공개 사이트 https://cancellawerra-bot.github.io/lol-manager/ 를 Playwright(Chrome --no-sandbox)로 PC 1280×800 / 휴대폰 390×844에서 확인했습니다. HTTP 200, 화면 v2.38.2, 같은 번들, 콘솔 오류 0건. 새 게임 카드 문구 「역사 모드 (2018~2026)」·「2018~2020은 2부·승강전이 있고, 2021년부터는 프랜차이즈라 승강전이 없습니다」가 두 화면에 보였습니다. 스크린샷 `/workspace/qa/hist-1280-01-title.png`, `hist-1280-02-mode.png`, `hist-1280-03-history-setup.png`, `hist-390-01-title.png`, `hist-390-01b-title-version.png`, `hist-390-02-mode.png`, `hist-390-03-history-setup.png`. 이 배포 기록을 추가하는 후속 main 커밋은 문서만 변경합니다.
 
 ### 2026-11-24 · Grok · 인계 점검: v2.30.0–v2.38.1 기록 보강 (코드 변경 없음)
 
