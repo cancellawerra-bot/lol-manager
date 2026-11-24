@@ -151,7 +151,7 @@ export function publishMatchdayNews(s: Save, day = s.day): void {
       const n = parseInt(r.streak, 10);
       const ours = r.t === s.team;
       if (ours && n >= 3 || !ours && n >= 4) {
-        emit(s, "streak", `${teamKo(s, r.t)} ${r.streak}`, `${teamKo(s, r.t)}가 정규 시즌 ${r.streak}을 달리고 있습니다. 현재 ${after.findIndex((x) => x.t === r.t) + 1}위 (${r.w}승 ${r.l}패).`, r.t, undefined, detail);
+        emit(s, "streak", `${teamKo(s, r.t)} ${r.streak}`, `${teamKo(s, r.t)}가 정규 시즌 ${r.streak}${/연패$/.test(r.streak) ? "를" : "을"} 달리고 있습니다. 현재 ${after.findIndex((x) => x.t === r.t) + 1}위 (${r.w}승 ${r.l}패).`, r.t, undefined, detail);
       }
     }
     const br = rankOf(before, s.team), ar = rankOf(after, s.team);
