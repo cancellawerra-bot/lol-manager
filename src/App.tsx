@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { fmtMoney } from "./game/money";
-import { CORE, CARDS_FILE, loadCore, loadRanked, TM } from "./data";
+import { CARDS_FILE, loadCore, loadRanked, TM } from "./data";
 import { useSave, advance, loadSlot, lastSlot, mutate } from "./store";
 import { standings, nextMySeries, dateKo, STAGE_KO } from "./game/season";
 import { FanNotice, TeamChip, form5 } from "./ui";
@@ -8,6 +8,7 @@ import { PATCH_VERSION } from "./pages/patchdata";
 import { go } from "./nav";
 import { swissRows } from "./game/swiss";
 import { usePrefs } from "./prefs";
+import { careerYear, hasYearMeta, lckYearName, NO_RECORD, yearSeason } from "./game/yearRecords";
 
 const Title = lazy(() => import("./pages/Title"));
 const Setup = lazy(() => import("./pages/Setup"));
@@ -112,7 +113,7 @@ export default function App() {
         <nav>{NAV.map(([h, label, ic]) => (
           <a key={h} href={h} className={hash.startsWith(h) ? "on" : ""}><i>{ic}</i>{label}{h === "#/news" && unread > 0 && <em>{unread}</em>}</a>
         ))}</nav>
-        <div className="side-foot">시즌 카드 {CARDS_FILE.meta.eligible}장 · LCK {CORE.meta.games}경기</div>
+        <div className="side-foot">시즌 카드 {CARDS_FILE.meta.eligible}장 · {hasYearMeta(careerYear(save)) && yearSeason(careerYear(save)) ? `${lckYearName(careerYear(save))} ${yearSeason(careerYear(save))!.games}경기` : `${lckYearName(careerYear(save))} 상세 경기 수 ${NO_RECORD}`}</div>
       </aside>
       {menu && <div className="scrim" onClick={() => setMenu(false)} />}
       <div className="main">
