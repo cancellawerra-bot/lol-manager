@@ -1,5 +1,6 @@
 import { CARDS, PL, TM } from "../data";
 import type { Save, News, Row } from "./season";
+import { captureClassReportSplit } from "./classReport";
 
 export type ClubEventKind = "milestone" | "roster" | "finance" | "season";
 export interface ClubEvent {
@@ -58,4 +59,5 @@ export function archiveClubSplit(s: Save, rows: Row[], champion?: string): void 
   if (s.clubTimeline?.splits.some(r => r.id === id)) return;
   const snapshot = clubSplitSnapshot(s, rows, champion); if (!snapshot?.complete) return;
   initializeClubTimeline(s)!.splits.push(snapshot);
+  captureClassReportSplit(s, rows);
 }

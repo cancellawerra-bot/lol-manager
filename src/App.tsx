@@ -28,6 +28,7 @@ const Patch = lazy(() => import("./pages/Patch"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Match = lazy(() => import("./pages/Match"));
 const Stove = lazy(() => import("./pages/Stove"));
+const ClassReport = lazy(() => import("./pages/ClassReport"));
 const Intro = lazy(() => import("./pages/Intro"));
 const Tour = lazy(() => import("./pages/Tour"));
 import type { IntroInfo } from "./pages/Intro";
@@ -64,7 +65,7 @@ export default function App() {
   const save = useSave();
   const prefs = usePrefs();
   useEffect(() => {
-    loadCore().then(() => loadRanked()).then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market|stove)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
+    loadCore().then(() => loadRanked()).then(() => { const l = lastSlot(); if (l && /^#\/(home|news|schedule|standings|squad|player|scout|meta|settings|match|club|market|stove|report)/.test(location.hash)) loadSlot(l); setReady(true); }).catch((e) => setErr(String(e)));
   }, []);
   useEffect(() => { if (save) loadRanked(); }, [save]);
   useEffect(() => { setMenu(false); setNote(""); }, [hash]);
@@ -73,7 +74,7 @@ export default function App() {
 
   const route = hash.replace(/^#\/?/, "").split("/");
   const page = route[0] || "";
-  const publicPages = ["help", "patch", "method", "settings", "setup", "new", "history"];
+  const publicPages = ["help", "patch", "method", "settings", "setup", "new", "history", "report"];
   if (!save && page === "history") return <Suspense fallback={<Loading />}><HistorySetup /></Suspense>;
   if (!save && (page === "setup" || page === "new")) return <Suspense fallback={<Loading />}><Setup /></Suspense>;
   if (!save && !publicPages.includes(page)) return <Suspense fallback={<Loading />}><Title /></Suspense>;
@@ -139,7 +140,7 @@ export default function App() {
           <Suspense fallback={<Loading />}>
             {page === "home" || page === "" ? <Home onAdvance={onAdvance} /> : page === "news" ? <NewsPage id={route[1]} /> : page === "schedule" ? <Schedule /> : page === "standings" ? <Standings />
               : page === "squad" ? <Squad /> : page === "club" ? <Club /> : page === "market" ? <Market /> : page === "player" ? <PlayerPage k={route[1]} /> : page === "scout" ? <Scout team={route[1]} /> : page === "meta" ? <Meta />
-              : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : page === "stove" ? <Stove /> : <Home onAdvance={onAdvance} />}
+              : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : page === "stove" ? <Stove /> : page === "report" ? <ClassReport /> : <Home onAdvance={onAdvance} />}
           </Suspense>
           {!inMatch && <FanNotice />}
         </main>

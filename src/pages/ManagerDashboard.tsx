@@ -7,6 +7,7 @@ import { trainingDate, trainingPerson } from "../game/trainingRuntime";
 import { TALK_COOLDOWN_DAYS } from "../game/talks";
 import { fmtMoney } from "../game/money";
 import { unreadHonorNews } from "../game/achievements";
+import { shouldOfferReport } from "../game/classReport";
 import { PlayerAvatar } from "../ui";
 import { ratingOf } from "../rating";
 import SeasonJourney from "./SeasonJourney";
@@ -39,7 +40,10 @@ export interface HomeTodos { pending: HomeTask[]; done: HomeTask[]; total: numbe
 export function homeTodos(s: Save): HomeTodos {
   if (s.story?.ended || s.phase === "done") {
     const pending: HomeTask[] = [{ id: "ended", label: "이번 여정을 돌아볼 시간", detail: "구단의 기록과 다음 도전을 살펴보세요.", href: "#/club", tone: "neutral" }];
-    return { pending, done: [], total: 1 };
+    const done: HomeTask[] = [];
+    if (shouldOfferReport(s)) pending.push({ id: "class-report", label: "수업 보고서를 작성할 수 있습니다", detail: "한 시즌 또는 스플릿의 기록을 한 장으로 정리해 과제로 제출할 수 있습니다.", href: "#/report", tone: "neutral" });
+    else done.push({ id: "class-report", label: "수업 보고서를 확인할 수 있습니다", detail: "기록·도움말과 구단 화면에서도 지금까지의 보고서를 열 수 있습니다.", href: "#/report", tone: "good", done: true });
+    return { pending, done, total: pending.length + done.length };
   }
   if (s.session) {
     const pending: HomeTask[] = [{ id: "session", label: "진행 중인 경기가 있습니다", detail: "현재 경기의 준비와 결과 확인을 이어가세요.", href: "#/match", tone: "warn" }];
@@ -84,6 +88,7 @@ export function homeTodos(s: Save): HomeTodos {
     const soon = s.story.contracts.filter((c) => c.years === 1 && c.years > 0).length;
     if (soon) pending.push({ id: "expirySoon", label: `계약 만료 임박 ${soon}명`, detail: "남은 계약이 1년입니다. 스토브리그에서 재계약을 정합니다.", href: "#/club", tone: "neutral" });
   }
+  if (shouldOfferReport(s)) pending.push({ id: "class-report", label: "수업 보고서를 작성할 수 있습니다", detail: "한 시즌 또는 스플릿의 기록을 한 장으로 정리해 과제로 제출할 수 있습니다.", href: "#/report", tone: "neutral" });
   return { pending, done, total: pending.length + done.length };
 }
 

@@ -1,6 +1,7 @@
 // 저장/불러오기: localStorage 슬롯 3개 + 자동 저장, JSON 내보내기/불러오기
 import { useSyncExternalStore } from "react";
 import { Save, SAVE_V, aiSelection, finishDay, lockedChamps, mySeriesToday, recordGame, selectionFor } from "./game/season";
+import { captureClassReportSplit } from "./game/classReport";
 import { DraftState, Side, aiStep, apply, autoDraft, newDraft, turn } from "./game/draft";
 import { simulateGame } from "./game/sim";
 import { formMap } from "./game/season";
@@ -94,7 +95,7 @@ export function advance(): "match" | "day" | "done" | "sched" | "franchise" | "s
     if (!s.schedOk) return "sched";
     mutate((x) => { prepareSeriesTraining(x, my); prepareSeriesLineups(x, my); x.session = { seriesId: my.id, gameIdx: my.games.length, holder: "", stage: "press", simStep: 0 }; }); return "match";
   }
-  mutate((x, rng) => { if (isStory(x)) finishStoryDay(x, rng); else finishDay(x, rng); });
+  mutate((x, rng) => { if (isStory(x)) finishStoryDay(x, rng); else { finishDay(x, rng); if (x.phase === "done") captureClassReportSplit(x); } });
   return (s.phase as string) === "done" || s.story?.ended ? (s.story?.ended ? "endstory" : "done") : "day";
 }
 export function autoSimSplit(onlyOthers = false): void {

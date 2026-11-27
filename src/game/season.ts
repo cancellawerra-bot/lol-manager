@@ -71,6 +71,7 @@ export interface Save {
   scouting?: ScoutingState;
   clubTimeline?: ClubTimelineState;
   honors?: import("./achievements").HonorsState;
+  classReport?: import("./classReport").ClassReportState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;

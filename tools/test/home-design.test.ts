@@ -39,7 +39,7 @@ console.log("OK pure home queries preserve save/source/RNG; no invented champion
 
 const expiry=structuredClone(s);expiry.story!.phase="expiry";expiry.story!.stove={expiryKeys:["a","b"],expiryDecided:{a:"resign"}} as any;assert(homeAttention(expiry).some(a=>a.label==="만료 계약 1명 결정 대기"));
 assert(!homeAttention(expiry).some(a=>a.id==="expirySoon"));
-const ended=structuredClone(s);ended.story!.ended="fail";ended.phase="done";assert.equal(homeAttention(ended).length,1);assert(homeAttention(ended)[0].label.includes("여정"));assert.equal(homeAdvanceLabel(ended),"여정의 끝");
+const ended=structuredClone(s);ended.story!.ended="fail";ended.phase="done";assert(homeAttention(ended).some(a=>a.label.includes("여정")));assert(homeAttention(ended).some(a=>a.id==="class-report"));assert.equal(homeAdvanceLabel(ended),"여정의 끝");
 const session=structuredClone(s);session.session={seriesId:s.series[0].id} as any;assert.equal(homeAttention(session).length,1);assert.equal(homeAttention(session)[0].href,"#/match");assert.equal(homeAdvanceLabel(session),"경기 계속하기 ▶");assert.equal(homeNeedsSchedule(session),false);
 const vacant=structuredClone(s);vacant.starters[vacant.team]=vacant.starters[vacant.team].slice(0,3);assert(homeAttention(vacant).some(a=>a.id==="lineup"&&a.label.includes("2자리")));
 const cooled=structuredClone(s);const now=trainingDate(cooled);

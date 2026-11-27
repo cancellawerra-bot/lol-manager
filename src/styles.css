@@ -965,3 +965,52 @@ svg.lead .mk.B{fill:#3B82F6}svg.lead .mk.R{fill:#EF4444}
   .trophy-case{grid-template-columns:repeat(2,minmax(0,1fr))}
   .honor-feats{grid-template-columns:1fr}
 }
+
+
+/* v2.45.0 수업 보고서 */
+.class-report{max-width:900px;margin:0 auto 2rem}
+.class-report .cr-kicker{font-size:.78rem;letter-spacing:.04em;color:var(--muted,#8ea0b8);margin:0 0 .2rem}
+.class-report h1{margin:.1rem 0 .4rem;font-size:1.55rem}
+.class-report .cr-toolbar{margin:.6rem 0 1rem;gap:.5rem;flex-wrap:wrap}
+.class-report .cr-scope select{margin-left:.3rem}
+.cr-paper{background:#f6f3ea;color:#1a1d23;border-radius:12px;padding:1rem .9rem 1.2rem;box-shadow:0 0 0 1px #d9d2c3}
+.cr-paper .card{background:#fffdf8;color:#1a1d23;border:1px solid #d9d2c3;margin:0 0 .8rem}
+.cr-paper .card h2,.cr-paper .card .card-title, .cr-paper h3{color:#152033}
+.cr-paper .muted,.cr-paper .muted.xs,.cr-paper .muted.sm{color:#5c6570}
+.cr-paper b{color:#111}
+.cr-facts li b{font-size:1rem}
+.cr-fields{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.cr-fields label,.cr-reflect label{display:flex;flex-direction:column;gap:.3rem;font-size:.9rem;font-weight:600}
+.cr-fields input,.cr-reflect textarea,.cr-scope select{
+  font:inherit;font-weight:400;padding:.45rem .55rem;border:1px solid #c9c2b3;border-radius:8px;background:#fff;color:#1a1d23;
+}
+.cr-split{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.cr-champs,.cr-obj,.cr-moves,.cr-growth{list-style:none;padding:0;margin:.3rem 0}
+.cr-champs li{display:flex;align-items:center;gap:.45rem;padding:.25rem 0}
+.cr-champs em{margin-left:auto;font-style:normal;color:#3d4a5c;font-size:.88rem}
+.cr-obj li,.cr-growth li{padding:.2rem 0}
+.cr-moves li{padding:.4rem 0;border-top:1px solid #ebe4d6}
+.cr-moves li:first-child{border-top:0}
+.cr-moves p{margin:.15rem 0 0;font-size:.88rem;color:#3d4a5c}
+.cr-reflect{display:flex;flex-direction:column;gap:.8rem}
+.cr-reflect textarea{min-height:4.2rem;resize:vertical}
+.cr-print-only{display:none}
+.cr-note{margin-top:.4rem}
+@media (max-width:640px){
+  .cr-fields,.cr-split{grid-template-columns:1fr}
+  .cr-paper{padding:.7rem}
+}
+@media print{
+  @page{size:A4;margin:12mm 12mm 14mm}
+  html,body{background:#fff!important;color:#111!important}
+  nav,header.top,.sidebar,.tabbar,.fan-notice,.tour,.intro,.mh-attention,.no-print-hide,a.btn,.cr-toolbar{display:none!important}
+  .class-report{max-width:none;margin:0}
+  .cr-paper{background:#fff;box-shadow:none;border:0;padding:0;color:#111}
+  .cr-paper .card{break-inside:avoid;box-shadow:none;border:1px solid #ccc;margin:0 0 .55rem;padding:.45rem .6rem}
+  .cr-print-only{display:block!important;margin:0 0 .3rem}
+  .cr-print-only.cr-kicker{font-size:10pt;color:#444}
+  .class-report h1,.cr-print-only + h2,h2.cr-print-only{font-size:16pt;margin:0 0 .4rem}
+  .cr-fields input,.cr-reflect textarea{border:1px solid #bbb;background:#fff}
+  .cr-champs em,.cr-paper .muted{color:#333}
+  body{font-size:10.5pt;line-height:1.35}
+}

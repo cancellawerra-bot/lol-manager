@@ -49,6 +49,7 @@ export default function Club() {
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       <TrophyCase s={s} />
+      <p className="row gap wrap"><a className="btn" href="#/report" data-testid="club-report">지금까지 수업 보고서</a></p>
       {s.story && <Ledger s={s} />}
       <div id="club-marketing" data-testid="club-marketing"><MarketingCard /></div>
       {s.story && <ClubTimeline />}
