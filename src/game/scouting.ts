@@ -8,7 +8,7 @@ import { moneyRound } from "./money";
 import { trainingDate, playerTraining } from "./trainingRuntime";
 import { trainingProfile } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
-import { estimateOvr, ownedCompareText, visibleSortValue } from "./scoutEstimate";
+import { compareByVisibleOvr, estimateOvr, ownedCompareText, visibleSortValue } from "./scoutEstimate";
 
 export type ScoutGoal = "upgrade" | "value" | "development" | "watch";
 export type ScoutContext = "season" | "fa" | "tryout";
@@ -132,7 +132,7 @@ function offlineBudget(s: Save, c: SeasonCard, context: "fa" | "tryout"): { rese
 function annotate(s: Save, c: ScoutCandidate, goal: ScoutGoal): ScoutCandidate {
   if (!c.card || c.ovr == null) return c;
   const profile = trainingProfile(PLAYER_BIRTHDATES[c.person], trainingDate(s)), base = bestOwned(s, c.card.posIdx);
-  const vis = visibleSortValue(estimateOvr(s, c.person, c.ovr, c.card));
+  const vis = visibleSortValue(estimateOvr(s, c.person, c.ovr, c.card, undefined, s.story?.year));
   c.bestOwned = base; c.delta = base == null || !Number.isFinite(vis) || vis === Number.NEGATIVE_INFINITY ? undefined : vis - base; c.age = profile.age;
   const hole = !(s.starters[s.team] ?? [])[c.card.posIdx];
   c.reasons = [hole ? `${POS_KO[c.card.posIdx]} 선발 공백` : base == null ? "보유 선수 비교 기록 없음" : ownedCompareText(s, base, c.person, c.ovr, c.card)];
@@ -202,5 +202,5 @@ export function openingScout(year: number, cap: number, selected: string[], pric
     }
     reserve = moneyRound(reserve);
     return moneyRound(used + salary + reserve) <= moneyRound(cap) ? [{ card, ovr: effective(card, year), salary, reserve }] : [];
-  }).sort((a, b) => visibleSortValue(estimateOvr(null, b.card.pkey, b.ovr, b.card)) - visibleSortValue(estimateOvr(null, a.card.pkey, a.ovr, a.card)) || a.salary - b.salary || cmpStr(a.card.id, b.card.id)).slice(0, 3);
+  }).sort((a, b) => compareByVisibleOvr(null, { person: a.card.pkey, value: a.ovr, card: a.card, id: a.card.id }, { person: b.card.pkey, value: b.ovr, card: b.card, id: b.card.id }, year)).slice(0, 3);
 }

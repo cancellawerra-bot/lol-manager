@@ -56,8 +56,21 @@ export function knownRating(s: Save | null | undefined, personOrKey: string, car
   return p ? ratingOf(p) : null;
 }
 
-function evidenceWidth(s: Save | null | undefined, id: string, card?: SeasonCard | null, player?: Player | null): number | null {
-  const year = careerYear(s);
+/** 커리어 연도. 저장이 없으면(창단 시장 등) 힌트나 카드 연도를 써서 2026으로 오인하지 않습니다. */
+export function contextYear(s: Save | null | undefined, card?: SeasonCard | null, yearHint?: number): number {
+  if (yearHint != null && yearHint > 0) return yearHint;
+  const y = s?.story?.year;
+  if (typeof y === "number" && y > 0) return y;
+  if (card?.year && card.year > 0) return card.year;
+  return careerYear(s);
+}
+
+/**
+ * 별점 구간 폭(반 칸). 표본이 충분하면 1~1.5개(2~3), 적으면 최대 2개(4).
+ * 해당 연도·10경기 이상·표본 충분: 2(별 1개). 과거 기록이지만 표본이 있으면 3(별 1.5개).
+ */
+export function evidenceWidth(s: Save | null | undefined, id: string, card?: SeasonCard | null, player?: Player | null, yearHint?: number): number | null {
+  const year = contextYear(s, card, yearHint);
   const found = cardForYear(id, year);
   const c = card ?? found?.card;
   const p = player ?? (Object.values(PL).find(x => x.personKey === id || x.key === id) ?? undefined);
@@ -65,7 +78,9 @@ function evidenceWidth(s: Save | null | undefined, id: string, card?: SeasonCard
   const small = !!(c?.small || p?.small);
   const current = c ? c.year >= Math.min(year, 2026) : year >= 2026;
   const games = c?.games ?? p?.games ?? 0;
-  return !small && current && games >= 10 ? 2 : 4;
+  if (!small && current && games >= 10) return 2;
+  if (!small && games >= 10) return 3;
+  return 4;
 }
 
 /** 가장 넓은 창을 사람마다 결정적으로 잡은 뒤, 너비만 줄여 항상 실제 별점을 포함하고 이전 구간의 부분집합이 되게 합니다. */
@@ -97,7 +112,7 @@ export function starWindow(trueHalf: number, width: number, salt: string, maxWid
   return [lo, hi];
 }
 
-export function estimateOvr(s: Save | null | undefined, personOrKey: string, value?: number | null, card?: SeasonCard | null, player?: Player | null): StarEstimate {
+export function estimateOvr(s: Save | null | undefined, personOrKey: string, value?: number | null, card?: SeasonCard | null, player?: Player | null, yearHint?: number): StarEstimate {
   const id = personId(s, personOrKey);
   const reports = scoutReports(s, id);
   const v = value ?? knownRating(s, id, card, player);
@@ -106,7 +121,7 @@ export function estimateOvr(s: Save | null | undefined, personOrKey: string, val
   if (isOurPlayer(s, id) || isOurPlayer(s, personOrKey)) {
     return { kind: "exact", lo: ratingToHalf(v), hi: ratingToHalf(v), value: v, width: 0, reports, text: String(v), reason: "우리 구단 선수라 정확한 능력치를 표시합니다." };
   }
-  const base = evidenceWidth(s, id, card, player);
+  const base = evidenceWidth(s, id, card, player, yearHint);
   if (base == null) return none("현재 연도에 확인된 능력치 기록이 없어 추정하지 않습니다.");
   const width = Math.max(0, base - reports * 2);
   const half = ratingToHalf(v);
@@ -117,13 +132,15 @@ export function estimateOvr(s: Save | null | undefined, personOrKey: string, val
   const reason = reports > 0
     ? `확인된 시즌 기록과 관찰 리포트 ${reports}건으로 별점 구간을 좁혔습니다. 실제 능력치는 이 구간에 있습니다.`
     : base <= 2
-      ? "해당 연도 시즌 기록을 바탕으로 별점 구간을 표시합니다. 실제 능력치는 이 구간에 있습니다."
-      : "과거 기록이거나 표본이 적어 별점 구간이 넓습니다. 실제 능력치는 이 구간에 있습니다.";
+      ? "해당 연도 시즌 기록(표본 충분)을 바탕으로 별점 구간을 표시합니다. 실제 능력치는 이 구간에 있습니다."
+      : base <= 3
+        ? "확인된 시즌 기록을 바탕으로 별점 구간을 표시합니다. 실제 능력치는 이 구간에 있습니다."
+        : "과거 기록이거나 표본이 적어 별점 구간이 넓습니다. 실제 능력치는 이 구간에 있습니다.";
   return { kind: "range", lo, hi, value: v, width: hi - lo, reports, text: formatStars(lo, hi), reason };
 }
 
-export function ratingLabel(s: Save | null | undefined, personOrKey: string, value?: number | null, card?: SeasonCard | null): string {
-  const est = estimateOvr(s, personOrKey, value, card);
+export function ratingLabel(s: Save | null | undefined, personOrKey: string, value?: number | null, card?: SeasonCard | null, yearHint?: number): string {
+  const est = estimateOvr(s, personOrKey, value, card, undefined, yearHint);
   if (est.kind === "none") return "기록 없음";
   if (est.kind === "exact") return String(est.value);
   return `${est.text} 추정`;
@@ -162,20 +179,29 @@ export function visibleRatingSpan(est: StarEstimate): { lo: number; hi: number }
 
 const cmpId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-/** 능력치 높은 순(표시 기준). 동점은 결정적 id 비교이며 실제 퍼센타일·숨은 능력치는 쓰지 않습니다. */
+/** 화면에 보이는 공개 시즌 기록(경기 수·KDA·승률) 비교. 숨은 능력치·퍼센타일은 쓰지 않습니다. */
+export function comparePublicRecords(a?: SeasonCard | null, b?: SeasonCard | null): number {
+  const games = (c?: SeasonCard | null): number => (c && Number.isFinite(c.games) ? c.games : -1);
+  const kda = (c?: SeasonCard | null): number => (c?.kda != null && Number.isFinite(c.kda) ? c.kda : Number.NEGATIVE_INFINITY);
+  const wr = (c?: SeasonCard | null): number => (c?.wr != null && Number.isFinite(c.wr) ? c.wr : Number.NEGATIVE_INFINITY);
+  return games(b) - games(a) || kda(b) - kda(a) || wr(b) - wr(a);
+}
+
+/** 능력치 높은 순(표시 기준). 구간 중간값 다음 공개 기록, 마지막은 결정적 id. 숨은 실제값·퍼센타일은 쓰지 않습니다. */
 export function compareByVisibleOvr(
   s: Save | null | undefined,
   a: { person: string; value?: number | null; card?: SeasonCard | null; id: string },
   b: { person: string; value?: number | null; card?: SeasonCard | null; id: string },
+  yearHint?: number,
 ): number {
-  const ea = estimateOvr(s, a.person, a.value, a.card);
-  const eb = estimateOvr(s, b.person, b.value, b.card);
-  return visibleSortValue(eb) - visibleSortValue(ea) || cmpId(a.id, b.id) || cmpId(a.person, b.person);
+  const ea = estimateOvr(s, a.person, a.value, a.card, undefined, yearHint);
+  const eb = estimateOvr(s, b.person, b.value, b.card, undefined, yearHint);
+  return visibleSortValue(eb) - visibleSortValue(ea) || comparePublicRecords(a.card, b.card) || cmpId(a.id, b.id) || cmpId(a.person, b.person);
 }
 
 /** 스카우트 추천 문장. 미관찰이면 실제 차이(+N)를 쓰지 않고 추정 구간으로만 적습니다. */
-export function ownedCompareText(s: Save | null | undefined, bestOwned: number, person: string, value?: number | null, card?: SeasonCard | null): string {
-  const est = estimateOvr(s, person, value, card);
+export function ownedCompareText(s: Save | null | undefined, bestOwned: number, person: string, value?: number | null, card?: SeasonCard | null, yearHint?: number): string {
+  const est = estimateOvr(s, person, value, card, undefined, yearHint);
   if (est.kind === "exact" && est.value != null && Number.isFinite(est.value)) {
     const d = Math.round(est.value - bestOwned);
     return `같은 포지션 보유 최고 ${bestOwned} 대비 ${d >= 0 ? "+" : ""}${d}`;

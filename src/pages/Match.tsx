@@ -220,7 +220,7 @@ function Lineup() {
                 {brief.keyPos === i && <em className="mu-key" data-testid="key-matchup">가장 큰 차이</em>}
               </div>
               <div className="lu-p op" style={{ "--tc": ro != null ? ratingColor(ro) : undefined } as React.CSSProperties}>
-                <span className="lu-ovr">{lane.op.estKind === "exact" ? <b>{ro ?? "–"}</b> : <ScoutStars person={lane.op.key} player={po} compact />}</span>
+                <span className={"lu-ovr" + (lane.op.estKind === "exact" ? "" : " est")}>{lane.op.estKind === "exact" ? <b>{ro ?? "–"}</b> : <ScoutStars person={lane.op.key} player={po} compact />}</span>
                 <div className="lu-info">
                   <b className="lu-name">{lo.name}</b>
                   <span className="lu-meta">{lo.year && <em>{lo.year}</em>}{lo.est && <em className="est">추정</em>}</span>

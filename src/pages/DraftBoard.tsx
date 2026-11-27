@@ -2,7 +2,7 @@
 // PC는 탑·정글·미드·원딜·서포터 다섯 열을 나란히, 열마다 안쪽 스크롤. 휴대폰은 포지션 탭으로 한 열씩.
 import { useMemo, useState } from "react";
 import { useSave } from "../store";
-import { compareByVisibleOvr } from "../game/scoutEstimate";
+import { compareByVisibleOvr, estimateOvr } from "../game/scoutEstimate";
 import { CARDS, POS_KO, cardLabel, fmt } from "../data";
 import type { SeasonCard } from "../types";
 import { ratingColor } from "../rating";
@@ -126,6 +126,11 @@ const FOUR_GROUPS: { title: string; items: { k: "fight" | "press" | "judge" | "o
 
 /** 상세 창: 4대 능력치 막대 (60–99, 기록 없으면 '기록 없음') */
 function FourStats({ c }: { c: SeasonCard }) {
+  const s = useSave();
+  const est = estimateOvr(s, c.pkey, undefined, c);
+  if (est.kind !== "exact") {
+    return <p className="muted xs" data-testid="four-hidden">세부 능력치(교전·압박·판단·운영)는 관찰을 마친 뒤 확인할 수 있습니다.</p>;
+  }
   if (!c.four) return null;
   return (
     <div className="four" data-testid="four-stats">

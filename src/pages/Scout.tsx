@@ -4,6 +4,7 @@ import { standings } from "../game/season";
 import { Card, ChampIcon, Ovr, TeamChip, Bar } from "../ui";
 import { careerYear, hasYearPlayerPools, hasYearTeamStyles, lckYearName, NO_RECORD } from "../game/yearRecords";
 import { estimateOvr } from "../game/scoutEstimate";
+import { StarRangeText } from "./ScoutRating";
 
 function ChampRow({ list, games, max = 10 }: { list: [string, number][]; games: number; max?: number }) {
   return (
@@ -58,7 +59,7 @@ export default function Scout({ team }: { team?: string }) {
         <div className="tbl-wrap"><table className="tbl">
           <thead><tr><th>포지션</th><th>선수</th><th className="r">종합</th><th>주력 챔피언 ({yearPools ? lckYearName(year) : `${lckYearName(year)} ${NO_RECORD}`})</th></tr></thead>
           <tbody>{keys.length ? keys.map((k, i) => { const p = PL[k]; return (
-            <tr key={k}><td className="muted">{POS_KO[i]}</td><td>{p ? <a className="pname" href={`#/player/${k}`}>{p.name}</a> : k}{p?.small && <span className="tag warn xs">표본 부족</span>}</td><td className="r">{p ? (() => { const est = estimateOvr(s, p.personKey ?? k, undefined, undefined, p); return est.kind === "range" ? <b className="scout-stars" data-testid="scout-stars" title={est.reason}>{est.text}</b> : <Ovr p={p} />; })() : "–"}</td>
+            <tr key={k}><td className="muted">{POS_KO[i]}</td><td>{p ? <a className="pname" href={`#/player/${k}`}>{p.name}</a> : k}{p?.small && <span className="tag warn xs">표본 부족</span>}</td><td className="r">{p ? (() => { const est = estimateOvr(s, p.personKey ?? k, undefined, undefined, p); return est.kind === "range" ? <span data-testid="scout-stars" title={est.reason}><StarRangeText lo={est.lo} hi={est.hi} text={est.text} /></span> : <Ovr p={p} />; })() : "–"}</td>
               <td>{yearPools && p?.pool?.length ? <span className="mini-pool">{p.pool.slice(0, 6).map(([c, n]) => <span key={c} title={`${CH[c]?.ko} ${n}경기`}><ChampIcon id={c} size={26} /><small>{n}</small></span>)}</span> : <span className="muted sm">{NO_RECORD}</span>}</td></tr>
           ); }) : <tr><td colSpan={4} className="muted">{NO_RECORD}</td></tr>}</tbody>
         </table></div>

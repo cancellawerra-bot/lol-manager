@@ -6,6 +6,7 @@ import { getSave, useSave } from "../store";
 import { Card } from "../ui";
 import { cardRating, ratingColor } from "../rating";
 import { compareByVisibleOvr, estimateOvr } from "../game/scoutEstimate";
+import { StarRangeText } from "./ScoutRating";
 import { HonorChips, MiniFour } from "../pcard";
 import { go } from "../nav";
 import { fmtMoney, moneyRound } from "../game/money";
@@ -13,13 +14,13 @@ import { franchisePlayers } from "../game/story";
 import InSeasonMarket from "./InSeasonMarket";
 import { OpeningScouting } from "./Scouting";
 
-export function CardTile({ c, on, disabled, reason, onClick, price, personView, ratingOf, showFour = true }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean; ratingOf?: (c: SeasonCard) => number; showFour?: boolean }) {
-  const s = useSave(), rt = ratingOf ? ratingOf(c) : cardRating(c), est = estimateOvr(s, c.pkey, rt, c);
+export function CardTile({ c, on, disabled, reason, onClick, price, personView, ratingOf, showFour = true, year }: { c: SeasonCard; on?: boolean; disabled?: boolean; reason?: string; onClick?: () => void; price?: number; personView?: boolean; ratingOf?: (c: SeasonCard) => number; showFour?: boolean; year?: number }) {
+  const s = useSave(), rt = ratingOf ? ratingOf(c) : cardRating(c), est = estimateOvr(s, c.pkey, rt, c, undefined, year);
   const exact = est.kind === "exact", tone = exact ? rt : 84;
   return (
     <button type="button" className={"card-tile pc" + (exact && rt >= 92 ? " top" : "") + (on ? " on" : "") + (disabled ? " dim" : "")} style={{ "--tc": ratingColor(tone) } as React.CSSProperties} onClick={onClick} disabled={disabled && !on} data-testid={`card-${c.id}`} data-person={c.pkey}>
       <div className="pc-head">
-        <div className={"pc-ovr" + (exact ? "" : " est")} aria-label={est.kind === "none" ? "능력치 기록 없음" : exact ? `능력치 ${rt}` : `능력치 추정 ${est.text}`} data-testid="scout-stars" data-kind={est.kind} data-lo={est.lo} data-hi={est.hi} title={est.reason}>{est.kind === "none" ? <b className="muted">–</b> : exact ? <b>{rt}</b> : <b className="scout-stars">{est.text}</b>}<small>{est.kind === "range" ? "능력치 추정" : est.kind === "none" ? "기록 없음" : "능력치"}</small></div>
+        <div className={"pc-ovr" + (exact ? "" : " est")} aria-label={est.kind === "none" ? "능력치 기록 없음" : exact ? `능력치 ${rt}` : `능력치 추정 ${est.text}`} data-testid="scout-stars" data-kind={est.kind} data-lo={est.lo} data-hi={est.hi} title={est.reason}>{est.kind === "none" ? <b className="muted">–</b> : exact ? <b>{rt}</b> : <StarRangeText lo={est.lo} hi={est.hi} text={est.text} />}<small>{est.kind === "range" ? "능력치 추정" : est.kind === "none" ? "기록 없음" : "능력치"}</small></div>
         <div className="pc-id">
           <b className="pc-name">{personView ? c.name : cardLabel(c)}</b>
           <span className="pc-sub">{personView && `${c.year} 기록 · `}{POS_KO[c.posIdx]} · {c.team}</span>
@@ -27,8 +28,8 @@ export function CardTile({ c, on, disabled, reason, onClick, price, personView, 
         </div>
         <span className="gold pc-price">{fmtMoney(price ?? c.salary)}</span>
       </div>
-      {showFour && <MiniFour c={c} />}
-      <div className="muted xs pc-note">{c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""} · {c.rank && c.pool ? `${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : `퍼센타일 ${c.percentile}`}</div>
+      {showFour && (exact ? <MiniFour c={c} /> : est.kind === "range" || est.kind === "none" ? <p className="muted xs" data-testid="four-hidden">세부 능력치(교전·압박·판단·운영)는 관찰을 마친 뒤 확인할 수 있습니다.</p> : null)}
+      <div className="muted xs pc-note">{c.games}경기{c.small ? " · 표본 부족" : ""}{c.limited ? " · 지표 제한(초기 시대)" : ""}{c.rank && c.pool ? ` · ${c.year} ${POS_KO[c.posIdx]} ${c.pool}명 중 ${c.rank}위` : exact && c.percentile != null ? ` · 퍼센타일 ${c.percentile}` : ""}</div>
       <div className="tile-metrics xs muted">
         <span>KDA {recTxt(c.kda, (n) => n.toFixed(2))}</span>
         <span>승률 {recTxt(c.wr, (n) => `${(n * 100).toFixed(1)}%`)}</span>
@@ -69,7 +70,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
       if (sort === "salaryAsc") return pa - pb;
       if (sort === "pct") {
         const ra = ratingOf ? ratingOf(a) : cardRating(a), rb = ratingOf ? ratingOf(b) : cardRating(b);
-        return compareByVisibleOvr(s, { person: a.pkey, value: ra, card: a, id: a.id }, { person: b.pkey, value: rb, card: b, id: b.id }) || pb - pa;
+        return compareByVisibleOvr(s, { person: a.pkey, value: ra, card: a, id: a.id }, { person: b.pkey, value: rb, card: b, id: b.id }, seasonYear);
       }
       return b.year - a.year || pb - pa;
     });
@@ -128,7 +129,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
       <div className="card-grid">
         {shown.slice(0, hideOwn ? 240 : 240).map((c) => {
           const r = reason(c);
-          return <CardTile key={c.id} c={c} on={selected.includes(c.id)} disabled={!!r} reason={r} onClick={() => toggle(c)} price={price(c)} personView={!!seasonYear} ratingOf={ratingOf} />;
+          return <CardTile key={c.id} c={c} on={selected.includes(c.id)} disabled={!!r} reason={r} onClick={() => toggle(c)} price={price(c)} personView={!!seasonYear} ratingOf={ratingOf} year={seasonYear} />;
         })}
       </div>
       {seasonYear && <p className="muted sm">{seasonYear}년 기준 선수당 한 명만 표시합니다. 시즌 기록은 연도에 맞춰 자동 적용하며, 해당 연도 기록이 없으면 가장 가까운 과거 기록을 사용합니다.</p>}

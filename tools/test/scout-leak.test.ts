@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { loadCore, loadRanked, CARDS, PL, RANKED } from "../../src/data";
 import { newHistoryCareer, marketCards } from "../../src/game/story";
 import { addScoutReport } from "../../src/game/scouting";
-import { estimateOvr, compareByVisibleOvr, ownedCompareText, visibleSortValue, halfToRatingLo, halfToRatingHi } from "../../src/game/scoutEstimate";
+import { estimateOvr, compareByVisibleOvr, comparePublicRecords, ownedCompareText, visibleSortValue, evidenceWidth } from "../../src/game/scoutEstimate";
 import { cardRating, ratingOf } from "../../src/rating";
 import { preMatchBrief } from "../../src/game/matchup";
 import { challengeLog, careerHonors } from "../../src/game/achievements";
@@ -26,9 +26,9 @@ assert.ok(others.length >= 20);
     const est = estimateOvr(s, c.pkey, value, c);
     return { c, value, vis: visibleSortValue(est), id: c.id, person: c.pkey, est };
   });
-  const byVisible = [...rows].sort((a, b) => b.vis - a.vis || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const byVisible = [...rows].sort((a, b) => b.vis - a.vis || comparePublicRecords(a.c, b.c) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const sorted = [...rows].sort((a, b) => compareByVisibleOvr(s, { person: a.person, value: a.value, card: a.c, id: a.id }, { person: b.person, value: b.value, card: b.c, id: b.id }));
-  assert.deepEqual(sorted.map((x) => x.id), byVisible.map((x) => x.id), "정렬은 보이는 중간값 내림차순, 동점은 id");
+  assert.deepEqual(sorted.map((x) => x.id), byVisible.map((x) => x.id), "정렬은 보이는 중간값 내림차순, 동점은 공개 기록·id");
 
   // 실제값 순과 보이는 순이 다른 쌍이 있으면, 보이는 쪽이 이긴다.
   const clone = structuredClone(s);
@@ -52,7 +52,7 @@ assert.ok(others.length >= 20);
   }
   assert.ok(inverted, "테스트 표본에서 실제값과 보이는 순이 다른 쌍을 만들어야 함");
 
-  // 동점 타이브레이커는 퍼센타일이 아니라 id
+  // 동점 타이브레이커는 퍼센타일·실제값이 아니라 공개 기록(경기 수·KDA·승률) 다음 id
   const sameVis = rows.filter((x) => x.est.kind === "range");
   let tied = false;
   for (let i = 0; i < sameVis.length; i++) {
@@ -60,13 +60,46 @@ assert.ok(others.length >= 20);
       const a = sameVis[i], b = sameVis[j];
       if (a.vis !== b.vis) continue;
       const cmp = compareByVisibleOvr(s, { person: a.person, value: a.value, card: a.c, id: a.id }, { person: b.person, value: b.value, card: b.c, id: b.id });
-      const expect = a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-      assert.equal(Math.sign(cmp), expect, "동점은 결정적 id, 퍼센타일·실제값 아님");
+      const pub = comparePublicRecords(a.c, b.c);
+      const expect = pub !== 0 ? Math.sign(pub) : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+      assert.equal(Math.sign(cmp), expect, "동점은 공개 기록·id, 퍼센타일·실제값 아님");
       tied = true;
       break;
     }
     if (tied) break;
   }
+}
+
+// 1-b) 확인된 시즌 기록이 있으면 구간이 더 좁고, 창단 시장에서 연도를 2026으로 오인하지 않는다.
+{
+  const cur = others.find((c) => c.year === 2018 && !c.small && c.games >= 10);
+  const past = others.find((c) => c.year <= 2016 && !c.small && c.games >= 10);
+  const thin = others.find((c) => c.small || c.games < 5);
+  assert.ok(cur, "2018 표본 충분 카드");
+  const wCur = evidenceWidth(s, cur!.pkey, cur, undefined, 2018);
+  const eCur = estimateOvr(s, cur!.pkey, cardRating(cur!, cur!.year < 2018), cur, undefined, 2018);
+  assert.equal(wCur, 2, "해당 연도·10경기 이상 구간 폭은 별 1개(2 반 칸)");
+  if (eCur.kind === "range") {
+    assert.ok(eCur.width <= 2);
+    assert.ok(eCur.lo <= eCur.hi);
+  }
+  const setup = estimateOvr(null, cur!.pkey, cardRating(cur!, false), cur, undefined, 2018);
+  assert.notEqual(setup.kind, "none");
+  if (setup.kind === "range") assert.ok(setup.width <= 2, "창단 시장 2018 카드가 넓은 기본 폭(4)으로 떨어지지 않음");
+  const noHint = estimateOvr(null, cur!.pkey, cardRating(cur!, false), cur);
+  if (noHint.kind === "range") assert.ok(noHint.width <= 2, "저장이 없어도 카드 연도를 기준으로 좁힘");
+  if (past) {
+    const wPast = evidenceWidth(s, past.pkey, past, undefined, 2018);
+    assert.equal(wPast, 3, "과거 기록이지만 표본이 있으면 별 1.5개(3 반 칸)");
+    assert.ok(wPast! > wCur!);
+  }
+  if (thin) {
+    const wThin = evidenceWidth(s, thin.pkey, thin, undefined, 2018);
+    assert.equal(wThin, 4, "표본이 적으면 최대 별 2개");
+  }
+  // 구간이 서로 달라 중간값만으로도 순서가 갈리는 쌍이 있어야 함(전원 ★★★~★★★★★ 방지)
+  const mids = new Set(others.map((c) => visibleSortValue(estimateOvr(s, c.pkey, cardRating(c, c.year < 2018), c, undefined, 2018))));
+  assert.ok(mids.size >= 5, `중간값이 다양해야 함 (got ${mids.size})`);
 }
 
 // 2) 「보유 최고 대비 +N」은 미관찰이면 실제 차이를 쓰지 않고 구간으로만 적는다.

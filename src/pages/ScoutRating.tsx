@@ -3,14 +3,19 @@ import { useSave, mutate } from "../store";
 import { Ovr } from "../ui";
 import { ratingOf } from "../rating";
 import { MAX_SCOUT_REPORTS, addScoutReport, isOurPlayer, personId, scoutReports } from "../game/scouting";
-import { estimateOvr, potentialNote, type StarEstimate } from "../game/scoutEstimate";
+import { estimateOvr, formatStars, potentialNote, type StarEstimate } from "../game/scoutEstimate";
 
-export function ScoutStars({ person, value, card, player, compact }: { person: string; value?: number | null; card?: SeasonCard | null; player?: Player | null; compact?: boolean }) {
+export function StarRangeText({ lo, hi, text }: { lo: number; hi: number; text: string }) {
+  if (lo === hi) return <b className="scout-stars">{text}</b>;
+  return <b className="scout-stars wrap"><span className="star-lo">{formatStars(lo, lo)}</span><span className="star-sep">~</span><span className="star-hi">{formatStars(hi, hi)}</span></b>;
+}
+
+export function ScoutStars({ person, value, card, player, compact, year }: { person: string; value?: number | null; card?: SeasonCard | null; player?: Player | null; compact?: boolean; year?: number }) {
   const s = useSave();
-  const est = estimateOvr(s, person, value ?? (player ? ratingOf(player) : null), card, player);
+  const est = estimateOvr(s, person, value ?? (player ? ratingOf(player) : null), card, player, year);
   if (est.kind === "none") return <span className="scout-est" data-testid="scout-stars" data-kind="none" title={est.reason}>기록 없음</span>;
   if (est.kind === "exact") return compact ? <Ovr p={player} v={est.value} /> : <span className="scout-est exact" data-testid="scout-stars" data-kind="exact" title={est.reason}><b>{est.value}</b><small>능력치</small></span>;
-  return <span className="scout-est" data-testid="scout-stars" data-kind="range" data-lo={est.lo} data-hi={est.hi} title={est.reason}><b className="scout-stars">{est.text}</b>{!compact && <small>능력치 추정</small>}</span>;
+  return <span className="scout-est" data-testid="scout-stars" data-kind="range" data-lo={est.lo} data-hi={est.hi} title={est.reason}><StarRangeText lo={est.lo} hi={est.hi} text={est.text} />{!compact && <small>능력치 추정</small>}</span>;
 }
 
 export function ScoutObserve({ person, onStatus }: { person: string; onStatus?: (msg: string) => void }) {

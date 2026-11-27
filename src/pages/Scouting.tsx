@@ -7,7 +7,7 @@ import { cardRating, ratingOf } from "../rating";
 import { fmtMoney } from "../game/money";
 import { SCOUT_GOALS, scoutingReport, scoutPreferences, scoutWatch, scoutBench, setScoutPreferences, toggleScoutWatch, openingScout, type ScoutContext, type ScoutCandidate, type ScoutGoal } from "../game/scouting";
 import { estimateOvr, potentialNote, ratingLabel } from "../game/scoutEstimate";
-import { ScoutObserve, ScoutPotential } from "./ScoutRating";
+import { ScoutObserve, ScoutPotential, StarRangeText } from "./ScoutRating";
 
 export function ScoutingPanel({ context, onSelect }: { context: ScoutContext; onSelect: (c: ScoutCandidate) => void }) {
   const s = useSave()!, [message, setMessage] = useState(""), [query, setQuery] = useState("");
@@ -53,7 +53,7 @@ export function ScoutingPanel({ context, onSelect }: { context: ScoutContext; on
 export function OpeningScouting({ year, cap, selected, priceOf, onPick }: { year: number; cap: number; selected: string[]; priceOf: (c: SeasonCard) => number; onPick: (c: SeasonCard) => void }) {
   const candidates = openingScout(year, cap, selected, priceOf);
   return <section className="notice" data-testid="opening-scout"><h3>창단 스카우팅 · 남은 포지션 예산 우선</h3><p className="sm">선발이 비어 있는 포지션을 먼저 추천합니다. 다른 빈 포지션의 최저 연봉을 남기고 현재 확인된 기록으로 비교합니다. 선수당 한 명이며 과거 기록은 추정 기준을 함께 표시합니다.</p>
-    <div className="card-grid">{candidates.map(c => { const rt = cardRating(c.card, c.card.year < Math.min(year, 2026)), est = estimateOvr(null, c.card.pkey, rt, c.card); return <div className="card-tile" key={c.card.pkey} data-testid={`opening-scout-${c.card.pkey}`}><b>{c.card.name} · {POS_KO[c.card.posIdx]}</b><p className="sm">{c.card.year} 기록 · {c.card.games}경기 · 현재 기준 능력치 <b data-testid="scout-stars">{est.kind === "range" ? est.text + " 추정" : String(rt)}</b>{c.card.year < Math.min(year, 2026) && " · 과거 기록 기반 추정"}{c.card.small && " · 표본 부족"}</p><p className="muted xs">{potentialNote(est)}</p><p className="sm">연봉 {fmtMoney(c.salary)} · 다른 빈 포지션 유보 {fmtMoney(c.reserve)}</p><button className="btn sm" data-testid={`opening-scout-pick-${c.card.pkey}`} onClick={() => onPick(c.card)}>추천 선수 선택</button></div>; })}</div>
+    <div className="card-grid">{candidates.map(c => { const rt = cardRating(c.card, c.card.year < Math.min(year, 2026)), est = estimateOvr(null, c.card.pkey, rt, c.card, undefined, year); return <div className="card-tile" key={c.card.pkey} data-testid={`opening-scout-${c.card.pkey}`}><b>{c.card.name} · {POS_KO[c.card.posIdx]}</b><p className="sm">{c.card.year} 기록 · {c.card.games}경기 · 현재 기준 능력치 <b data-testid="scout-stars">{est.kind === "range" ? <> <StarRangeText lo={est.lo} hi={est.hi} text={est.text} /> 추정</> : String(rt)}</b>{c.card.year < Math.min(year, 2026) && " · 과거 기록 기반 추정"}{c.card.small && " · 표본 부족"}</p><p className="muted xs">{potentialNote(est)}</p><p className="sm">연봉 {fmtMoney(c.salary)} · 다른 빈 포지션 유보 {fmtMoney(c.reserve)}</p><button className="btn sm" data-testid={`opening-scout-pick-${c.card.pkey}`} onClick={() => onPick(c.card)}>추천 선수 선택</button></div>; })}</div>
     {!candidates.length && <p className="sm">현재 예산·남은 자리에서 추천할 후보가 없습니다. 보유 선택과 포지션을 확인해 주세요.</p>}
     <p className="muted xs">추천은 게임용 비교이며 성장이나 승리를 보장하지 않습니다. 모든 연봉은 게임용 가상 금액입니다.</p>
   </section>;
