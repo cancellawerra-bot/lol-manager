@@ -1,0 +1,26 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+  <title>Crimson chevron shield emblem</title>
+  <desc>A sturdy crimson and near-black heraldic shield with a double border, white highlight edges, and a bold rising chevron on a transparent background.</desc>
+  <defs>
+    <linearGradient id="red-grad" x1="365" y1="160" x2="667" y2="903" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ee0830" />
+      <stop offset=".48" stop-color="#b6001c" />
+      <stop offset="1" stop-color="#850617" />
+    </linearGradient>
+    <linearGradient id="chevron-grad" x1="453" y1="366" x2="571" y2="620" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#303135" />
+      <stop offset=".55" stop-color="#121316" />
+      <stop offset="1" stop-color="#08090c" />
+    </linearGradient>
+  </defs>
+  <g id="shield">
+    <path id="outer-dark-border" fill="#0b0c0f" d="M512 29C411 115 229 180 89 170 62 435 120 772 512 1002 904 772 962 435 935 170 795 180 613 115 512 29Z" />
+    <path id="white-border" fill="#fafbfc" d="M512 44C409 130 236 190 101 183 77 440 140 765 512 989 884 765 947 440 923 183 788 190 615 130 512 44Z" />
+    <path id="inner-dark-border" fill="#390007" d="M512 78C414 157 247 216 128 212 111 441 167 748 512 959 857 748 913 441 896 212 777 216 610 157 512 78Z" />
+    <path id="crimson-field" fill="url(#red-grad)" d="M512 82C430 175 228 232 128 358L132 396C184 333 266 277 338 237 235 326 175 413 154 516L220 677C268 747 321 796 380 825 346 772 330 722 324 673 359 780 431 879 512 956 593 879 665 780 700 673 694 722 678 772 644 825 703 796 756 747 804 677L870 516C849 413 789 326 686 237 758 277 840 333 892 396L896 358C796 232 594 175 512 82Z" />
+    <g id="central-chevron">
+      <path id="chevron-white-edge" fill="#fafbfc" d="M154 516 512 325 870 516C856 574 837 626 815 678L512 515 209 678C187 637 166 575 154 516Z" />
+      <path id="chevron-dark-face" fill="url(#chevron-grad)" d="M162 540 512 353 862 540C850 580 834 619 814 654L512 486 209 654C190 619 174 580 162 540Z" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,1 @@
+const n=[{id:"intro",ko:"입문",min:1,desc:"1~2경기"},{id:"skilled",ko:"숙련",min:3,desc:"3~6경기"},{id:"expert",ko:"전문",min:7,desc:"7~11경기"},{id:"master",ko:"장인",min:12,desc:"12경기 이상"}],t=s=>[...n].reverse().find(e=>s>=e.min)??n[0];function o(s){const e={intro:0,skilled:0,expert:0,master:0};for(const[,i]of s)i>0&&e[t(i).id]++;return e}export{n as T,o as a,t as m};

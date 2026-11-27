@@ -1,0 +1,122 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+  <title>Magenta and navy faceted gemstone</title>
+  <defs>
+    <linearGradient id="crown-grad" x1="349" y1="116" x2="653" y2="351" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffcfef" />
+      <stop offset=".48" stop-color="#ff69c4" />
+      <stop offset="1" stop-color="#eb007d" />
+    </linearGradient>
+    <linearGradient id="upper-left-grad" x1="160" y1="166" x2="222" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b50057" />
+      <stop offset=".55" stop-color="#ff008c" />
+      <stop offset="1" stop-color="#ff8ed7" />
+    </linearGradient>
+    <linearGradient id="upper-right-grad" x1="766" y1="154" x2="940" y2="361" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9c004b" />
+      <stop offset=".62" stop-color="#fa048f" />
+      <stop offset="1" stop-color="#ffd6f3" />
+    </linearGradient>
+    <linearGradient id="table-grad" x1="504" y1="221" x2="514" y2="382" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b50055" />
+      <stop offset="1" stop-color="#ff269f" />
+    </linearGradient>
+    <linearGradient id="wine-left-grad" x1="277" y1="238" x2="360" y2="395" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#440027" />
+      <stop offset="1" stop-color="#90003f" />
+    </linearGradient>
+    <linearGradient id="wine-right-grad" x1="711" y1="232" x2="681" y2="399" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#960044" />
+      <stop offset="1" stop-color="#430024" />
+    </linearGradient>
+    <linearGradient id="navy-left-grad" x1="155" y1="392" x2="462" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#001443" />
+      <stop offset=".52" stop-color="#000a2c" />
+      <stop offset="1" stop-color="#0048a8" />
+    </linearGradient>
+    <linearGradient id="navy-right-grad" x1="842" y1="406" x2="556" y2="848" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000b2c" />
+      <stop offset=".56" stop-color="#00143f" />
+      <stop offset="1" stop-color="#006fe9" />
+    </linearGradient>
+    <linearGradient id="blue-left-grad" x1="69" y1="387" x2="365" y2="672" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0074ee" />
+      <stop offset=".4" stop-color="#32baff" />
+      <stop offset="1" stop-color="#00339e" />
+    </linearGradient>
+    <linearGradient id="blue-right-grad" x1="939" y1="398" x2="686" y2="662" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0066e5" />
+      <stop offset=".43" stop-color="#32baff" />
+      <stop offset="1" stop-color="#003cae" />
+    </linearGradient>
+    <linearGradient id="heart-left-grad" x1="405" y1="391" x2="517" y2="916" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#450025" />
+      <stop offset=".51" stop-color="#dc006b" />
+      <stop offset=".78" stop-color="#ff1197" />
+      <stop offset="1" stop-color="#ffa0e8" />
+    </linearGradient>
+    <linearGradient id="heart-right-grad" x1="586" y1="384" x2="521" y2="925" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff8ed9" />
+      <stop offset=".23" stop-color="#ff1294" />
+      <stop offset=".65" stop-color="#c00057" />
+      <stop offset="1" stop-color="#ec007f" />
+    </linearGradient>
+    <linearGradient id="edge-grad" x1="511" y1="95" x2="511" y2="960" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#63002d" />
+      <stop offset=".35" stop-color="#460028" />
+      <stop offset=".36" stop-color="#00143c" />
+      <stop offset=".68" stop-color="#000a26" />
+      <stop offset="1" stop-color="#500037" />
+    </linearGradient>
+    <linearGradient id="pink-rim-grad" x1="192" y1="587" x2="493" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff0082" />
+      <stop offset="1" stop-color="#c80068" />
+    </linearGradient>
+  </defs>
+  <g id="gemstone" stroke-linejoin="miter">
+    <path fill="url(#edge-grad)" d="M0 359 208 132 375 96 511 84 650 96 815 132 1024 359 889 549 512 964 135 550Z" />
+    <path fill="url(#crown-grad)" d="M28 359 221 140 262 149 511 90 763 149 803 140 996 359 831 378 681 382 343 382 194 378Z" />
+    <path fill="url(#upper-left-grad)" d="M28 359 221 140 262 149 290 223 194 378Z" />
+    <path fill="#ffb1e5" d="M28 359 132 244 221 140 100 322Z" />
+    <path fill="#a60050" d="M28 359 290 223 194 378Z" />
+    <path fill="#ff0089" d="m28 359 192-7-26 26Z" />
+    <path fill="#fff" d="m290 223 161-109 60-24-43 56Z" />
+    <path fill="#ffa0db" d="m262 149 189-35-161 109Z" />
+    <path fill="url(#upper-right-grad)" d="m511 90 252 59 40-9 193 219-165 19-96-155Z" />
+    <path fill="#d90070" d="m511 90 224 133 28-74Z" />
+    <path fill="#ff3cb2" d="m735 223 187 95-119-178 132 153 61 66-165 19Z" />
+    <path fill="#bd0059" d="m735 223 96 155 165-19-184-60Z" />
+    <path fill="url(#wine-left-grad)" d="m290 223 124 90-71 69-149-4Z" />
+    <path fill="#61002e" d="m290 223 53 159-149-4Z" />
+    <path fill="url(#table-grad)" d="m290 223 445 0-223 159Z" />
+    <path fill="#c60066" d="m290 223 124 90 65-89Z" />
+    <path fill="#e00073" d="m414 313 98 69H343Z" />
+    <path fill="url(#wine-right-grad)" d="m735 223 96 155-150 4H512Z" />
+    <path fill="#6a0032" d="m735 223-54 159 150-4Z" />
+    <path fill="url(#navy-left-grad)" d="m28 359 166 19 149 4 169 561-357-402Z" />
+    <path fill="url(#navy-right-grad)" d="m512 943 169-561 150-4 165-19-127 182Z" />
+    <path fill="url(#blue-left-grad)" d="m28 359 127 182 226 151-113-158-74-156 43 124-95-45Z" />
+    <path fill="#0065d5" d="m28 359 114 98 126 77-74-156 54 123-113-65Z" />
+    <path fill="#00113b" d="m155 541 226 151 131 251-182-265Z" />
+    <path fill="url(#blue-right-grad)" d="m996 359-127 182-225 151 113-158 74-156-43 124 93-45Z" />
+    <path fill="#006ee6" d="m996 359-115 98-124 77 74-156-54 123 135-66Z" />
+    <path fill="#00123c" d="M869 541 644 692 512 943l181-265Z" />
+    <path fill="url(#pink-rim-grad)" d="m184 577 146 101 137 204Z" />
+    <path fill="#f00079" d="M840 577 693 678 556 882Z" />
+    <path fill="#ff0087" d="m194 378 149 4 37 102Z" />
+    <path fill="#ff008a" d="m681 382 150-4-188 106Z" />
+    <path fill="#a6004a" d="m681 382 150-4-116 32-72 74Z" />
+    <path fill="url(#heart-left-grad)" d="M343 382h169v561Z" />
+    <path fill="url(#heart-right-grad)" d="M512 382h169L512 943Z" />
+    <path fill="#9d004b" d="m681 382-102 83-67 234v244Z" />
+    <path fill="#ffb7eb" d="m433 642 79 170v-53Z" />
+    <path fill="#002864" d="m380 484 113 380-59-123Z" />
+    <path fill="#2baaff" d="m583 741 60-257-113 380Z" />
+  </g>
+  <g id="sparkles" fill="#fff">
+    <path fill="#fa168f" d="M723 62c7 41 11 78 23 93 14 13 50 20 87 26-39 6-75 12-87 28-11 16-17 61-23 105-5-45-10-89-23-105-13-16-52-23-96-28 44-5 84-11 97-27 12-17 17-53 22-92Z" />
+    <path d="M723 81c5 33 8 67 20 81 13 11 47 16 80 19-34 4-68 9-80 22-11 14-16 49-20 82-4-34-8-69-20-82-13-12-46-18-80-22 34-4 68-9 81-22 11-15 15-46 19-78Z" />
+    <path d="M246 192c3 13 3 21 10 26 7 4 19 4 32 5-14 3-26 5-32 11-5 6-8 18-11 30-1-14-2-26-7-32-5-5-17-7-29-9 13-1 24-2 29-8 4-5 6-13 8-23Z" />
+    <path d="M237 287c2 10 4 17 9 21 5 3 14 4 24 5-11 2-20 3-25 7-4 5-6 14-8 24-2-10-4-18-8-23-5-4-15-6-27-7 12-1 22-3 27-7 4-5 6-11 8-20Z" />
+    <path d="M767 442c3 25 4 45 12 55 9 8 29 11 52 14-24 3-43 5-52 14-8 10-10 30-12 54-3-24-5-45-14-54-9-8-30-11-55-14 25-3 47-5 55-13 8-10 11-31 14-56Z" />
+  </g>
+</svg>
