@@ -120,6 +120,9 @@ function snapCore(s: { eco: { cash: number; fans: number }; series: { id: string
   captureClassReportSplit(s);
   const v = buildClassReport(s, "until-now");
   assert.ok(s.classReport?.splits?.length || v.record !== NONE || (s.clubTimeline?.splits?.length ?? 0) >= 0);
+  if ((s.classReport?.splits ?? []).some((sp) => sp.rank) || (s.clubTimeline?.splits ?? []).some((sp) => sp.rank)) {
+    assert.match(v.rank, /\d+위/, "스플릿 기록이 있으면 지금까지 순위를 기록 없음으로 두지 않음");
+  }
   // 학생 입력만 저장되고 승부는 그대로
   setReportStudent(s, "홍길동", "20261234");
   setReportReflection(s, "draft", "첫 세트 1픽을 더 신중히 하고 싶습니다.");

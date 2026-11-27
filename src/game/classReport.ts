@@ -479,6 +479,7 @@ export function buildClassReport(s: Save, scope: ReportScope = "until-now"): Cla
     for (const sp of snaps) {
       if (sp.id === currentSnapId(s) && live.series.length) continue; // live already covers current series
       rec.w += sp.seriesW; rec.l += sp.seriesL; rec.gw += sp.setW; rec.gl += sp.setL;
+      if (sp.rank && sp.rank > 0) rank = sp.rank;
       pickLists.push(sp.picks); banLists.push(sp.bans);
       gold.sample += sp.goldSample; gold.leadN += sp.goldLeadN; gold.leadWins += sp.goldLeadWins;
       gold.comebackW += sp.comebackW; gold.comebackL += sp.comebackL;
