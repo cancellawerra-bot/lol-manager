@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSave, mutate } from "../store";
 import { Card, ChampIcon } from "../ui";
 import { PATCH_VERSION } from "./patchdata";
@@ -23,7 +23,8 @@ function wr(n: number, wins: number): string {
 export default function ClassReport() {
   const s = useSave()!;
   const [scope, setScope] = useState<ReportScope>("until-now");
-  const view = useMemo(() => buildClassReport(s, scope), [s, scope]);
+  // save 객체 참조는 mutate 후에도 같으므로, 매 렌더에서 다시 집계해야 이름·성찰 입력이 반영됩니다.
+  const view = buildClassReport(s, scope);
   useEffect(() => { mutate((x) => { markReportSeen(x); }); }, []);
   const mark = (): void => { mutate((x) => { markReportSeen(x); }); };
 
