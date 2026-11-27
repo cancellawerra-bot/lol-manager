@@ -12,6 +12,7 @@ import { prepareSeriesLineups, recordAppearances, type AppearanceRecord, type Li
 import type { ScoutingState } from "./scouting";
 import { captureClubNews, type ClubTimelineState } from "./clubTimeline";
 import { publishMatchdayNews } from "./newsFeed";
+import { staffDraftOpt } from "./staff";
 import { emptyHonors, syncHonors } from "./achievements";
 
 export const SAVE_V = 2;
@@ -72,6 +73,7 @@ export interface Save {
   clubTimeline?: ClubTimelineState;
   honors?: import("./achievements").HonorsState;
   classReport?: import("./classReport").ClassReportState;
+  staff?: import("./staff").StaffState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;
@@ -214,7 +216,7 @@ export function simSeries(s: Save, sr: SeriesRec, rng: Rng): void {
     const holder = selectionFor(sr, gi, rng);
     const sel = aiSelection(holder, holder === sr.a ? sr.b : sr.a, rng);
     const d0 = newDraft(sel.blue, sel.red, s.starters[sel.blue], s.starters[sel.red], sel.firstSide, lockedChamps(sr), s.story?.year);
-    const d = autoDraft(d0, rng);
+    const d = autoDraft(d0, rng, staffDraftOpt(s, sel.blue, sel.red));
     const res = simulateGame(d, formMap(s, [...d.lineup.B, ...d.lineup.R]), rng, matchTraining(s, [...d.lineup.B, ...d.lineup.R]), matchTactics(d, s.tactics));
     recordGame(s, sr, d, res, holder, false);
   }

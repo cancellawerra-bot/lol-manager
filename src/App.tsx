@@ -29,6 +29,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Match = lazy(() => import("./pages/Match"));
 const Stove = lazy(() => import("./pages/Stove"));
 const ClassReport = lazy(() => import("./pages/ClassReport"));
+const Staff = lazy(() => import("./pages/Staff"));
 const Intro = lazy(() => import("./pages/Intro"));
 const Tour = lazy(() => import("./pages/Tour"));
 import type { IntroInfo } from "./pages/Intro";
@@ -139,7 +140,7 @@ export default function App() {
         <main className="content">
           <Suspense fallback={<Loading />}>
             {page === "home" || page === "" ? <Home onAdvance={onAdvance} /> : page === "news" ? <NewsPage id={route[1]} /> : page === "schedule" ? <Schedule /> : page === "standings" ? <Standings />
-              : page === "squad" ? <Squad /> : page === "club" ? <Club /> : page === "market" ? <Market /> : page === "player" ? <PlayerPage k={route[1]} /> : page === "scout" ? <Scout team={route[1]} /> : page === "meta" ? <Meta />
+              : page === "squad" ? <Squad /> : page === "club" && route[1] === "staff" ? <Staff /> : page === "club" ? <Club /> : page === "market" ? <Market /> : page === "player" ? <PlayerPage k={route[1]} /> : page === "scout" ? <Scout team={route[1]} /> : page === "meta" ? <Meta />
               : page === "help" || page === "method" ? <Help /> : page === "patch" ? <Patch /> : page === "settings" ? <Settings /> : page === "match" ? <Match /> : page === "stove" ? <Stove /> : page === "report" ? <ClassReport /> : <Home onAdvance={onAdvance} />}
           </Suspense>
           {!inMatch && <FanNotice />}

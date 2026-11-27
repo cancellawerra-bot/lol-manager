@@ -216,7 +216,7 @@ export function apply(d: DraftState, c: string, pos: PosIdx | null, by: "user" |
   return n;
 }
 
-export function aiStep(d: DraftState, rng: Rng): DraftState {
+export function aiStep(d: DraftState, rng: Rng, opt?: { sideTemp?: Partial<Record<Side, number>> }): DraftState {
   const t = turn(d); if (!t) return d;
   let recs = recommend(d, t.side, t.kind);
   if (!recs.length && t.kind === "pick") { // 남은 포지션에 맞는 챔피언이 없을 때(극단적 피어리스): 아무 챔피언이나
@@ -224,8 +224,9 @@ export function aiStep(d: DraftState, rng: Rng): DraftState {
     const c = available(d)[0];
     return apply(d, c.id, pos, "ai", ["남은 포지션에 맞는 챔피언이 없어 임의 선택"]);
   }
-  const r = aiChoose(recs, rng)!;
+  const temp = opt?.sideTemp?.[t.side];
+  const r = aiChoose(recs, rng, temp ?? 0.45)!;
   recs = [];
   return apply(d, r.c, r.pos, "ai", r.reasons.filter((x) => x.v > 0.05).sort((a, b) => b.v - a.v).slice(0, 3).map((x) => x.t));
 }
-export function autoDraft(d: DraftState, rng: Rng): DraftState { let x = d; while (turn(x)) x = aiStep(x, rng); return x; }
+export function autoDraft(d: DraftState, rng: Rng, opt?: { sideTemp?: Partial<Record<Side, number>> }): DraftState { let x = d; while (turn(x)) x = aiStep(x, rng, opt); return x; }

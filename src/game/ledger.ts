@@ -5,6 +5,7 @@ import { standings } from "./season";
 import { goodsIncomeEstimate } from "./marketing";
 import { sponsorBonus, CK_OPS, LCK_OPS, LCK_SHARE, LCK_SHARE_PRE, LCK_SPONSOR, lckPrizeOf } from "./story";
 import { moneyRound } from "./money";
+import { staffPayroll } from "./staff";
 
 export interface LedgerExtra { label: string; amount: number }
 export interface LedgerLine { label: string; amount: number; note?: string }
@@ -51,6 +52,8 @@ export function projectLedger(s: Save, extras: LedgerExtra[] = []): Ledger | nul
   const keep = st.contracts.filter((c) => c.years >= (incomeLeft ? 2 : 1) && c.salary > 0);
   const pay = moneyRound(keep.reduce((n, c) => n + c.salary, 0));
   lines.push({ label: "다음 시즌 연봉", amount: -pay, note: `이어지는 계약 ${keep.length}명` });
+  const staffPay = staffPayroll(s);
+  if (staffPay) lines.push({ label: "다음 시즌 코칭스태프 연봉", amount: -staffPay, note: "고용 중인 가상 코치 (해임 전까지)" });
   const extra = moneyRound(extras.reduce((n, e) => n + e.amount, 0));
   const start = s.eco.cash;
   const end = moneyRound(start + lines.reduce((n, l) => n + l.amount, 0) - extra);

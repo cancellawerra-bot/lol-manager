@@ -1035,3 +1035,16 @@ svg.lead .mk.B{fill:#3B82F6}svg.lead .mk.R{fill:#EF4444}
   .cr-facts li{padding:.25rem .4rem}
   body{font-size:9.5pt;line-height:1.28}
 }
+
+.staff-page{max-width:960px;margin:0 auto 2rem}
+.staff-facts{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.staff-market{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-top:.7rem}
+.staff-card{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:.7rem .75rem}
+.staff-card.on{outline:2px solid var(--teal);outline-offset:1px}
+.staff-card .btn{margin-top:.4rem}
+.staff-hired{margin-bottom:.4rem}
+.staff-lines{margin:.25rem 0 .4rem;padding-left:1.1rem}
+@media (max-width:640px){
+  .staff-market{grid-template-columns:1fr}
+  .staff-facts{grid-template-columns:repeat(2,1fr)}
+}

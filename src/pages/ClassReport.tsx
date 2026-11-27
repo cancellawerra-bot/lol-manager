@@ -151,6 +151,16 @@ export default function ClassReport() {
           <p className="muted xs">여론 온도는 표시만 하며 자금·팬심·승부 수치를 바꾸지 않습니다. 선수 발언은 짓지 않습니다. 「현재 N위」는 지금 저장의 정규 시즌 순위표이며, 위의 정규 순위(지난 스플릿까지 모은 값)나 진행 중인 월즈·MSI 성적과 다를 수 있습니다.</p>
         </Card>
 
+        <Card title="코칭스태프">
+          <p data-testid="report-staff-pay"><b>스태프 연봉 합:</b> {view.staffPay}</p>
+          <ul className="cr-growth" data-testid="report-staff">
+            {view.staff.map((st) => (
+              <li key={st.role}><b>{st.role}</b> {st.name === NONE ? <span className="muted">{NONE}</span> : <span>{st.name} ({st.grade}) · {st.salary}{st.effects.length ? ` · ${st.effects.join(" ")}` : ""}</span>}</li>
+            ))}
+          </ul>
+          <p className="muted xs">가상 코치이며 실존 인물 이름·사진은 쓰지 않습니다. 고용하지 않았으면 기록 없음입니다. 연봉은 게임용 가상 금액입니다.</p>
+        </Card>
+
         <Card title="성찰 (학생이 직접 작성)">
           <div className="cr-reflect" data-testid="report-reflect">
             {view.reflections.map((q) => (

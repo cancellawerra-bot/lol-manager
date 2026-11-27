@@ -4,6 +4,7 @@ import type { Save, SeriesRec, DayAct } from "./season";
 import { moraleEdge } from "./talks";
 import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, talentSpeed, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
 import { historyGrowthSpeed } from "./historyGrowth";
+import { staffSessionBoost } from "./staff";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
 export interface TrainingState {
@@ -103,6 +104,7 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
     const person = trainingPerson(s, key); if (!person) continue;
     let p = state.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0, lastDate: previousDate(state.periodStart > date ? date : state.periodStart) };
     if (p.lastDate && p.lastDate >= date) continue;
+    const boost = team === s.team ? staffSessionBoost(s) : undefined;
     for (let day = nextDate(p.lastDate ?? previousDate(state.periodStart > date ? date : state.periodStart)); day <= date; day = nextDate(day)) {
       const weekday = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7;
       const chosen = trainingPlan(s, key, day, team);
@@ -111,7 +113,7 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
       if (automatic && p.fatigue >= 60) act = "rest";
       const base = ratingOf(PL[key]) ?? 85;
       const ctx = growthCtxAt(s, key, trainedRating(p, { base, potential: potentialFor(), speed: 1 }).overall);
-      p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : act === "champ" ? "champion" : "recovery", day, PLAYER_BIRTHDATES[person], ctx).progress;
+      p = trainingSession(p, act === "train" ? "mechanics" : act === "scrim" ? "strategy" : act === "champ" ? "champion" : "recovery", day, PLAYER_BIRTHDATES[person], ctx, boost).progress;
     }
     state.players[person] = p;
   }
@@ -142,6 +144,7 @@ export function previewWeek(s: Save, key: string, plan: DayAct[], date = trainin
   const days: WeekPreview["days"] = [];
   let day = p.lastDate && p.lastDate >= date ? nextDate(p.lastDate) : date;
   let over = 0, max = 0, train = 0, champ = 0;
+  const boost = staffSessionBoost(s);
   for (let i = 0; i < 7; i++, day = nextDate(day)) {
     const weekday = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7;
     const act = plan[weekday] ?? "";
@@ -149,7 +152,7 @@ export function previewWeek(s: Save, key: string, plan: DayAct[], date = trainin
     const before = p.overDays ?? 0;
     const base = ratingOf(PL[key]) ?? 85;
     const ctx = growthCtxAt(s, key, trainedRating(p, { base, potential: potentialFor(), speed: 1 }).overall);
-    p = trainingSession(p, kind, day, PLAYER_BIRTHDATES[person], ctx).progress;
+    p = trainingSession(p, kind, day, PLAYER_BIRTHDATES[person], ctx, boost).progress;
     const o = (p.overDays ?? 0) > before;
     if (o) over++; if (act === "train" || act === "scrim" || act === "champ") train++; if (act === "champ") champ++;
     max = Math.max(max, p.fatigue);

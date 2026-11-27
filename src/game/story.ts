@@ -8,6 +8,7 @@ import type { StoveState } from "./stove";
 import { addNews, dateKo, simSeries, standings } from "./season";
 import { publishMatchdayNews } from "./newsFeed";
 import { moneyRound, fmtMoney } from "./money";
+import { settleStaffPayroll } from "./staff";
 import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
 import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 import { prepareInSeason } from "./inSeason";
@@ -751,6 +752,7 @@ export function settlePayrollAndSolvency(s: Save): void {
   const pay = st.contracts.filter((c) => !c.prepaid).reduce((n, c) => n + c.salary, 0);
   for (const c of st.contracts) c.prepaid = false;
   s.eco.cash = moneyRound(s.eco.cash - pay);
+  settleStaffPayroll(s);
   if (s.eco.cash < 0) forceSalesToCover(s);
   if (s.eco.cash < 0) {
     st.deficitYears = (st.deficitYears ?? 0) + 1;

@@ -7,6 +7,8 @@ import { autoAdvanceOffseason, stepYear } from "./game/stove";
 import { Rng } from "./game/rng";
 import { resolveFranchise } from "./game/story";
 import type { Save } from "./game/season";
+import { fireStaff, hireStaff, STAFF_CATALOG } from "./game/staff";
+import { addNews } from "./game/season";
 
 function openingRoster(best: boolean, cap: number): string[] {
   const year = 2018;
@@ -77,6 +79,9 @@ export function installQaHook(): void {
       return { cash: s.eco.cash, cap: s.eco.cap, names: picks.map((id) => CARDS[id].name) };
     },
     rankedReady: () => !!RANKED,
+    hireStaff: (id: string) => { let err: string | null = null; mutate((s) => { err = hireStaff(s, id); if (!err) { const e = STAFF_CATALOG.find((c) => c.id === id)!; addNews(s, "season", `코칭스태프 · ${e.name} 고용`, `${e.name}을 연봉 가상 금액으로 고용했습니다.`, s.team); } }); return err; },
+    fireStaff: (role: string) => { let err: string | null = null; mutate((s) => { err = fireStaff(s, role as "head" | "phys" | "ops" | "cond"); }); return err; },
+
     runToEnd: (opts: { acceptBuyIn?: boolean; signStars?: boolean } = {}) => {
       const s = getSave();
       if (!s?.story) return null;

@@ -7,6 +7,7 @@ import { fanOpinion, teamKo } from "./newsFeed";
 import type { GameRec, Mode, Save, SeriesRec } from "./season";
 import { STAGE_KO, standings } from "./season";
 import { trainedRatingOf } from "./trainingRuntime";
+import { hiredOf, staffEffectLines, staffGradeLabel, staffHires, staffPayroll, staffRoleLabel, STAFF_ROLES } from "./staff";
 
 export const NONE = "기록 없음";
 export const CLASS_REPORT_LIMITS = {
@@ -94,6 +95,8 @@ export interface ClassReportView {
   press: string;
   opinion: string;
   form: string;
+  staff: { role: string; name: string; grade: string; salary: string; effects: string[] }[];
+  staffPay: string;
   reflections: { id: string; prompt: string; answer: string }[];
   note: string;
 }
@@ -619,6 +622,13 @@ export function buildClassReport(s: Save, scope: ReportScope = "until-now"): Cla
     press: pressLine,
     opinion,
     form,
+    staff: STAFF_ROLES.map((role) => {
+      const e = hiredOf(s, role);
+      return e
+        ? { role: staffRoleLabel(role), name: e.name, grade: staffGradeLabel(e.grade), salary: fmtMoney(e.salary), effects: staffEffectLines(e) }
+        : { role: staffRoleLabel(role), name: NONE, grade: "", salary: NONE, effects: [] };
+    }),
+    staffPay: staffHires(s).length ? fmtMoney(staffPayroll(s)) : NONE,
     reflections: REFLECTION_QUESTIONS.map((q) => ({ id: q.id, prompt: q.prompt, answer: s.classReport?.reflections?.[q.id] ?? "" })),
     note: "이 보고서는 이 커리어에서 실제로 남은 기록만 모았습니다. 없는 값은 「기록 없음」이며 0으로 채우거나 다른 연도 기록으로 대체하지 않습니다. 성찰 칸의 답은 학생이 직접 씁니다. 금액은 게임용 가상 금액입니다. 팀 로고·선수 사진은 쓰지 않습니다.",
   };
@@ -685,6 +695,8 @@ export function reportToJson(view: ClassReportView): string {
     press: view.press === NONE ? null : view.press,
     opinion: view.opinion === NONE ? null : view.opinion,
     form: view.form === NONE ? null : view.form,
+    staff: view.staff,
+    staffPay: view.staffPay === NONE ? null : view.staffPay,
     reflections: view.reflections,
     note: view.note,
   }, null, 2);
@@ -715,6 +727,8 @@ export function reportToCsv(view: ClassReportView): string {
     ["기자회견 어조", view.press],
     ["여론", view.opinion],
     ["최근 전적", view.form],
+    ["코칭스태프 연봉", view.staffPay],
+    ...view.staff.map((st): [string, string] => [`스태프 ${st.role}`, st.name === NONE ? NONE : `${st.name} (${st.grade}) ${st.salary} · ${st.effects.join(" ")}`]),
     ...view.reflections.map((r): [string, string] => [r.prompt, r.answer || ""]),
   ];
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;

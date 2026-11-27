@@ -116,7 +116,7 @@ export function matchExperience(p: TrainingProgress, ctx?: GrowthCtx): TrainingP
 }
 
 /** 한 사람의 하루 한 세션. 60분당 XP만 달라져 시간 단축 보너스를 중복 지급하지 않습니다. ctx가 있으면 능력치 성장도 계산합니다. */
-export function trainingSession(progress: TrainingProgress, kind: TrainingKind, date: string, birth?: VerifiedBirth, ctx?: GrowthCtx): { progress: TrainingProgress; profile: TrainingProfile; applied: boolean; over?: boolean } {
+export function trainingSession(progress: TrainingProgress, kind: TrainingKind, date: string, birth?: VerifiedBirth, ctx?: GrowthCtx, boost?: { mechanics?: number; strategy?: number; recovery?: number; fatigueLoad?: number }): { progress: TrainingProgress; profile: TrainingProfile; applied: boolean; over?: boolean } {
   const profile = trainingProfile(birth, date);
   if (isoDate(date) == null || (progress.lastDate != null && date <= progress.lastDate)) return { progress: { ...progress }, profile, applied: false };
   const p = { ...progress, mechanicsXp: clamp(progress.mechanicsXp, 0, 100), strategyXp: clamp(progress.strategyXp, 0, 100), fatigue: clamp(progress.fatigue, 0, 100), lastDate: date };
@@ -133,7 +133,7 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
   }
   const ag = ageGrowth(profile.known ? profile.age : undefined);
   let over = false;
-  if (kind === "recovery") p.fatigue = clamp(p.fatigue - 25 * profile.recovery, 0, 100);
+  if (kind === "recovery") p.fatigue = clamp(p.fatigue - 25 * profile.recovery * (boost?.recovery ?? 1), 0, 100);
   else {
     p.weekPts = (p.weekPts ?? 0) + 1;
     over = p.weekPts > WEEKLY_POINTS;
@@ -142,14 +142,14 @@ export function trainingSession(progress: TrainingProgress, kind: TrainingKind, 
     const attr = kind === "mechanics" ? "mechanicsXp" : "strategyXp";
     const fatigueFactor = Math.max(0.5, 1 - p.fatigue / 150);
     const progressFactor = 1 - p[attr] / 200;
-    if (!over && !champ) p[attr] = clamp(p[attr] + 10 * profile[kind as "mechanics" | "strategy"] * fatigueFactor * progressFactor, 0, 100);
+    if (!over && !champ) p[attr] = clamp(p[attr] + 10 * profile[kind as "mechanics" | "strategy"] * fatigueFactor * progressFactor * ((kind === "mechanics" ? boost?.mechanics : boost?.strategy) ?? 1), 0, 100);
     if (!over && champ && p.champFocus) p.champs = { ...(p.champs ?? {}), [p.champFocus]: (p.champs?.[p.champFocus] ?? 0) + 1 };
     // 과훈련: 성장 없음 + 피로 3배 → 컨디션 저하
-    p.fatigue = clamp(p.fatigue + 12 * profile.fatigueLoad * (over ? 3 : 1), 0, 100);
+    p.fatigue = clamp(p.fatigue + 12 * profile.fatigueLoad * (over ? 3 : 1) * (boost?.fatigueLoad ?? 1), 0, 100);
     if (over) p.overDays = (p.overDays ?? 0) + 1;
     else if (ctx && !champ) {
-      if (kind === "mechanics") p.physGain = (p.physGain ?? 0) + grow(ctx.base + (p.physGain ?? 0), ctx.potential, ag.phys * fatigueFactor, ctx.speed);
-      else p.brainGain = (p.brainGain ?? 0) + grow(ctx.base + (p.brainGain ?? 0), ctx.potential, ag.brain * experienceFactor(p.sets) * fatigueFactor, ctx.speed);
+      if (kind === "mechanics") p.physGain = (p.physGain ?? 0) + grow(ctx.base + (p.physGain ?? 0), ctx.potential, ag.phys * fatigueFactor * (boost?.mechanics ?? 1), ctx.speed);
+      else p.brainGain = (p.brainGain ?? 0) + grow(ctx.base + (p.brainGain ?? 0), ctx.potential, ag.brain * experienceFactor(p.sets) * fatigueFactor * (boost?.strategy ?? 1), ctx.speed);
     }
   }
   return { progress: p, profile, applied: true, over };

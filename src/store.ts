@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { Save, SAVE_V, aiSelection, finishDay, lockedChamps, mySeriesToday, recordGame, selectionFor } from "./game/season";
 import { captureClassReportSplit } from "./game/classReport";
 import { DraftState, Side, aiStep, apply, autoDraft, newDraft, turn } from "./game/draft";
+import { staffDraftOpt } from "./game/staff";
 import { simulateGame } from "./game/sim";
 import { formMap } from "./game/season";
 import { Rng } from "./game/rng";
@@ -151,10 +152,10 @@ export function userAct(c: string, pos: PosIdx | null, why: string[]): void {
   mutate((s) => { const ss = s.session!; ss.draft = apply(ss.draft!, c, pos, "user", why); });
 }
 export function aiAct(): void {
-  mutate((s, rng) => { const ss = s.session!; ss.draft = aiStep(ss.draft!, rng); });
+  mutate((s, rng) => { const ss = s.session!; const d = ss.draft!; ss.draft = aiStep(d, rng, staffDraftOpt(s, d.teams.B, d.teams.R)); });
 }
 export function autoRest(): void {
-  mutate((s, rng) => { const ss = s.session!; ss.draft = autoDraft(ss.draft!, rng); });
+  mutate((s, rng) => { const ss = s.session!; const d = ss.draft!; ss.draft = autoDraft(d, rng, staffDraftOpt(s, d.teams.B, d.teams.R)); });
 }
 export function runSim(): void {
   mutate((s, rng) => {
