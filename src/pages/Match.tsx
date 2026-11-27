@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { blueSideHint, careerYear, hasYearMeta, lckYearName, NO_RECORD } from "../game/yearRecords";
+import { isMainSquad } from "../game/academy";
 import { CH, CHAMPS, PL, POS_KO, TM, loadRanked, fmt } from "../data";
 import { useSave, choose, mySide, userAct, aiAct, autoRest, simNext, simTo, endSeries, sessionSeries, setPress, afterPress, confirmLineup, afterMeet, afterPog, afterResult, afterLocker, lockerSay, lockerDelegate, setStarter, toMeet, toPog, autoGame } from "../store";
 import { turn, recommend, PHASE_OF, SEQ, openPos, used, posWeight, DraftState, Side, other, Rec } from "../game/draft";
@@ -175,7 +176,7 @@ function Lineup() {
   const s = useSave()!; const sr = sessionSeries(s); const op = sr.a === s.team ? sr.b : sr.a;
   const mine = s.starters[s.team];
   const theirs = s.starters[op];
-  const bench = (s.cards.length ? s.cards : []).filter((k) => !mine.includes(k));
+  const bench = (s.cards.length ? s.cards : []).filter((k) => !mine.includes(k) && (s.mode !== "story" || s.story?.contracts.some((c) => c.key === k && isMainSquad(c))));
   const story = s.mode === "story";
   const reasonOf = (k: string, i: number): string => sr.rotation?.[s.team]?.keys[i] === k ? sr.rotation[s.team].reasons[i] : "감독 수동 교체";
   const brief = preMatchBrief(s, s.team, op, sr);

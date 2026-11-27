@@ -5,7 +5,7 @@ import { moneyRound } from "./money";
 import { fmtMoney } from "./money";
 import type { Save } from "./season";
 
-export const STAFF_ROLES = ["head", "phys", "ops", "cond"] as const;
+export const STAFF_ROLES = ["head", "phys", "ops", "cond", "acad"] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
 export const STAFF_GRADES = ["normal", "skilled", "veteran"] as const;
 export type StaffGrade = (typeof STAFF_GRADES)[number];
@@ -43,6 +43,7 @@ const ROLE_META: Record<StaffRole, { label: string; short: string; focus: string
   phys: { label: "피지컬 코치", short: "피지컬", focus: "교전·압박 훈련" },
   ops: { label: "운영 코치", short: "운영", focus: "판단·운영 훈련" },
   cond: { label: "컨디션 코치", short: "컨디션", focus: "멘탈·피로 회복" },
+  acad: { label: "2군 감독", short: "2군", focus: "2군 육성" },
 };
 
 const GRADE_META: Record<StaffGrade, { label: string; salary: number; train: number; recover: number; fatigueLoad: number; advice: number; letter: string }> = {
@@ -129,6 +130,7 @@ export function staffEffectLines(entry: StaffCatalogEntry): string[] {
   }
   if (entry.role === "phys") return [`피지컬 훈련(교전·압박) 효율 +${Math.round((entry.train - 1) * 100)}%`];
   if (entry.role === "ops") return [`운영 훈련(판단·운영) 효율 +${Math.round((entry.train - 1) * 100)}%`];
+  if (entry.role === "acad") return [`2군 육성 성장 +${Math.round((entry.train - 1) * 100)}% (1군 훈련·밴픽·경기에는 적용되지 않음, 상한 +${Math.round((STAFF_TRAIN_CAP - 1) * 100)}%)`];
   return [
     `휴식 시 피로 회복 +${Math.round((entry.recover - 1) * 100)}%`,
     `훈련 피로 증가 ×${entry.fatigueLoad.toFixed(2)}`,

@@ -8,6 +8,7 @@ import type { GameRec, Mode, Save, SeriesRec } from "./season";
 import { STAGE_KO, standings } from "./season";
 import { trainedRatingOf } from "./trainingRuntime";
 import { hiredOf, staffEffectLines, staffGradeLabel, staffHires, staffPayroll, staffRoleLabel, STAFF_ROLES } from "./staff";
+import { ACADEMY_LEVEL_META, academyGrowthBoost, academyLevel, academyPayroll, academyProspects, academyTrained } from "./academy";
 
 export const NONE = "기록 없음";
 export const CLASS_REPORT_LIMITS = {
@@ -97,6 +98,7 @@ export interface ClassReportView {
   form: string;
   staff: { role: string; name: string; grade: string; salary: string; effects: string[] }[];
   staffPay: string;
+  academy: { level: string; cost: string; boost: string; people: { name: string; pos: string; overall: string; origin: string }[] };
   reflections: { id: string; prompt: string; answer: string }[];
   note: string;
 }
@@ -629,6 +631,22 @@ export function buildClassReport(s: Save, scope: ReportScope = "until-now"): Cla
         : { role: staffRoleLabel(role), name: NONE, grade: "", salary: NONE, effects: [] };
     }),
     staffPay: staffHires(s).length ? fmtMoney(staffPayroll(s)) : NONE,
+    academy: (() => {
+      const lv = academyLevel(s);
+      if (!lv && !academyProspects(s).length) {
+        return { level: NONE, cost: NONE, boost: NONE, people: [] };
+      }
+      const boost = academyGrowthBoost(s);
+      return {
+        level: lv ? ACADEMY_LEVEL_META[lv].label : "미운영",
+        cost: lv ? fmtMoney(academyPayroll(s)) : NONE,
+        boost: boost ? `×${boost.toFixed(2)}` : NONE,
+        people: academyProspects(s).map((p) => {
+          const tr = academyTrained(s, p);
+          return { name: p.name, pos: POS_KO[p.pos], overall: String(tr.overall), origin: p.origin === "virtual" ? "가상 유망주" : "강등" };
+        }),
+      };
+    })(),
     reflections: REFLECTION_QUESTIONS.map((q) => ({ id: q.id, prompt: q.prompt, answer: s.classReport?.reflections?.[q.id] ?? "" })),
     note: "이 보고서는 이 커리어에서 실제로 남은 기록만 모았습니다. 없는 값은 「기록 없음」이며 0으로 채우거나 다른 연도 기록으로 대체하지 않습니다. 성찰 칸의 답은 학생이 직접 씁니다. 금액은 게임용 가상 금액입니다. 팀 로고·선수 사진은 쓰지 않습니다.",
   };
@@ -697,6 +715,7 @@ export function reportToJson(view: ClassReportView): string {
     form: view.form === NONE ? null : view.form,
     staff: view.staff,
     staffPay: view.staffPay === NONE ? null : view.staffPay,
+    academy: view.academy.level === NONE && !view.academy.people.length ? null : view.academy,
     reflections: view.reflections,
     note: view.note,
   }, null, 2);
@@ -729,6 +748,10 @@ export function reportToCsv(view: ClassReportView): string {
     ["최근 전적", view.form],
     ["코칭스태프 연봉", view.staffPay],
     ...view.staff.map((st): [string, string] => [`스태프 ${st.role}`, st.name === NONE ? NONE : `${st.name} (${st.grade}) ${st.salary} · ${st.effects.join(" ")}`]),
+    ["2군 육성 단계", view.academy.level],
+    ["2군 육성비", view.academy.cost],
+    ["2군 성장 배율", view.academy.boost],
+    ["2군 명단", view.academy.people.length ? view.academy.people.map((p) => `${p.name} (${p.pos}) 종합 ${p.overall} · ${p.origin}`).join(" / ") : NONE],
     ...view.reflections.map((r): [string, string] => [r.prompt, r.answer || ""]),
   ];
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;

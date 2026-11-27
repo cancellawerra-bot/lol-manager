@@ -161,6 +161,20 @@ export default function ClassReport() {
           <p className="muted xs">가상 코치이며 실존 인물 이름·사진은 쓰지 않습니다. 고용하지 않았으면 기록 없음입니다. 연봉은 게임용 가상 금액입니다.</p>
         </Card>
 
+        <Card title="2군 육성">
+          <p data-testid="report-academy-level"><b>육성 단계:</b> {view.academy.level}</p>
+          <p data-testid="report-academy-cost"><b>연간 육성비:</b> {view.academy.cost}</p>
+          <p data-testid="report-academy-boost"><b>성장 배율:</b> {view.academy.boost}</p>
+          <ul className="cr-growth" data-testid="report-academy">
+            {view.academy.people.length
+              ? view.academy.people.map((p) => (
+                <li key={p.name + p.pos}><b>{p.name}</b> {p.pos} · 종합 {p.overall} · {p.origin}</li>
+              ))
+              : <li className="muted">{NONE}</li>}
+          </ul>
+          <p className="muted xs">가상 유망주는 가상 이름만 쓰며 공식 시즌 기록이 없으면 기록 없음입니다. 육성하지 않았으면 기록 없음입니다. 금액은 게임용 가상 금액입니다.</p>
+        </Card>
+
         <Card title="성찰 (학생이 직접 작성)">
           <div className="cr-reflect" data-testid="report-reflect">
             {view.reflections.map((q) => (

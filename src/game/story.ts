@@ -9,6 +9,7 @@ import { addNews, dateKo, simSeries, standings } from "./season";
 import { publishMatchdayNews } from "./newsFeed";
 import { moneyRound, fmtMoney } from "./money";
 import { settleStaffPayroll } from "./staff";
+import { dropAcademyProspect, isMainSquad, settleAcademyPayroll, syncAcademyKeys, refillAcademyProspects } from "./academy";
 import { drawSwissRound, drawSwissKnockout, swissRows, type SwissState } from "./swiss";
 import { beginTrainingPeriod, advanceTeamTraining } from "./trainingRuntime";
 import { prepareInSeason } from "./inSeason";
@@ -85,7 +86,7 @@ export type StoryPhase =
   | "awards" | "tryout" | "expiry" | "stove" | "franchise" | "clear" | "fail" | "bankrupt";
 
 export interface EraTeam { short: string; ko: string; name: string; color: string }
-export interface Contract { key: string; cardId: string; years: number; salary: number; person: string; prepaid?: boolean }
+export interface Contract { key: string; cardId: string; years: number; salary: number; person: string; prepaid?: boolean; squad?: "main" | "cl" }
 export interface PromoState {
   wb: [string, string][]; // remaining or completed markers via series
   lck9: string; lck10: string; ck1: string; ck2: string;
@@ -676,10 +677,11 @@ export function ensureStartingFive(s: Save): void {
   }
   for (const c of st.contracts) used.add(c.person);
   for (let pos = 0; pos < 5; pos++) {
+    if (keys[pos] && st.contracts.some((ct) => ct.key === keys[pos] && !isMainSquad(ct))) keys[pos] = "";
     if (keys[pos] && PL[keys[pos]]) continue;
     const c = st.contracts.find((ct) => {
       const p = PL[ct.key];
-      return p && p.pos === pos && !used.has(ct.person) && !ct.person.startsWith("acad-");
+      return p && p.pos === pos && isMainSquad(ct) && !used.has(ct.person) && !ct.person.startsWith("acad-");
     });
     if (c) { keys[pos] = c.key; used.add(c.person); }
   }
@@ -737,6 +739,7 @@ function forceSalesToCover(s: Save): void {
     st.contracts = st.contracts.filter((x) => x !== c);
     s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => k === c.key ? "" : k);
     s.cards = (s.cards ?? []).filter((k) => k !== c.key && k !== c.cardId);
+    dropAcademyProspect(s, c.key);
     s.eco.cash = moneyRound(s.eco.cash + fee);
     sold.push(`${PL[c.key]?.name ?? c.person}(${fmtMoney(fee)})`);
   }
@@ -753,6 +756,7 @@ export function settlePayrollAndSolvency(s: Save): void {
   for (const c of st.contracts) c.prepaid = false;
   s.eco.cash = moneyRound(s.eco.cash - pay);
   settleStaffPayroll(s);
+  settleAcademyPayroll(s);
   if (s.eco.cash < 0) forceSalesToCover(s);
   if (s.eco.cash < 0) {
     st.deficitYears = (st.deficitYears ?? 0) + 1;
@@ -1286,12 +1290,14 @@ export function finishStove(s: Save, _rng: Rng): void {
     nextKeys.set(ct.key, nk); ct.key = nk; ct.cardId = r.card.id;
   }
   s.starters[s.team] = (s.starters[s.team] ?? []).map((k) => nextKeys.get(k) ?? k);
-  s.cards = st.contracts.map((c) => c.key);
+  syncAcademyKeys(s, nextKeys);
+  s.cards = st.contracts.filter((c) => isMainSquad(c)).map((c) => c.key);
   applyStoryWorld(s, next); // AI는 다음 시즌 카드로 다시 짭니다. 이전에는 year===st.year 조건이 항상 참이라 2018 로스터가 남았습니다.
   syncPromises(s);
   if (st.ended) return;
   if (next > STORY_END) { endStory(s, st.trophies.worlds > 0 && st.year >= STORY_END ? "clear" : "fail"); return; }
   beginSplit(s, next, "spring");
+  refillAcademyProspects(s);
   addNews(s, "welcome", `${next} 시즌 개막`, `연봉 ${fmtMoney(pay)}을 정산했습니다. 잔고 ${fmtMoney(s.eco.cash)}.`, s.team);
 }
 

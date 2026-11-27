@@ -4,6 +4,7 @@ import { initializeTraining, playerTraining, trainingDate, trainingPerson, growt
 import { trainingProfile, matchExperience } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 import { promiseMood } from "./talks";
+import { isMainSquad } from "./academy";
 
 export const ROLE_LABEL = { 3: "주전", 2: "로테이션", 1: "육성" };
 export interface PlayingPromise { person: string; name: string; pos: number; target: 1 | 2 | 3; starts: number; opportunities: number; since: string }
@@ -19,7 +20,7 @@ const active = (s: Save): boolean => s.mode === "story" && !!s.story;
 const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
 function roster(s: Save, team: string): string[] {
   const contracts = team === s.team ? s.story?.contracts : s.inSeason?.year === s.story?.year ? s.inSeason?.rosters[team] : undefined;
-  return [...new Set(contracts ? contracts.filter(c => c.years > 0).map(c => c.key) : s.starters[team] ?? [])].filter(k => !!PL[k]);
+  return [...new Set(contracts ? contracts.filter(c => c.years > 0 && (team !== s.team || isMainSquad(c))).map(c => c.key) : s.starters[team] ?? [])].filter(k => !!PL[k]);
 }
 const owned = (s: Save, key: string): boolean => !!s.story?.contracts.some(c => c.key === key && c.years > 0);
 export function initializeRotation(s: Save): RotationState | undefined {

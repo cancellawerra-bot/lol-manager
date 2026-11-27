@@ -2,12 +2,12 @@
 // 경기 승패를 조작하지 않으며, 스토브 입찰·자동 시뮬만 빠르게 밟습니다.
 import { CARDS, RANKED } from "./data";
 import { getSave, mutate, persist, setSave, loadSlot, lastSlot } from "./store";
-import { pumpStory, newStoryCareer, marketCards, storySalary, STORY_BUDGETS, FRANCHISE_BUYIN, type StoryDiff } from "./game/story";
+import { pumpStory, newStoryCareer, marketCards, storySalary, STORY_BUDGETS, FRANCHISE_BUYIN, resolveFranchise, ensureStartingFive, type StoryDiff } from "./game/story";
 import { autoAdvanceOffseason, stepYear } from "./game/stove";
 import { Rng } from "./game/rng";
-import { resolveFranchise } from "./game/story";
 import type { Save } from "./game/season";
 import { fireStaff, hireStaff, STAFF_CATALOG } from "./game/staff";
+import { callUpAcademy, demoteToAcademy, setAcademyLevel } from "./game/academy";
 import { addNews } from "./game/season";
 
 function openingRoster(best: boolean, cap: number): string[] {
@@ -80,7 +80,10 @@ export function installQaHook(): void {
     },
     rankedReady: () => !!RANKED,
     hireStaff: (id: string) => { let err: string | null = null; mutate((s) => { err = hireStaff(s, id); if (!err) { const e = STAFF_CATALOG.find((c) => c.id === id)!; addNews(s, "season", `코칭스태프 · ${e.name} 고용`, `${e.name}을 연봉 가상 금액으로 고용했습니다.`, s.team); } }); return err; },
-    fireStaff: (role: string) => { let err: string | null = null; mutate((s) => { err = fireStaff(s, role as "head" | "phys" | "ops" | "cond"); }); return err; },
+    fireStaff: (role: string) => { let err: string | null = null; mutate((s) => { err = fireStaff(s, role as "head" | "phys" | "ops" | "cond" | "acad"); }); return err; },
+    setAcademyLevel: (level: string) => { let err: string | null = null; mutate((s) => { err = setAcademyLevel(s, level as "lean" | "standard" | "aggressive" | "off"); if (!err && level !== "off") addNews(s, "season", "2군 육성 투자", "2군 육성 단계를 정했습니다.", s.team); }); return err; },
+    callUpAcademy: (key: string) => { let err: string | null = null; mutate((s) => { err = callUpAcademy(s, key); if (!err) addNews(s, "season", "2군 콜업", "1군 명단으로 올렸습니다.", s.team); }); return err; },
+    demoteToAcademy: (key: string) => { let err: string | null = null; mutate((s) => { err = demoteToAcademy(s, key); if (!err) { ensureStartingFive(s); addNews(s, "season", "2군 강등", "2군으로 내렸습니다.", s.team); } }); return err; },
 
     runToEnd: (opts: { acceptBuyIn?: boolean; signStars?: boolean } = {}) => {
       const s = getSave();

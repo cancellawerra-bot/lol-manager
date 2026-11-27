@@ -5,6 +5,7 @@ import { moraleEdge } from "./talks";
 import { AGE_TRAINING_ENABLED, trainingBonuses, trainingProfile, trainingSession, potentialFor, talentSpeed, fatiguePenalty, trainedRating, type TrainingProgress, type MatchTraining, type GrowthCtx } from "./training";
 import { historyGrowthSpeed } from "./historyGrowth";
 import { staffSessionBoost } from "./staff";
+import { advanceAcademyTraining, isMainSquad } from "./academy";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
 
 export interface TrainingState {
@@ -82,7 +83,8 @@ export function playerTraining(s: Save, key: string): TrainingProgress | undefin
   return s.training?.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0 };
 }
 function roster(s: Save, team: string): string[] {
-  return [...new Set([...(s.starters[team] ?? []), ...(team === s.team ? s.story?.contracts.map((c) => c.key) ?? [] : s.inSeason?.year === s.story?.year ? s.inSeason?.rosters[team]?.map((c) => c.key) ?? [] : [])])];
+  const ours = team === s.team ? (s.story?.contracts.filter((c) => isMainSquad(c)).map((c) => c.key) ?? []) : s.inSeason?.year === s.story?.year ? s.inSeason?.rosters[team]?.map((c) => c.key) ?? [] : [];
+  return [...new Set([...(s.starters[team] ?? []), ...ours])];
 }
 /** 새 스플릿의 공백 기간은 훈련으로 소급 적립하지 않습니다. 성장 XP는 유지하고 긴 휴식의 피로는 회복합니다. */
 export function beginTrainingPeriod(s: Save, date: string): void {
@@ -117,6 +119,7 @@ export function advanceTeamTraining(s: Save, team: string, date: string): void {
     }
     state.players[person] = p;
   }
+  if (team === s.team) advanceAcademyTraining(s, date);
 }
 
 /** v2.34.0 챔피언 훈련: 선수가 연습할 챔피언을 정합니다(이미 쌓은 연습은 그대로 남음). */

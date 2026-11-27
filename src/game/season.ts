@@ -74,6 +74,7 @@ export interface Save {
   honors?: import("./achievements").HonorsState;
   classReport?: import("./classReport").ClassReportState;
   staff?: import("./staff").StaffState;
+  academy?: import("./academy").AcademyState;
 }
 export interface CareerOpts {
   mode?: Mode; managerInfo?: Manager; club?: ClubInfo; eco?: Partial<Economy>;

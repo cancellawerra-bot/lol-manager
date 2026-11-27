@@ -9,6 +9,7 @@ import { formMap } from "./game/season";
 import { Rng } from "./game/rng";
 import type { PosIdx } from "./types";
 import { hydrateSave } from "./game/cards";
+import { hydrateAcademy, isMainSquad } from "./game/academy";
 import { finishStoryDay, isStory, simRestOfPhase, resolveFranchise, pumpStory, applyStoryWorld, FRANCHISE_BUYIN } from "./game/story";
 import "./game/stove";
 import { autoAdvanceOffseason, finishOffseason } from "./game/stove";
@@ -49,7 +50,7 @@ export function persist(): boolean {
   cur.updated = new Date().toISOString();
   try { localStorage.setItem(KEY(cur.slot), JSON.stringify(cur)); localStorage.setItem(LAST, String(cur.slot)); return true; } catch { return false; }
 }
-export function setSave(s: Save | null): void { cur = s; if (s) { hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); initializeTraining(s); } persist(); } emit(); }
+export function setSave(s: Save | null): void { cur = s; if (s) { hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); hydrateAcademy(s); initializeTraining(s); } persist(); } emit(); }
 /** 운영자가 명단에서 뺀 선수(tools/excluded_players.json)가 내 명단에 남은 예전 저장은 열지 않고 안내합니다 (2026-11-22).
  *  스토리 모드 AI 구단 명단은 applyStoryWorld가 해당 구단만 다시 짭니다. 판타지 저장은 모든 구단 지명을 봅니다. */
 const REMOVED_MSG = "이 저장에는 명단에서 뺀 선수가 들어 있어 열 수 없습니다. 새 게임을 시작해 주세요.";
@@ -61,7 +62,7 @@ function hasRemovedCard(s: Save): boolean {
   return ids.some((id) => !!id && /-\d{4}$/.test(id) && !CARDS[id]);
 }
 export function loadSlot(n: number): boolean {
-  try { const raw = localStorage.getItem(KEY(n)); if (!raw) return false; const s = JSON.parse(raw) as Save; if (s.v !== SAVE_V) return false; loadProblem = null; if (hasRemovedCard(s)) { loadProblem = REMOVED_MSG; return false; } hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); initializeTraining(s); } cur = s; localStorage.setItem(LAST, String(n)); emit(); return true; } catch { return false; }
+  try { const raw = localStorage.getItem(KEY(n)); if (!raw) return false; const s = JSON.parse(raw) as Save; if (s.v !== SAVE_V) return false; loadProblem = null; if (hasRemovedCard(s)) { loadProblem = REMOVED_MSG; return false; } hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); hydrateAcademy(s); initializeTraining(s); } cur = s; localStorage.setItem(LAST, String(n)); emit(); return true; } catch { return false; }
 }
 export function deleteSlot(n: number): void { localStorage.removeItem(KEY(n)); if (cur?.slot === n) cur = null; emit(); }
 export function exportJson(): string { return JSON.stringify(cur); }
@@ -69,7 +70,7 @@ export function importJson(text: string, slot: number): string | null {
   try {
     const s = JSON.parse(text) as Save;
     if (!s || s.v !== SAVE_V || !Array.isArray(s.series) || !s.team) return "LOL Manager 세이브 파일이 아니거나 버전이 다릅니다. v2부터는 새 형식이라 이전 세이브는 불러올 수 없습니다.";
-    s.slot = slot; if (hasRemovedCard(s)) return REMOVED_MSG; hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); initializeTraining(s); } cur = s; persist(); emit(); return null;
+    s.slot = slot; if (hasRemovedCard(s)) return REMOVED_MSG; hydrateSave(s); if (s.mode === "story") { applyStoryWorld(s); hydrateAcademy(s); initializeTraining(s); } cur = s; persist(); emit(); return null;
   } catch { return "파일을 읽지 못했습니다. JSON 형식인지 확인해 주세요."; }
 }
 
@@ -193,7 +194,7 @@ export function setStarter(team: string, pos: number, key: string): void {
     if (team !== s.team || !Number.isInteger(pos) || pos < 0 || pos > 4 || PL[key]?.pos !== pos) return;
     if (s.story?.ended) return;
     if (s.session && !["press", "lineup"].includes(s.session.stage)) return;
-    if (s.mode === "story" ? !s.story?.contracts.some(c => c.key === key && c.years > 0) : ![...s.cards, ...(s.starters[team] ?? [])].includes(key)) return;
+    if (s.mode === "story" ? !s.story?.contracts.some(c => c.key === key && c.years > 0 && isMainSquad(c)) : ![...s.cards, ...(s.starters[team] ?? [])].includes(key)) return;
     s.starters[team][pos] = key;
   });
 }

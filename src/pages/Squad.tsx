@@ -4,6 +4,7 @@ import { useSave, mutate, fillSchedule, setStarter } from "../store";
 import { Card, PName, Ovr } from "../ui";
 import type { DayAct } from "../game/season";
 import { playerTraining, trainingPlan, trainingPerson, trainingDate, setTrainingPlan, trainedRatingOf } from "../game/trainingRuntime";
+import { isMainSquad } from "../game/academy";
 import { trainingProfile, trainingBonuses, fatiguePenalty, WEEKLY_POINTS } from "../game/training";
 import { ratingColor } from "../rating";
 import { PLAYER_BIRTHDATES } from "../game/playerBirthdates";
@@ -70,7 +71,7 @@ export default function Squad() {
       </Card></div>}
       {story && <Card title="선수 성장 · 훈련과 회복" right={<span className="muted sm">다음 일정 {date}</span>}>
         <p className="muted sm">훈련 성장은 선수 개인에게 쌓이고 시즌이 바뀌어도 유지됩니다(원본 시즌 기록·연봉과 별개인 게임 효과). 피지컬 훈련은 교전·압박(손으로 실행), 스크림(팀 연습경기)과 출전 경험은 판단·운영(뇌지컬)을 올립니다. 모든 선수가 100까지 키울 수 있습니다. 다만 능력치가 높을수록 천천히 올라 한 시즌 만에는 닿지 않고, 재능(커리어 최고 기록)은 성장 속도에만 영향을 줍니다(최상위 약 4시즌, 80대 초반 약 8시즌). 한 주 훈련은 5포인트까지 성장에 반영되고, 넘으면 피로만 크게 쌓여 컨디션이 떨어집니다. 어린 선수는 피지컬이 빨리 오르고, 25세부터는 한 주에 피지컬 훈련을 2번 미만 하면 피지컬이 조금씩 내려갑니다(꾸준히 훈련하면 막을 수 있음).</p>
-        <div className="card-grid" data-testid="training-roster">{[...new Map([...keys, ...(s.story?.contracts.map((c) => c.key) ?? [])].map((k) => [trainingPerson(s, k), k])).values()].map((k) => {
+        <div className="card-grid" data-testid="training-roster">{[...new Map([...keys, ...(s.story?.contracts.filter((c) => isMainSquad(c)).map((c) => c.key) ?? [])].map((k) => [trainingPerson(s, k), k])).values()].map((k) => {
           const person = trainingPerson(s, k), p = playerTraining(s, k); if (!person || !p) return null;
           const birth = PLAYER_BIRTHDATES[person], profile = trainingProfile(birth, date), bonus = trainingBonuses(p), tr = trainedRatingOf(s, k);
           return <div className="card-tile" key={person} data-testid={`training-${person}`}>

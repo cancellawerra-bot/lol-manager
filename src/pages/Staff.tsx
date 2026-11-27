@@ -43,7 +43,7 @@ export default function Staff() {
   return (
     <div className="staff-page" data-testid="staff-page">
       <Card title="코칭스태프">
-        <p className="muted sm">가상 코치를 역할마다 한 명씩 고용할 수 있습니다. 실존 인물 이름·사진·발언·성격은 쓰지 않습니다. 연봉은 게임용 가상 금액이며 지금 구단 자금에서 나갑니다. 고용하지 않으면 승부·성장·경제는 기존과 같습니다.</p>
+        <p className="muted sm">가상 코치를 역할마다 한 명씩 고용할 수 있습니다(수석·피지컬·운영·컨디션·2군 감독). 실존 인물 이름·사진·발언·성격은 쓰지 않습니다. 연봉은 게임용 가상 금액이며 지금 구단 자금에서 나갑니다. 고용하지 않으면 승부·성장·경제는 기존과 같습니다.</p>
         {err && <p className="err sm" data-testid="staff-error">{err}</p>}
         <div className="facts staff-facts" data-testid="staff-effects">
           <li><b>{hiredN}명</b><span>고용 중</span></li>
@@ -54,7 +54,7 @@ export default function Staff() {
           <li><b>{boost.recovery === 1 ? "기본" : `+${Math.round((boost.recovery - 1) * 100)}%`}</b><span>피로 회복</span></li>
           <li><b>{temp === STAFF_DEFAULT_TEMP ? "기본" : `+${Math.round((1 - temp / STAFF_DEFAULT_TEMP) * 100)}%`}</b><span>밴픽 조언 정확도</span></li>
         </div>
-        <p className="muted xs">효과는 우리 팀만 적용됩니다. 성장 상한 100과 역사 모드 약팀 성장 가속 규칙은 그대로입니다. 판타지 드래프트 예산(90/85/80억)은 선수 선발용이며 여기 연봉과 별개입니다. 해임하면 이미 나간 연봉은 돌아오지 않습니다.</p>
+        <p className="muted xs">1군 코치 효과는 우리 1군만 적용됩니다. 2군 감독의 효과는 2군 성장에만 더해집니다. 성장 상한 100과 역사 모드 약팀 성장 가속 규칙은 그대로입니다. 판타지 드래프트 예산(90/85/80억)은 선수 선발용이며 여기 연봉과 별개입니다. 해임하면 이미 나간 연봉은 돌아오지 않습니다.</p>
       </Card>
 
       {STAFF_ROLES.map((role) => {

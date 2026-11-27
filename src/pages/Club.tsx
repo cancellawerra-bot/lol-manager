@@ -11,6 +11,7 @@ import Ledger from "./Ledger";
 import TrophyCase from "./TrophyCase";
 import { MarketingCard } from "./Marketing";
 import { staffPayroll } from "../game/staff";
+import { academyPayroll } from "../game/academy";
 
 export default function Club() {
   const s = useSave()!;
@@ -50,7 +51,7 @@ export default function Club() {
         <p className="muted xs">{CARDS_FILE.meta.salaryNote}</p>
       </Card>
       <TrophyCase s={s} />
-      <p className="row gap wrap"><a className="btn" href="#/club/staff" data-testid="club-staff">코칭스태프</a><a className="btn" href="#/report" data-testid="club-report">지금까지 수업 보고서</a></p>
+      <p className="row gap wrap"><a className="btn" href="#/club/staff" data-testid="club-staff">코칭스태프</a><a className="btn" href="#/club/academy" data-testid="club-academy">2군 육성</a><a className="btn" href="#/report" data-testid="club-report">지금까지 수업 보고서</a></p>
       {s.story && <Ledger s={s} />}
       <div id="club-marketing" data-testid="club-marketing"><MarketingCard /></div>
       {s.story && <ClubTimeline />}
@@ -85,7 +86,7 @@ export default function Club() {
       <Card title="예산">
         <ul className="sm">
           <li>한도 {fmtMoney(s.eco.cap)} ({({ easy: "쉬움", normal: "보통", hard: "어려움" } as const)[s.eco.difficulty]})</li>
-          <li>선수 연봉 {fmtMoney(sal)}{staffPayroll(s) ? ` · 스태프 연봉 ${fmtMoney(staffPayroll(s))}` : ""} · 보유 자금 {fmtMoney(s.eco.cash)}</li>
+          <li>선수 연봉 {fmtMoney(sal)}{staffPayroll(s) ? ` · 스태프 연봉 ${fmtMoney(staffPayroll(s))}` : ""}{academyPayroll(s) ? ` · 2군 육성비 ${fmtMoney(academyPayroll(s))}` : ""} · 보유 자금 {fmtMoney(s.eco.cash)}</li>
         </ul>
       </Card>
     </div>

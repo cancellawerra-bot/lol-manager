@@ -9,6 +9,7 @@ import { fmtMoney } from "../game/money";
 import { unreadHonorNews } from "../game/achievements";
 import { shouldOfferReport } from "../game/classReport";
 import { shouldOfferStaff } from "../game/staff";
+import { shouldOfferAcademy } from "../game/academy";
 import { PlayerAvatar } from "../ui";
 import { ratingOf } from "../rating";
 import SeasonJourney from "./SeasonJourney";
@@ -91,6 +92,7 @@ export function homeTodos(s: Save): HomeTodos {
   }
   if (shouldOfferReport(s)) pending.push({ id: "class-report", label: "수업 보고서를 작성할 수 있습니다", detail: "한 시즌 또는 스플릿의 기록을 한 장으로 정리해 과제로 제출할 수 있습니다.", href: "#/report", tone: "neutral" });
   if (shouldOfferStaff(s)) pending.push({ id: "staff", label: "코칭스태프를 검토할 수 있습니다", detail: "가상 코치를 고용하면 훈련 효율·피로 회복·밴픽 조언이 작게 달라집니다. 고용하지 않으면 기존과 같습니다.", href: "#/club/staff", tone: "neutral" });
+  if (shouldOfferAcademy(s)) pending.push({ id: "academy", label: "2군 육성을 검토할 수 있습니다", detail: "가상 유망주를 키우고 1군으로 콜업할 수 있습니다. 육성하지 않으면 기존과 같습니다.", href: "#/club/academy", tone: "neutral" });
   return { pending, done, total: pending.length + done.length };
 }
 
