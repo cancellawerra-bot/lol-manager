@@ -5,7 +5,7 @@ import { personUsed } from "../game/cards";
 import { getSave, useSave } from "../store";
 import { Card } from "../ui";
 import { cardRating, ratingColor } from "../rating";
-import { estimateOvr } from "../game/scoutEstimate";
+import { compareByVisibleOvr, estimateOvr } from "../game/scoutEstimate";
 import { HonorChips, MiniFour } from "../pcard";
 import { go } from "../nav";
 import { fmtMoney, moneyRound } from "../game/money";
@@ -50,6 +50,7 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
   const view = viewProp ?? own;
   const setView = (patch: Partial<MarketView>): void => { const v = { ...view, ...patch }; if (onView) onView(v); else setOwn(v); };
   const { q, pos, year, sort } = view;
+  const s = useSave();
   const setQ = (x: string): void => setView({ q: x });
   const setPos = (x: MarketView["pos"]): void => setView({ pos: x });
   const setYear = (x: MarketView["year"]): void => setView({ year: x });
@@ -62,9 +63,18 @@ export function CardMarket({ cap, selected, onChange, hideOwn, yearMax, priceOf,
     else if (pos !== "all") arr = arr.filter((c) => c.posIdx === pos);
     if (!seasonYear && year !== "all") arr = arr.filter((c) => c.year === year);
     if (q.trim()) { const t = q.trim().toLowerCase(); arr = arr.filter((c) => c.name.toLowerCase().includes(t) || String(c.year).includes(t) || c.team.toLowerCase().includes(t)); }
-    arr = [...arr].sort((a, b) => { const pa = priceOf ? priceOf(a) : a.salary, pb = priceOf ? priceOf(b) : b.salary; return sort === "salary" ? pb - pa : sort === "salaryAsc" ? pa - pb : sort === "pct" ? (ratingOf ? ratingOf(b) - ratingOf(a) : cardRating(b) - cardRating(a)) || b.percentile - a.percentile || pb - pa : b.year - a.year || pb - pa; });
+    arr = [...arr].sort((a, b) => {
+      const pa = priceOf ? priceOf(a) : a.salary, pb = priceOf ? priceOf(b) : b.salary;
+      if (sort === "salary") return pb - pa;
+      if (sort === "salaryAsc") return pa - pb;
+      if (sort === "pct") {
+        const ra = ratingOf ? ratingOf(a) : cardRating(a), rb = ratingOf ? ratingOf(b) : cardRating(b);
+        return compareByVisibleOvr(s, { person: a.pkey, value: ra, card: a, id: a.id }, { person: b.pkey, value: rb, card: b, id: b.id }) || pb - pa;
+      }
+      return b.year - a.year || pb - pa;
+    });
     return arr;
-  }, [q, pos, year, sort, yearMax, priceOf, ratingOf, seasonYear, openKey]);
+  }, [q, pos, year, sort, yearMax, priceOf, ratingOf, seasonYear, openKey, s]);
   const price = (c: SeasonCard): number => priceOf ? priceOf(c) : c.salary;
   const used = selected.reduce((n, id) => n + (CARDS[id] ? price(CARDS[id]) : 0), 0);
   const toggle = (c: SeasonCard): void => {

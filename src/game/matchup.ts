@@ -4,6 +4,7 @@ import { careerYear, hasYearPlayerPools, lckYearName, NO_RECORD } from "./yearRe
 import { standings, type Save, type SeriesRec } from "./season";
 import { ratingOf } from "../rating";
 import { playerTraining } from "./trainingRuntime";
+import { estimateOvr, visibleSortValue, visibleRatingSpan } from "./scoutEstimate";
 import type { PosIdx } from "../types";
 import type { SeasonCard } from "../types";
 import type { DraftState } from "./draft";
@@ -14,7 +15,12 @@ export interface ChampFact { id: string; n: number; wins?: number }
 export interface SideFact {
   key: string;
   name: string;
-  ovr: number | null;
+  ovr: number | null; // 공개된 정확값만. 미관찰 구간이면 null
+  ovrText: string;
+  estKind: "exact" | "range" | "none";
+  visible: number | null;
+  ovrLo: number | null;
+  ovrHi: number | null;
   cardYear: number | null;
   cardGames: number | null;
   cardKda: number | null;
@@ -42,6 +48,7 @@ export interface PreMatchBrief {
   opTeam: string;
   myAvg: number | null;
   opAvg: number | null;
+  opAvgText: string;
   lanes: LaneFact[];
   keyPos: PosIdx | null;
   teamForm: { my: string[]; op: string[] };
@@ -49,6 +56,34 @@ export interface PreMatchBrief {
   series: { sa: number; sb: number; set: number } | null;
   picks: { pos: PosIdx; my?: string; op?: string }[] | null;
   advice: string[];
+}
+
+function visibleSide(s: Save, key: string): Pick<SideFact, "ovr" | "ovrText" | "estKind" | "visible" | "ovrLo" | "ovrHi"> {
+  const p = PL[key];
+  const est = estimateOvr(s, p?.personKey ?? key, p ? ratingOf(p) : null, undefined, p ?? null);
+  if (est.kind === "exact" && est.value != null) {
+    return { ovr: est.value, ovrText: String(est.value), estKind: "exact", visible: est.value, ovrLo: est.value, ovrHi: est.value };
+  }
+  if (est.kind === "range") {
+    const span = visibleRatingSpan(est)!;
+    return { ovr: null, ovrText: est.text, estKind: "range", visible: visibleSortValue(est), ovrLo: span.lo, ovrHi: span.hi };
+  }
+  return { ovr: null, ovrText: "기록 없음", estKind: "none", visible: null, ovrLo: null, ovrHi: null };
+}
+
+function vsVisible(our: number | null, op: SideFact): string {
+  if (our == null) return "";
+  if (op.estKind === "exact" && op.visible != null) {
+    const d = Math.round(our - op.visible);
+    if (d === 0) return " 종합은 같습니다.";
+    return ` 우리가 ${Math.abs(d)} ${d > 0 ? "높습니다" : "낮습니다"}.`;
+  }
+  if (op.estKind === "range" && op.ovrLo != null && op.ovrHi != null) {
+    if (our > op.ovrHi) return " 우리 값이 상대 추정 구간보다 높습니다.";
+    if (our < op.ovrLo) return " 우리 값이 상대 추정 구간보다 낮습니다.";
+    return " 우리 값이 상대 추정 구간과 겹칩니다.";
+  }
+  return "";
 }
 
 function seasonCardOf(s: Save, key: string): SeasonCard | undefined {
@@ -72,7 +107,7 @@ function sideFact(s: Save, key: string, year: number): SideFact {
   return {
     key,
     name: p?.name ?? key,
-    ovr: p ? ratingOf(p) : null,
+    ...visibleSide(s, key),
     cardYear: card?.year ?? null,
     cardGames: card ? card.games : (hasYearPlayerPools(year) && p && !card ? p.games : null),
     cardKda: card ? (card.kda ?? null) : (hasYearPlayerPools(year) && p && !card ? p.m.kda : null),
@@ -89,9 +124,10 @@ function sideFact(s: Save, key: string, year: number): SideFact {
   };
 }
 
-function avgOf(keys: string[]): number | null {
-  const v = keys.map((k) => ratingOf(PL[k])).filter((x): x is number => x != null);
-  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+function avgExact(s: Save, keys: string[]): number | null {
+  const sides = keys.map((k) => visibleSide(s, k));
+  if (!sides.length || sides.some((x) => x.estKind !== "exact" || x.ovr == null)) return null;
+  return sides.reduce((n, x) => n + x.ovr!, 0) / sides.length;
 }
 
 function keyLane(lanes: LaneFact[]): PosIdx | null {
@@ -125,13 +161,12 @@ function adviceOf(b: Omit<PreMatchBrief, "advice">): string[] {
     if (Math.abs(d) < 0.5) lines.push(`선발 5명 평균 종합은 우리 ${fmt1(b.myAvg)}, 상대 ${fmt1(b.opAvg)}로 비슷합니다.`);
     else if (d > 0) lines.push(`선발 5명 평균 종합은 우리 ${fmt1(b.myAvg)}, 상대 ${fmt1(b.opAvg)}로 우리가 ${fmt1(d)} 높습니다.`);
     else lines.push(`선발 5명 평균 종합은 우리 ${fmt1(b.myAvg)}, 상대 ${fmt1(b.opAvg)}로 우리가 ${fmt1(-d)} 낮습니다.`);
+  } else if (b.myAvg != null) {
+    lines.push(`선발 5명 평균 종합은 우리 ${fmt1(b.myAvg)}입니다. 상대는 미관찰 선수가 있어 ${b.opAvgText}으로만 비교합니다.`);
   }
   if (b.keyPos != null) {
     const ln = b.lanes[b.keyPos];
-    const d = ln.ovrDiff!;
-    const dir = d > 0 ? "높습니다" : d < 0 ? "낮습니다" : "같습니다";
-    const gap = d === 0 ? "" : ` 우리가 ${Math.abs(d)} ${dir}.`;
-    lines.push(`종합 능력치 차이가 가장 큰 라인은 ${ln.posKo}입니다. 우리 ${ln.my.name} ${ln.my.ovr ?? "기록 없음"}, 상대 ${ln.op.name} ${ln.op.ovr ?? "기록 없음"}.${gap}`);
+    lines.push(`종합 능력치 차이가 가장 큰 라인은 ${ln.posKo}입니다. 우리 ${ln.my.name} ${ln.my.ovrText}, 상대 ${ln.op.name} ${ln.op.ovrText}.${vsVisible(ln.my.ovr, ln.op)}`);
     const facts: string[] = [];
     if (ln.my.cardKda != null) facts.push(`우리 ${ln.posKo}의 ${ln.my.cardYear ?? b.year} 시즌 카드 KDA ${ln.my.cardKda.toFixed(2)}`);
     else facts.push(`우리 ${ln.posKo}의 ${lckYearName(b.year)} 시즌 KDA는 ${NO_RECORD}`);
@@ -183,7 +218,7 @@ export function preMatchBrief(s: Save, myTeam: string, opTeam: string, sr?: Seri
     const pos = i as PosIdx;
     const my = sideFact(s, mine[i] ?? "", year);
     const op = sideFact(s, theirs[i] ?? "", year);
-    const ovrDiff = my.ovr != null && op.ovr != null ? Math.round(my.ovr - op.ovr) : null;
+    const ovrDiff = my.visible != null && op.visible != null ? Math.round(my.visible - op.visible) : null;
     return { pos, posKo: POS_KO[pos], my, op, ovrDiff };
   });
   const rows = standings(s);
@@ -194,12 +229,19 @@ export function preMatchBrief(s: Save, myTeam: string, opTeam: string, sr?: Seri
     const opSide = mySide === "B" ? "R" as const : "B" as const;
     return { pos, my: draft.picks[mySide].find((p) => p.pos === pos)?.c, op: draft.picks[opSide].find((p) => p.pos === pos)?.c };
   }) : null;
+  const myAvg = avgExact(s, mine);
+  const opAvg = avgExact(s, theirs);
+  const opSides = theirs.map((k) => visibleSide(s, k));
+  const opAvgText = opAvg != null ? fmt1(opAvg)
+    : opSides.some((x) => x.estKind === "range") ? "추정 구간"
+    : "기록 없음";
   const base: Omit<PreMatchBrief, "advice"> = {
     year,
     myTeam,
     opTeam,
-    myAvg: avgOf(mine),
-    opAvg: avgOf(theirs),
+    myAvg,
+    opAvg,
+    opAvgText,
     lanes,
     keyPos: keyLane(lanes),
     teamForm: { my: myRow?.last?.slice(-5) ?? [], op: opRow?.last?.slice(-5) ?? [] },

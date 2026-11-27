@@ -1,6 +1,8 @@
 // v2.19.0 판타지 드래프트 선택 화면: 포지션 5칸 보드 + 팀 필터 (Grok 2026-11-22).
 // PC는 탑·정글·미드·원딜·서포터 다섯 열을 나란히, 열마다 안쪽 스크롤. 휴대폰은 포지션 탭으로 한 열씩.
 import { useMemo, useState } from "react";
+import { useSave } from "../store";
+import { compareByVisibleOvr } from "../game/scoutEstimate";
 import { CARDS, POS_KO, cardLabel, fmt } from "../data";
 import type { SeasonCard } from "../types";
 import { ratingColor } from "../rating";
@@ -16,6 +18,7 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
   const set = (p: Partial<MarketView>): void => onView({ ...view, ...p });
   const [detail, setDetail] = useState<string | null>(null);
   const { q, year, sort } = view;
+  const s = useSave();
   const team = view.team ?? "all";
   const all = useMemo(() => Object.values(CARDS), []);
   const years = useMemo(() => [...new Set(all.map((c) => c.year))].sort((a, b) => b - a), [all]);
@@ -26,9 +29,10 @@ export function DraftBoard({ cap, mine, view, onView, rules, priceOf, ratingOf, 
     if (q.trim()) { const t = q.trim().toLowerCase(); arr = arr.filter((c) => c.name.toLowerCase().includes(t) || String(c.year).includes(t) || c.team.toLowerCase().includes(t)); }
     return [...arr].sort((a, b) => {
       const pa = priceOf(a), pb = priceOf(b);
-      return sort === "salary" ? pb - pa : sort === "salaryAsc" ? pa - pb : sort === "year" ? b.year - a.year || ratingOf(b) - ratingOf(a) : ratingOf(b) - ratingOf(a) || b.percentile - a.percentile || pb - pa;
+      const vis = () => compareByVisibleOvr(s, { person: a.pkey, value: ratingOf(a), card: a, id: a.id }, { person: b.pkey, value: ratingOf(b), card: b, id: b.id });
+      return sort === "salary" ? pb - pa : sort === "salaryAsc" ? pa - pb : sort === "year" ? b.year - a.year || vis() || pb - pa : vis() || pb - pa;
     });
-  }, [all, team, year, q, sort, priceOf, ratingOf]);
+  }, [all, team, year, q, sort, priceOf, ratingOf, s]);
   const cols = POS_KO.map((n, i) => {
     const pickedId = mine.find((id) => CARDS[id]?.posIdx === i);
     const list = filtered.filter((c) => c.posIdx === i);

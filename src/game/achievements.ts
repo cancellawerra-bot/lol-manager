@@ -34,7 +34,12 @@ export function challengeLog(s: Save): Achievement[] | undefined {
     { id: "top6", label: "플레이오프 진출", done: !!po || livePo, detail: po ? `${po.at}` : livePo ? "이번 스플릿" : "정규 시즌 상위권(6위 이내)을 노려 보세요" },
     { id: "rank1", label: "정규 시즌 1위", done: !!top || (me === 1 && st.tier === "LCK" && rows[0]?.w + rows[0]?.l > 0 && s.phase !== "regular"), detail: top ? top.at : best != null ? `최고 ${best}위` : "아직 완료한 스플릿이 없습니다" },
     { id: "final", label: "LCK 결승 진출", done: !!fin || liveFin, detail: fin ? fin.at : liveFin ? "이번 스플릿" : "플레이오프에서 결승까지" },
-    { id: "lck", label: "LCK 우승", done: st.trophies.lck > 0, detail: st.trophies.lck > 0 ? `${st.trophies.lck}회` : "결승 승리" },
+    (() => {
+      const honors = careerHonors(s), lckT = honors.trophies.find((x) => x.id === "lck"), ckT = honors.trophies.find((x) => x.id === "ck");
+      if (lckT?.done) return { id: "lck", label: "LCK 우승", done: true, detail: lckT.detail };
+      if (ckT?.done) return { id: "lck", label: "2부 우승", done: true, detail: ckT.detail };
+      return { id: "lck", label: "LCK 우승", done: false, detail: "결승 승리" };
+    })(),
     { id: "msi", label: "MSI 우승", done: st.trophies.msi > 0, detail: st.trophies.msi > 0 ? `${st.trophies.msi}회` : "LCK 1시드로 출전" },
     { id: "worlds", label: "월즈 우승 (최종 목표)", done: st.trophies.worlds > 0, detail: st.trophies.worlds > 0 ? `${st.trophies.worlds}회` : "2027까지 도전" },
   ];

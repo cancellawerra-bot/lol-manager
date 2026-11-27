@@ -8,6 +8,7 @@ import { moneyRound } from "./money";
 import { trainingDate, playerTraining } from "./trainingRuntime";
 import { trainingProfile } from "./training";
 import { PLAYER_BIRTHDATES } from "./playerBirthdates";
+import { estimateOvr, ownedCompareText, visibleSortValue } from "./scoutEstimate";
 
 export type ScoutGoal = "upgrade" | "value" | "development" | "watch";
 export type ScoutContext = "season" | "fa" | "tryout";
@@ -131,9 +132,10 @@ function offlineBudget(s: Save, c: SeasonCard, context: "fa" | "tryout"): { rese
 function annotate(s: Save, c: ScoutCandidate, goal: ScoutGoal): ScoutCandidate {
   if (!c.card || c.ovr == null) return c;
   const profile = trainingProfile(PLAYER_BIRTHDATES[c.person], trainingDate(s)), base = bestOwned(s, c.card.posIdx);
-  c.bestOwned = base; c.delta = base == null ? undefined : c.ovr - base; c.age = profile.age;
+  const vis = visibleSortValue(estimateOvr(s, c.person, c.ovr, c.card));
+  c.bestOwned = base; c.delta = base == null || !Number.isFinite(vis) || vis === Number.NEGATIVE_INFINITY ? undefined : vis - base; c.age = profile.age;
   const hole = !(s.starters[s.team] ?? [])[c.card.posIdx];
-  c.reasons = [hole ? `${POS_KO[c.card.posIdx]} 선발 공백` : base == null ? "보유 선수 비교 기록 없음" : `같은 포지션 보유 최고 ${base} 대비 ${c.delta! >= 0 ? "+" : ""}${c.delta}`];
+  c.reasons = [hole ? `${POS_KO[c.card.posIdx]} 선발 공백` : base == null ? "보유 선수 비교 기록 없음" : ownedCompareText(s, base, c.person, c.ovr, c.card)];
   if (c.estimated) c.warnings.push(`${c.card.year} 과거 기록 기반 추정 · 현재 연도 기록 없음`);
   if (c.card.small || c.card.games < 20) c.warnings.push("표본 부족 · 순위를 보수적으로 계산합니다.");
   if (c.card.limited) c.warnings.push("일부 지표 기록 없음 · 초기 시대 지표 제한");
@@ -141,7 +143,8 @@ function annotate(s: Save, c: ScoutCandidate, goal: ScoutGoal): ScoutCandidate {
   if (c.offerCardId && c.owner !== "FA" && c.owner !== "트라이아웃") c.warnings.push("원 소속 대체 선수와 구단 합의가 필요합니다.");
   c.warnings.push("선수 동의·경쟁 구단의 제안에 따라 영입이 거절될 수 있습니다.");
   const penalty = c.card.small || c.card.games < 20 ? 3 : 0;
-  c.score = goal === "value" ? Math.max(0, c.delta ?? c.ovr) / Math.max(.01, c.salary! + c.fee!) - penalty : goal === "development" ? c.ovr + (21 - (c.age ?? 21)) * 2 - penalty : (hole ? 1000 : (c.delta ?? 0) * 10) + c.ovr * .1 - penalty;
+  const power = Number.isFinite(vis) && vis !== Number.NEGATIVE_INFINITY ? vis : 0;
+  c.score = goal === "value" ? Math.max(0, c.delta ?? power) / Math.max(.01, c.salary! + c.fee!) - penalty : goal === "development" ? power + (21 - (c.age ?? 21)) * 2 - penalty : (hole ? 1000 : (c.delta ?? 0) * 10) + power * .1 - penalty;
   return c;
 }
 export function scoutingReport(s: Save, context: ScoutContext, pref = scoutPreferences(s), query = ""): { candidates: ScoutCandidate[]; total: number; blocked: number; missingEvidence: number; notice?: string } {
@@ -199,5 +202,5 @@ export function openingScout(year: number, cap: number, selected: string[], pric
     }
     reserve = moneyRound(reserve);
     return moneyRound(used + salary + reserve) <= moneyRound(cap) ? [{ card, ovr: effective(card, year), salary, reserve }] : [];
-  }).sort((a, b) => b.ovr - a.ovr || a.salary - b.salary || cmpStr(a.card.id, b.card.id)).slice(0, 3);
+  }).sort((a, b) => visibleSortValue(estimateOvr(null, b.card.pkey, b.ovr, b.card)) - visibleSortValue(estimateOvr(null, a.card.pkey, a.ovr, a.card)) || a.salary - b.salary || cmpStr(a.card.id, b.card.id)).slice(0, 3);
 }

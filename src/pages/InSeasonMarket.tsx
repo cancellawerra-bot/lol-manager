@@ -6,7 +6,7 @@ import { Card } from "../ui";
 import { cardRating, ratingOf } from "../rating";
 import { CardTile } from "./Market";
 import { ScoutObserve, ScoutPotential } from "./ScoutRating";
-import { ratingLabel } from "../game/scoutEstimate";
+import { ratingLabel, compareByVisibleOvr } from "../game/scoutEstimate";
 import { fmtMoney } from "../game/money";
 import { seasonCandidates, seasonMarketClosed, seasonMarketWeek, prepareInSeason, seasonSalaryDue, seasonReserve, startSeasonNegotiation, seasonClubReply, seasonPlayerReply, answerSeasonIncoming, setSeasonAutomatic } from "../game/inSeason";
 import { ScoutingPanel } from "./Scouting";
@@ -18,7 +18,7 @@ export default function InSeasonMarket({ s }: { s: Save }) {
   const [message, setMessage] = useState(""), [fee, setFee] = useState("0"), [salary, setSalary] = useState("0.3"), [years, setYears] = useState(1), [starter, setStarter] = useState(true);
   const closed = seasonMarketClosed(s), week = seasonMarketWeek(s), m = s.inSeason;
   useEffect(() => { if (!closed && (m?.year !== s.story?.year || m?.week !== week)) mutate((x) => prepareInSeason(x)); }, [closed, m?.year, m?.week, s.story?.year, week]);
-  const list = seasonCandidates(s).filter((c) => (pos === "all" || c.card.posIdx === Number(pos)) && (source === "all" || (source === "FA" ? c.owner === "FA" : c.owner !== "FA")) && (!query.trim() || `${c.card.name} ${c.owner} ${TM[c.owner]?.ko ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a, b) => a.salary - b.salary || b.ovr - a.ovr);
+  const list = seasonCandidates(s).filter((c) => (pos === "all" || c.card.posIdx === Number(pos)) && (source === "all" || (source === "FA" ? c.owner === "FA" : c.owner !== "FA")) && (!query.trim() || `${c.card.name} ${c.owner} ${TM[c.owner]?.ko ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a, b) => a.salary - b.salary || compareByVisibleOvr(s, { person: a.person, value: a.ovr, card: a.card, id: a.card.id }, { person: b.person, value: b.ovr, card: b.card, id: b.card.id }));
   const tr = m?.negotiation, target = tr && seasonCandidates(s).find((c) => c.person === tr.person);
   const negotiationRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (tr) negotiationRef.current?.scrollIntoView({ block: "start" }); }, [tr?.person, tr?.step]);

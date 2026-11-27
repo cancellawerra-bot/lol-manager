@@ -131,11 +131,15 @@ function snapshotEconomy(s: { eco: { cash: number; fans: number }; series: { id:
   const h = careerHonors(s);
   const log = challengeLog(s)!;
   assert.equal(log.length, 6);
-  if (s.story!.trophies.lck > 0) {
-    assert.ok(log.find((x) => x.id === "lck")!.done);
+  const lckItem = log.find((x) => x.id === "lck")!;
+  const lckTitle = !!h.trophies.find((t) => t.id === "lck")?.done;
+  const ckTitle = !!h.trophies.find((t) => t.id === "ck")?.done;
+  assert.equal(lckItem.done, lckTitle || ckTitle);
+  if (lckTitle) {
+    assert.equal(lckItem.label, "LCK 우승");
     assert.ok(log.find((x) => x.id === "final")!.done);
     assert.ok(log.find((x) => x.id === "top6")!.done);
-  }
+  } else if (ckTitle) assert.equal(lckItem.label, "2부 우승");
   const splitChamp = (s.clubTimeline?.splits ?? []).some((x) => x.tier === "LCK" && x.champion === s.team);
   assert.equal(!!h.trophies.find((t) => t.id === "lck")?.done, splitChamp, "LCK 트로피는 이번 커리어 스플릿 우승 기록만");
   assert.equal(!!h.trophies.find((t) => t.id === "promo")?.done, false, "LCK로 시작한 팀은 승격 소식을 승격 업적으로 치지 않음");

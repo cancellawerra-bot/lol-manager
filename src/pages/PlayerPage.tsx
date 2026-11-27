@@ -8,6 +8,7 @@ import { comfort } from "../game/draft";
 import { TIERS, masteryOf, masterySummary } from "../game/mastery";
 import { careerYear, hasYearPlayerPools, lckYearName, NO_RECORD } from "../game/yearRecords";
 import { estimateOvr } from "../game/scoutEstimate";
+import { ScoutStars } from "./ScoutRating";
 import { ScoutObserve, ScoutPotential } from "./ScoutRating";
 
 const GROUP_KO: Record<string, string> = { lane: "라인전", fight: "교전", farm: "성장", vision: "시야", pool: "챔피언 폭" };
@@ -90,7 +91,7 @@ export default function PlayerPage({ k }: { k: string }) {
         </div>
       </Card>
       <Card title="팀 내 같은 포지션">
-        <ul className="plist">{(TM[t.short]?.players ?? []).map((x) => PL[x]).filter((x) => x?.pos === p.pos).map((x) => <li key={x.key}><a href={`#/player/${x.key}`}>{x.name}</a> <Ovr p={x} /> <span className="muted sm">{x.games}경기</span></li>)}</ul>
+        <ul className="plist">{(TM[t.short]?.players ?? []).map((x) => PL[x]).filter((x) => x?.pos === p.pos).map((x) => <li key={x.key}><a href={`#/player/${x.key}`}>{x.name}</a> <ScoutStars person={x.personKey ?? x.key} player={x} compact /> <span className="muted sm">{x.games}경기</span></li>)}</ul>
       </Card>
     </div>
   );

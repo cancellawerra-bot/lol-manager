@@ -133,3 +133,57 @@ export const potentialNote = (est: StarEstimate): string => (
   est.kind === "exact" ? "성장 상한 100(기존 규칙). 숨은 잠재력 점수는 만들지 않습니다."
     : "성장 상한은 우리 구단 선수이거나 관찰이 끝난 뒤에만 확인합니다. 숨은 잠재력 점수는 만들지 않습니다."
 );
+
+/** 별점 반 칸이 가리키는 능력치 하한(표시·비교용). 숨은 정확한 값은 쓰지 않습니다. */
+export function halfToRatingLo(h: number): number {
+  const n = Math.max(STAR_MIN, Math.min(STAR_MAX, Math.round(h)));
+  if (n >= STAR_MAX) return 92;
+  return 60 + (n - STAR_MIN) * 4;
+}
+/** 별점 반 칸이 가리키는 능력치 상한(표시·비교용). */
+export function halfToRatingHi(h: number): number {
+  const n = Math.max(STAR_MIN, Math.min(STAR_MAX, Math.round(h)));
+  if (n >= STAR_MAX) return 100;
+  return 60 + (n - STAR_MIN) * 4 + 3;
+}
+
+/** 화면에 보이는 값으로 정렬·비교할 숫자. 정확값이면 그 숫자, 구간이면 하한~상한의 중간, 기록 없음은 맨 뒤. */
+export function visibleSortValue(est: StarEstimate): number {
+  if (est.kind === "exact" && est.value != null && Number.isFinite(est.value)) return est.value;
+  if (est.kind === "range") return (halfToRatingLo(est.lo) + halfToRatingHi(est.hi)) / 2;
+  return Number.NEGATIVE_INFINITY;
+}
+
+export function visibleRatingSpan(est: StarEstimate): { lo: number; hi: number } | undefined {
+  if (est.kind === "exact" && est.value != null && Number.isFinite(est.value)) return { lo: est.value, hi: est.value };
+  if (est.kind === "range") return { lo: halfToRatingLo(est.lo), hi: halfToRatingHi(est.hi) };
+  return;
+}
+
+const cmpId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/** 능력치 높은 순(표시 기준). 동점은 결정적 id 비교이며 실제 퍼센타일·숨은 능력치는 쓰지 않습니다. */
+export function compareByVisibleOvr(
+  s: Save | null | undefined,
+  a: { person: string; value?: number | null; card?: SeasonCard | null; id: string },
+  b: { person: string; value?: number | null; card?: SeasonCard | null; id: string },
+): number {
+  const ea = estimateOvr(s, a.person, a.value, a.card);
+  const eb = estimateOvr(s, b.person, b.value, b.card);
+  return visibleSortValue(eb) - visibleSortValue(ea) || cmpId(a.id, b.id) || cmpId(a.person, b.person);
+}
+
+/** 스카우트 추천 문장. 미관찰이면 실제 차이(+N)를 쓰지 않고 추정 구간으로만 적습니다. */
+export function ownedCompareText(s: Save | null | undefined, bestOwned: number, person: string, value?: number | null, card?: SeasonCard | null): string {
+  const est = estimateOvr(s, person, value, card);
+  if (est.kind === "exact" && est.value != null && Number.isFinite(est.value)) {
+    const d = Math.round(est.value - bestOwned);
+    return `같은 포지션 보유 최고 ${bestOwned} 대비 ${d >= 0 ? "+" : ""}${d}`;
+  }
+  if (est.kind === "range") {
+    const lo = halfToRatingLo(est.lo), hi = halfToRatingHi(est.hi);
+    return `같은 포지션 보유 최고 ${bestOwned} 대비 추정 ${est.text} (구간 ${lo}~${hi})`;
+  }
+  return "보유 선수 비교 기록 없음";
+}
+

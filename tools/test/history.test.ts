@@ -67,11 +67,13 @@ for (const [year, short] of [[2024, "GEN"], [2024, "T1"], [2024, "HLE"], [2024, 
     if (s.story!.ended === "bankrupt") bankrupt++;
     worlds += s.story!.trophies.worlds;
     if (year <= 2020) { assert(s.story!.franchised || s.story!.tier === "CK" || s.story!.ended, `${year} ${short} 프랜차이즈 판정이 끝났어야 함`); if (s.story!.tier === "CK") relegated++; }
-    // 도전 성과: 우승 기록과 모순되지 않아야 함(LCK 우승 → 결승·플레이오프 진출, 월즈 우승 → 최종 성과)
+    // 도전 성과 6항은 유지. 'LCK 우승'은 1부 타이틀만이며 trophies.lck(2부 결승에도 오름)과 같지 않을 수 있음.
     const log = challengeLog(s)!, by = Object.fromEntries(log.map((x) => [x.id, x.done]));
     assert.equal(log.length, 6);
-    assert.equal(by.lck, s.story!.trophies.lck > 0); assert.equal(by.msi, s.story!.trophies.msi > 0); assert.equal(by.worlds, s.story!.trophies.worlds > 0);
-    if (by.lck) assert(by.final && by.top6, "LCK 우승이면 결승·플레이오프 진출도 기록");
+    const lckItem = log.find((x) => x.id === "lck")!;
+    assert.equal(by.msi, s.story!.trophies.msi > 0); assert.equal(by.worlds, s.story!.trophies.worlds > 0);
+    if (lckItem.done && lckItem.label === "LCK 우승") assert(by.final && by.top6, "1부 LCK 우승이면 결승·플레이오프 진출도 기록");
+    if (lckItem.done && lckItem.label === "2부 우승") assert.match(lckItem.detail, /\d{4}/);
     if (by.final) assert(by.top6);
   }
   const g = historyGrade(exactRosterIds(short, year).starters.reduce((x, id) => x + CARDS[id].salary, 0));

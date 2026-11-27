@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => JSON.parse(readFileSync("public/data/" + String(u).split("/").pop()!, "utf8")) });
 import { loadCore, loadRanked, CARDS, PL, RANKED } from "../../src/data";
+import { ratingOf } from "../../src/rating";
 import { newHistoryCareer } from "../../src/game/story";
 import { newCareer } from "../../src/game/season";
 import { autoDraft, newDraft } from "../../src/game/draft";
@@ -85,6 +86,25 @@ const info = { name: "맞대결검증", birth: "1988-01-01", nation: "한국", c
   assert.equal(JSON.stringify(a), JSON.stringify(b), "같은 시드 같은 경기 결과");
 }
 
+{
+  const kz = newHistoryCareer("KZ", 1, 11, { startYear: 2018, managerInfo: info, difficulty: "normal" });
+  const first = kz.series.find((x) => x.a === "KZ" || x.b === "KZ")!;
+  const op = first.a === "KZ" ? first.b : first.a;
+  const b = preMatchBrief(kz, "KZ", op, first);
+  assert.equal(b.opAvg, null, "미관찰 상대 선발 평균은 숫자로 내지 않음");
+  assert.equal(b.opAvgText, "추정 구간");
+  for (const ln of b.lanes) {
+    if (ln.op.estKind !== "range") continue;
+    const trueV = ratingOf(PL[ln.op.key]);
+    assert.equal(ln.op.ovr, null);
+    assert.match(ln.op.ovrText, /★/);
+    if (trueV != null) {
+      const blob = b.advice.filter((t) => !/KDA|골드|경기|승률/.test(t)).join("\n");
+      assert.doesNotMatch(blob, new RegExp(`상대[^\n]{0,40}${trueV}(?!\\d)`), "조언에 상대 숨은 종합");
+    }
+  }
+}
+
 assert.equal(JSON.stringify(CARDS), originalCards, "카드 원본 불변");
 assert.equal(JSON.stringify(RANKED), originalRanked, "랭크 원본 불변");
-console.log("OK matchup: display-only brief, 2018 기록 없음, key lane by |OVR|, no invented quotes, same seed same result");
+console.log("OK matchup: display-only brief, 2018 기록 없음, key lane by visible |OVR|, no invented quotes, no hidden opp rating, same seed same result");
