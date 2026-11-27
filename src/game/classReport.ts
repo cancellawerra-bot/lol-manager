@@ -279,12 +279,34 @@ function yearLabel(s: Save, snap?: ClassReportSnap): string {
   return NONE;
 }
 
+function playoffFromArchive(s: Save): string | undefined {
+  const bits: string[] = [];
+  for (const sp of s.clubTimeline?.splits ?? []) {
+    const po = (sp.matches ?? []).filter((m) => m.stage === "PO1" || m.stage === "SF" || m.stage === "F");
+    const label = `${sp.year} ${SPLIT_KO[sp.split] ?? sp.split ?? ""}`.trim();
+    if (po.length) {
+      bits.push(`${label} ` + po.map((m) => {
+        const st = STAGE_KO[m.stage as keyof typeof STAGE_KO] ?? m.stage;
+        return `${st} vs ${m.opponentName} ${m.scored}:${m.conceded}${m.won ? " 승" : " 패"}`;
+      }).join(", "));
+    } else if (sp.championName || sp.champion) {
+      bits.push(`${label} 우승 ${sp.championName ?? teamKo(s, sp.champion!)}`);
+    }
+  }
+  if (bits.length) return bits.join(" · ");
+  const honors = careerHonors(s).trophies.filter((x) => x.done && /플레이오프|우승|준우승|월즈|MSI|승격/.test(x.label));
+  if (honors.length) return honors.map((x) => x.detail ? `${x.label} (${x.detail})` : x.label).join(" · ");
+  return;
+}
+
 function playoffLine(s: Save, series: SeriesRec[]): string {
   const mine = ourSeries(s, series);
   const po = mine.filter((x) => x.stage === "PO1" || x.stage === "SF" || x.stage === "F");
   if (!po.length) {
+    const archived = playoffFromArchive(s);
+    if (archived) return archived;
     const regularDone = liveSeries(s).filter((x) => x.stage === "R").every((x) => !!x.winner) && liveSeries(s).some((x) => x.stage === "R");
-    if (s.story?.tier === "CK") return "2부 스플릿에는 플레이오프가 없습니다";
+    if (s.story?.tier === "CK" && !(s.clubTimeline?.splits ?? []).length) return "2부 스플릿에는 플레이오프가 없습니다";
     if (regularDone && s.phase !== "regular") return "플레이오프 진출 기록 없음";
     return NONE;
   }

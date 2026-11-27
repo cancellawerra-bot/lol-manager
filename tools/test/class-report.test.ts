@@ -123,6 +123,10 @@ function snapCore(s: { eco: { cash: number; fans: number }; series: { id: string
   if ((s.classReport?.splits ?? []).some((sp) => sp.rank) || (s.clubTimeline?.splits ?? []).some((sp) => sp.rank)) {
     assert.match(v.rank, /\d+위/, "스플릿 기록이 있으면 지금까지 순위를 기록 없음으로 두지 않음");
   }
+  const hasPoEvidence = (s.clubTimeline?.splits ?? []).some((sp) => (sp.matches ?? []).some((m) => m.stage === "PO1" || m.stage === "SF" || m.stage === "F") || sp.champion || sp.championName);
+  if (hasPoEvidence || v.trophies.some((t) => /플레이오프|우승|월즈|MSI|승격/.test(t.label))) {
+    assert.notEqual(v.playoff, NONE, "보관된 플레이오프·우승 기록이 있으면 기록 없음으로 두지 않음");
+  }
   // 학생 입력만 저장되고 승부는 그대로
   setReportStudent(s, "홍길동", "20261234");
   setReportReflection(s, "draft", "첫 세트 1픽을 더 신중히 하고 싶습니다.");
