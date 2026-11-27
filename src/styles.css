@@ -978,6 +978,13 @@ svg.lead .mk.B{fill:#3B82F6}svg.lead .mk.R{fill:#EF4444}
 .cr-paper .card h2,.cr-paper .card .card-title, .cr-paper h3{color:#152033}
 .cr-paper .muted,.cr-paper .muted.xs,.cr-paper .muted.sm{color:#5c6570}
 .cr-paper b{color:#111}
+/* 개요 타일은 앱 다크 .facts를 쓰되, 밝은 종이 안에서는 밝은 배경+진한 글씨로 덮습니다. */
+.cr-paper .facts li,.cr-paper .chip,.cr-paper .badge,.cr-paper .tag,.cr-paper .seg{
+  background:#e8edf4;color:#152033;border-color:#b8c2d0;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.cr-paper .facts li b,.cr-paper .chip b,.cr-paper .badge b{color:#111}
+.cr-paper .facts li span,.cr-paper .chip small,.cr-paper .facts li small{color:#3a4556}
 .cr-facts li b{font-size:1rem}
 .cr-fields{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
 .cr-fields label,.cr-reflect label{display:flex;flex-direction:column;gap:.3rem;font-size:.9rem;font-weight:600}
@@ -1019,6 +1026,12 @@ svg.lead .mk.B{fill:#3B82F6}svg.lead .mk.R{fill:#EF4444}
   .cr-moves li{padding:.15rem 0}
   .cr-moves p{margin:0}
   .cr-champs em,.cr-paper .muted{color:#333}
+  .cr-paper .facts li,.cr-paper .chip,.cr-paper .badge,.cr-paper .tag{
+    background:#e8edf4!important;color:#152033!important;border-color:#b8c2d0!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .cr-paper .facts li b,.cr-paper .chip b{color:#111!important}
+  .cr-paper .facts li span,.cr-paper .chip small{color:#3a4556!important}
   .cr-facts li{padding:.25rem .4rem}
   body{font-size:9.5pt;line-height:1.28}
 }

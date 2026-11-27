@@ -6,6 +6,7 @@ import { SAVE_V, simSeries } from "../../src/game/season";
 import { newHistoryCareer, finishStoryDay, pumpStory } from "../../src/game/story";
 import { Rng } from "../../src/game/rng";
 import { homeTodos } from "../../src/pages/ManagerDashboard";
+import { fanOpinion } from "../../src/game/newsFeed";
 import {
   NONE, REFLECTION_QUESTIONS, buildClassReport, captureClassReportSplit,
   markReportSeen, reportToCsv, reportToJson, setReportReflection, setReportStudent,
@@ -154,6 +155,23 @@ function snapCore(s: { eco: { cash: number; fans: number }; series: { id: string
   assert.ok(js.includes("홍길동") && js.includes("20261234"));
   assert.ok(js.includes("1픽"));
   console.log("OK student fields optional, reflections not invented, offseason todo, SAVE_V 2");
+}
+
+
+{
+  const s = newHistoryCareer("KZ", 1, 11, { startYear: 2018, managerInfo: info, difficulty: "normal" });
+  s.schedOk = true;
+  pumpStory(s, new Rng(s.rng));
+  const before = JSON.stringify({ cash: s.eco.cash, winners: s.series.map((x) => x.winner), fans: s.eco.fans });
+  const v = buildClassReport(s, "until-now");
+  const op = fanOpinion(s);
+  if (v.opinion !== NONE && op.rank > 0) {
+    assert.ok(v.opinion.includes(`현재 ${op.rank}위`), "여론 순위 숫자는 바꾸지 않음");
+    assert.ok(v.opinion.includes("정규 시즌 순위표"), "여론 순위의 기준을 밝힘");
+  }
+  const after = JSON.stringify({ cash: s.eco.cash, winners: s.series.map((x) => x.winner), fans: s.eco.fans });
+  assert.equal(after, before, "여론 기준 표기는 조회만 하며 승부·자금을 바꾸지 않음");
+  console.log("OK opinion rank keeps its number and states regular-table basis");
 }
 
 console.log("OK class-report tests complete");

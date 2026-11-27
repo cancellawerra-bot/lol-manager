@@ -5,7 +5,7 @@ import { careerHonors } from "./achievements";
 import { fmtMoney } from "./money";
 import { fanOpinion, teamKo } from "./newsFeed";
 import type { GameRec, Mode, Save, SeriesRec } from "./season";
-import { STAGE_KO } from "./season";
+import { STAGE_KO, standings } from "./season";
 import { trainedRatingOf } from "./trainingRuntime";
 
 export const NONE = "기록 없음";
@@ -571,9 +571,10 @@ export function buildClassReport(s: Save, scope: ReportScope = "until-now"): Cla
   const op = fanOpinion(s);
   const form = op.form.length ? `최근 ${op.form.length}경기 ${op.form.filter(Boolean).length}승 ${op.form.length - op.form.filter(Boolean).length}패` : NONE;
   const pressLine = press.length ? press.map((p) => `「${p.tone}」 ${p.n}회`).join(" · ") : NONE;
-  const opinion = (scopeId === "until-now" || scopeId === "live")
+  const opinionRaw = (scopeId === "until-now" || scopeId === "live")
     ? (live.series.length || op.form.length ? `${op.label} · 표시 온도 ${op.score} · ${op.summary}` : NONE)
     : NONE;
+  const opinion = annotateOpinionRank(s, opinionRaw, op.rank);
 
   const growth = (scopeId === "until-now" || scopeId === "live") ? growthOf(s) : null;
   const moves = movesOf(s);
@@ -621,6 +622,34 @@ export function buildClassReport(s: Save, scope: ReportScope = "until-now"): Cla
     reflections: REFLECTION_QUESTIONS.map((q) => ({ id: q.id, prompt: q.prompt, answer: s.classReport?.reflections?.[q.id] ?? "" })),
     note: "이 보고서는 이 커리어에서 실제로 남은 기록만 모았습니다. 없는 값은 「기록 없음」이며 0으로 채우거나 다른 연도 기록으로 대체하지 않습니다. 성찰 칸의 답은 학생이 직접 씁니다. 금액은 게임용 가상 금액입니다. 팀 로고·선수 사진은 쓰지 않습니다.",
   };
+}
+
+
+/** 여론의 「현재 N위」는 지금 저장의 정규 시즌 순위표입니다. 숫자는 그대로 두고 기준만 밝힙니다. */
+function opinionRankBasis(s: Save): string {
+  const me = standings(s).find((r) => r.t === s.team);
+  const played = me ? me.w + me.l : 0;
+  const day = s.days[Math.min(Math.max(s.day, 0), Math.max(0, s.days.length - 1))];
+  const label = day?.label ?? "";
+  const phase = s.story?.phase ?? s.phase ?? "";
+  const intl = phase === "worlds" || phase === "msi" || /월즈|MSI/.test(label);
+  const off = ["awards", "tryout", "expiry", "stove", "done"].includes(String(phase));
+  if (played > 0) {
+    return intl || off
+      ? "지금 정규 시즌 순위표 기준 · 지난 스플릿·국제전 성적과 별개"
+      : "지금 진행 중인 정규 시즌 순위표 기준";
+  }
+  if (intl) return "지금 정규 시즌 순위표 기준 · 이 표에는 정규 경기가 없어 위의 정규 순위·진행 중인 국제전과 다를 수 있음";
+  if (off) return "지금 정규 시즌 순위표 기준 · 이 표에는 정규 경기가 없어 위의 정규 순위와 다를 수 있음";
+  return "지금 정규 시즌 순위표 기준";
+}
+
+function annotateOpinionRank(s: Save, opinion: string, rank: number): string {
+  if (!opinion || opinion === NONE || !(rank > 0)) return opinion;
+  const basis = opinionRankBasis(s);
+  const token = `현재 ${rank}위`;
+  if (opinion.includes(token)) return opinion.replace(token, `${token}(${basis})`);
+  return `${opinion} · ${token}(${basis})`;
 }
 
 function clubChampion(s: Save, id: string): string | undefined {

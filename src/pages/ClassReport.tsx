@@ -148,7 +148,7 @@ export default function ClassReport() {
           <p data-testid="report-press"><b>기자회견 어조:</b> {view.press}</p>
           <p data-testid="report-form"><b>최근 전적:</b> {view.form}</p>
           <p data-testid="report-opinion"><b>여론(표시용):</b> {view.opinion}</p>
-          <p className="muted xs">여론 온도는 표시만 하며 자금·팬심·승부 수치를 바꾸지 않습니다. 선수 발언은 짓지 않습니다.</p>
+          <p className="muted xs">여론 온도는 표시만 하며 자금·팬심·승부 수치를 바꾸지 않습니다. 선수 발언은 짓지 않습니다. 「현재 N위」는 지금 저장의 정규 시즌 순위표이며, 위의 정규 순위(지난 스플릿까지 모은 값)나 진행 중인 월즈·MSI 성적과 다를 수 있습니다.</p>
         </Card>
 
         <Card title="성찰 (학생이 직접 작성)">
