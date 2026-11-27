@@ -5,7 +5,7 @@ import type { Player, PosIdx } from "../types";
 import { moneyRound, fmtMoney } from "./money";
 import type { Save } from "./season";
 import { hiredOf } from "./staff";
-import { trainingSession, trainedRating, potentialFor, type TrainingProgress } from "./training";
+import { trainingSession, potentialFor, type TrainingProgress } from "./training";
 
 export const ACADEMY_LEVELS = ["lean", "standard", "aggressive"] as const;
 export type AcademyLevel = (typeof ACADEMY_LEVELS)[number];
@@ -340,15 +340,20 @@ export function advanceAcademyTraining(s: Save, date: string): void {
       p = trainingSession(p, kind, day, undefined, ctx, boost).progress;
     }
     state.players[person] = p;
-    const tr = trainedRating(p, { base, potential: potentialFor(), speed: 1 });
-    writeFour(prosp, tr);
+    writeFour(prosp, academyDisplay(base, p));
   }
+}
+
+/** 2군은 시작 32라 1군 표시 하한 60을 쓰지 않습니다. 성장 상한 100은 같습니다. */
+export function academyDisplay(base: number, prog?: TrainingProgress): { phys: number; brain: number; overall: number; base: number } {
+  const p = prog ?? { person: "", mechanicsXp: 0, strategyXp: 0, fatigue: 0 };
+  const phys = Math.max(0, Math.min(100, base + (p.physGain ?? 0)));
+  const brain = Math.max(0, Math.min(100, base + (p.brainGain ?? 0)));
+  return { phys, brain, overall: Math.min(100, Math.round((phys + brain) / 2)), base };
 }
 
 export function academyTrained(s: Save, prosp: AcademyProspect): { phys: number; brain: number; overall: number; base: number } {
   const person = prosp.person;
   const prog = s.training?.players[person] ?? { person, mechanicsXp: 0, strategyXp: 0, fatigue: 0 };
-  const base = prosp.rating;
-  const tr = trainedRating(prog, { base, potential: potentialFor(), speed: 1 });
-  return { ...tr, base };
+  return academyDisplay(prosp.rating, prog);
 }

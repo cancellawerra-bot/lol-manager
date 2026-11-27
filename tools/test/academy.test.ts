@@ -102,6 +102,7 @@ function playOne(s: ReturnType<typeof fixture>) {
   assert.equal(academyPayroll(s), 0.6);
   assert.equal(academyProspects(s).length, 5);
   assert.ok(academyProspects(s).every((p) => p.origin === "virtual" && p.name.startsWith("2군 ") && p.rating === 32));
+  assert.ok(academyProspects(s).every((p) => academyTrained(s, p).overall === 32), "표시 종합은 하한 60이 아니라 시작 32");
   assert.equal(academyGrowthBoost(s), 1.07);
   const mid = academyProspects(s).find((p) => p.pos === 2)!;
   assert.equal(mid.name, "2군 미드 A");
